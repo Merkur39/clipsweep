@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { authorizeUrl, parseAuthFragment } from './auth'
+import { authorizeUrl, normalizeRedirectUri, parseAuthFragment } from './auth'
 
 describe('parseAuthFragment', () => {
   it('extracts the access token returned by the implicit flow', () => {
@@ -22,6 +22,30 @@ describe('parseAuthFragment', () => {
   it('ignores a fragment that carries no auth payload', () => {
     expect(parseAuthFragment('')).toEqual({ status: 'none' })
     expect(parseAuthFragment('#section=results')).toEqual({ status: 'none' })
+  })
+})
+
+describe('normalizeRedirectUri', () => {
+  it('keeps a root path untouched', () => {
+    expect(normalizeRedirectUri('http://localhost:5173', '/')).toBe('http://localhost:5173/')
+  })
+
+  it('keeps a project subpath served with its trailing slash', () => {
+    expect(normalizeRedirectUri('https://merkur39.github.io', '/get-clip-twitch/')).toBe(
+      'https://merkur39.github.io/get-clip-twitch/',
+    )
+  })
+
+  it('adds the trailing slash when the subpath is reached without one', () => {
+    expect(normalizeRedirectUri('https://merkur39.github.io', '/get-clip-twitch')).toBe(
+      'https://merkur39.github.io/get-clip-twitch/',
+    )
+  })
+
+  it('drops an explicit html filename', () => {
+    expect(normalizeRedirectUri('https://merkur39.github.io', '/get-clip-twitch/index.html')).toBe(
+      'https://merkur39.github.io/get-clip-twitch/',
+    )
   })
 })
 

@@ -65,9 +65,20 @@ export const clientIdStore = {
   write: (clientId: string) => localStorage.setItem(CLIENT_ID_KEY, clientId),
 }
 
+/**
+ * Twitch matches the redirect URI byte for byte, so it has to be stable however
+ * the page was reached: with or without the trailing slash, and whether or not
+ * `index.html` is spelled out. Served from a project subpath (GitHub Pages),
+ * that difference is what turns a working login into `redirect_mismatch`.
+ */
+export function normalizeRedirectUri(origin: string, pathname: string): string {
+  const directory = pathname.replace(/[^/]*\.html?$/i, '')
+  return origin + (directory.endsWith('/') ? directory : `${directory}/`)
+}
+
 /** The redirect URI must match the one registered on dev.twitch.tv, query-free. */
 export function redirectUri(): string {
-  return location.origin + location.pathname
+  return normalizeRedirectUri(location.origin, location.pathname)
 }
 
 /**

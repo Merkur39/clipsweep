@@ -37,6 +37,26 @@ Aucun secret nulle part : flux implicite, le jeton revient dans le fragment d'UR
 `sessionStorage`. Le navigateur parle directement à Helix (CORS autorisé), il n'y a pas de backend — le
 build est déployable en statique.
 
+## Déploiement
+
+Poussé sur `main`, [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) enchaîne lint, tests,
+build et mise en ligne sur GitHub Pages.
+
+Deux réglages à faire une fois :
+
+1. **Settings → Pages → Source : GitHub Actions** sur le dépôt (sans ça le workflow échoue à l'étape
+   `configure-pages`).
+2. Ajouter l'URL Pages aux « OAuth Redirect URLs » de l'application Twitch, **slash final compris** :
+   `https://merkur39.github.io/get-clip-twitch/`. Twitch compare la chaîne à l'octet près ; l'app
+   normalise l'URI (slash final ajouté, `index.html` retiré) pour qu'elle soit stable quel que soit le
+   chemin d'arrivée.
+
+`base: './'` dans [vite.config.ts](vite.config.ts) rend les chemins d'assets relatifs : le build
+fonctionne aussi bien à la racine d'un domaine que sous `/get-clip-twitch/`.
+
+Chaque visiteur reste maître de son accès : il déclare sa propre application Twitch avec cette URL de
+redirection, saisit son Client ID et se connecte avec son compte.
+
 ## Architecture
 
 | Fichier | Rôle |
