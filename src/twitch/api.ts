@@ -1,0 +1,89 @@
+import type { Session } from './auth'
+import type { ClipPageFetcher } from './clips'
+import type { Clip, TwitchUser } from './types'
+
+const HELIX = 'https://api.twitch.tv/helix'
+const PAGE_SIZE = 100
+/** Helix allows 800 points/min; one request costs one point. */
+const THROTTLE_MS = 60
+const MAX_ATTEMPTS = 6
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** Raised on 401 so the UI can drop the session and offer to reconnect. */
+export class TokenRejectedError extends Error {
+  constructor() {
+    super('Jeton refusé par Twitch. Reconnecte-toi.')
+    this.name = 'TokenRejectedError'
+  }
+}
+
+interface HelixResponse<T> {
+  data: T[]
+  pagination?: { cursor?: string }
+  message?: string
+}
+
+export class TwitchApi {
+  constructor(
+    private readonly session: Session,
+    private readonly signal?: AbortSignal,
+  ) {}
+
+  private async get<T>(path: string, params: Record<string, string>): Promise<HelixResponse<T>> {
+    const url = `${HELIX}/${path}?${new URLSearchParams(params)}`
+
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
+      const response = await fetch(url, {
+        signal: this.signal,
+        headers: {
+          'Client-Id': this.session.clientId,
+          Authorization: `Bearer ${this.session.accessToken}`,
+        },
+      })
+
+      if (response.status === 429) {
+        // Helix answers with the epoch second at which the bucket refills.
+        const reset = Number(response.headers.get('ratelimit-reset')) * 1000
+        const waitMs = Number.isFinite(reset) && reset > Date.now() ? reset - Date.now() : 5000
+        await sleep(Math.min(waitMs + 250, 60_000))
+        continue
+      }
+      if (response.status === 401) throw new TokenRejectedError()
+      if (response.status >= 500) {
+        await sleep(1000 * 2 ** attempt)
+        continue
+      }
+
+      const payload = (await response.json()) as HelixResponse<T>
+      if (!response.ok) throw new Error(payload.message ?? `Twitch répond ${response.status}`)
+
+      await sleep(THROTTLE_MS)
+      return payload
+    }
+
+    throw new Error(`${MAX_ATTEMPTS} tentatives infructueuses sur /${path}.`)
+  }
+
+  async fetchUser(login: string): Promise<TwitchUser> {
+    const { data } = await this.get<TwitchUser>('users', { login: login.trim().toLowerCase() })
+    const user = data[0]
+    if (!user) throw new Error(`Chaîne « ${login} » introuvable.`)
+    return user
+  }
+
+  clipPageFetcher(broadcasterId: string): ClipPageFetcher {
+    return async (window, cursor) => {
+      const params: Record<string, string> = {
+        broadcaster_id: broadcasterId,
+        first: String(PAGE_SIZE),
+        started_at: window.startedAt,
+        ended_at: window.endedAt,
+      }
+      if (cursor) params.after = cursor
+
+      const { data, pagination } = await this.get<Clip>('clips', params)
+      return { clips: data, cursor: pagination?.cursor || undefined }
+    }
+  }
+}
