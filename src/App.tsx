@@ -96,7 +96,12 @@ export default function App({ authError }: { authError: string | null }) {
   const [span, setSpan] = useState<Span | null>(null)
   const [progress, setProgress] = useState<Progress | null>(null)
   const [logEntries, setLogEntries] = useState<LogEntry[]>([])
-  const [channelCreatedAt, setChannelCreatedAt] = useState<string | null>(null)
+  // Le login résolu voyage avec sa date : comparé à la saisie courante, il rend
+  // toute réponse tardive inoffensive au lieu d'écraser une chaîne plus récente.
+  const [resolvedChannel, setResolvedChannel] = useState<{
+    login: string
+    createdAt: string
+  } | null>(null)
   // Exclusions, not selections: everything starts checked, including clips that
   // appear later when the threshold is raised.
   const [deselected, setDeselected] = useState<ReadonlySet<string>>(() => new Set())
@@ -142,6 +147,33 @@ export default function App({ authError }: { authError: string | null }) {
   }, [])
 
   const connect = () => location.assign(authorizeUrl(BUILD_TIME_CLIENT_ID, redirectUri()))
+
+  const wantedLogin = channel.trim().toLowerCase()
+  // Une réponse ne vaut que pour la chaîne actuellement saisie.
+  const channelCreatedAt = resolvedChannel?.login === wantedLogin ? resolvedChannel.createdAt : null
+
+  // Résout la chaîne dès la saisie, pour pouvoir proposer sa date de création
+  // avant la première fouille. Temporisé : sans ça, chaque lettre tapée
+  // déclencherait une requête pour un préfixe qui n'existe pas.
+  useEffect(() => {
+    if (!session || !wantedLogin) return
+
+    const controller = new AbortController()
+    const timer = setTimeout(() => {
+      new TwitchApi(session, controller.signal)
+        .fetchUser(wantedLogin)
+        .then((user) =>
+          setResolvedChannel({ login: user.login, createdAt: user.created_at.slice(0, 10) }),
+        )
+        // Chaîne inexistante ou saisie abandonnée : le lien reste simplement absent.
+        .catch(() => {})
+    }, 500)
+
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [session, wantedLogin])
 
   const maxViews = numberOrNull(maxViewsInput)
   const minViews = numberOrNull(minViewsInput)
@@ -201,7 +233,7 @@ export default function App({ authError }: { authError: string | null }) {
     try {
       const api = new TwitchApi(session, controller.signal)
       const user: TwitchUser = await api.fetchUser(channel)
-      setChannelCreatedAt(user.created_at.slice(0, 10))
+      setResolvedChannel({ login: user.login, createdAt: user.created_at.slice(0, 10) })
       log(
         `Chaîne : ${user.display_name} (id ${user.id}), créée le ${user.created_at.slice(0, 10)}.`,
         'good',
