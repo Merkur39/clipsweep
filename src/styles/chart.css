@@ -1,0 +1,228 @@
+/* Frieze.tsx — la bande graduée, plus sa légende rendue par SearchProgress.
+   La hauteur d'une dalle est logarithmique : sans décades légendées, deux
+   dalles d'aspect différent peuvent valoir 100 ou 10 000 clips. Le graticule
+   est la moitié de l'information.
+
+   Attention : la hauteur du tracé et le pas des décades sont calculés dans
+   `Frieze.tsx` (PLOT_HEIGHT, BASELINE, DECADE). Changer `grid-template-rows`
+   ici sans les suivre là-bas décale les graduations. */
+
+.chart {
+  margin: 0;
+}
+
+.frieze {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-rows: 176px 24px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.frieze-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0 var(--s-6);
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.frieze-scale {
+  position: relative;
+  border-right: 1px solid var(--rule);
+  background: var(--chassis);
+}
+
+.frieze-decade-label {
+  position: absolute;
+  right: 6px;
+  transform: translateY(50%);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+.frieze-plot {
+  position: relative;
+  overflow: hidden;
+}
+
+.frieze-decade,
+.frieze-year {
+  position: absolute;
+  pointer-events: none;
+}
+
+.frieze-decade {
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px dashed var(--rule);
+}
+
+.frieze-year {
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px solid var(--rule);
+}
+
+.slab {
+  position: absolute;
+  bottom: 0;
+  transform-origin: bottom;
+  animation: trace 0.28s var(--ease);
+}
+
+/* Chaque état porte une texture en plus de sa teinte : la frise reste lisible
+   en niveaux de gris et en deutéranopie. */
+.slab.done {
+  background: var(--violet-deep);
+  border-top: 1.5px solid var(--violet);
+}
+
+.slab.split {
+  background: var(--amber-deep);
+  background-image: repeating-linear-gradient(-45deg, transparent 0 3px, var(--amber) 3px 4.5px);
+  border-top: 1.5px solid var(--amber);
+}
+
+/* La seule vraie lacune : plein rouge, et le tracé s'échappe par le haut. */
+.slab.lost {
+  background: var(--red-deep);
+  border-top: 2px solid var(--red);
+}
+
+.slab.lost::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 15px;
+  background: repeating-linear-gradient(to top, var(--red) 0 2px, transparent 2px 5px);
+}
+
+.slab.active {
+  outline: 1px solid var(--text);
+  outline-offset: 0;
+  z-index: 2;
+}
+
+/* Le stylet : où l'enregistreur écrit en ce moment. */
+.frieze-pen {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--violet-bright);
+  box-shadow: 0 0 8px 1px rgb(164 129 255 / 45%);
+  animation: pen 1.4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 3;
+}
+
+@keyframes trace {
+  from {
+    transform: scaleY(0.04);
+    opacity: 0;
+  }
+}
+
+@keyframes pen {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.frieze-axis {
+  position: relative;
+  grid-column: 2;
+  border-top: 1px solid var(--rule-strong);
+  background: var(--chassis);
+}
+
+.tick {
+  position: absolute;
+  bottom: 5px;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+
+/* La lecture chiffrée d'une fenêtre était enfermée dans un attribut `title`. */
+.chart-readout {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: 26px;
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.chart-readout .muted {
+  color: var(--text-faint);
+}
+
+/* Les pastilles reprennent exactement les textures des dalles : une légende
+   qui ne montre que la teinte ment sur ce qu'elle légende. */
+.legend {
+  display: flex;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  margin-top: var(--s-2);
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+
+.legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.legend b {
+  width: 14px;
+  height: 11px;
+  border-radius: 1px;
+}
+
+.legend .done {
+  background: var(--violet-deep);
+  border-top: 1.5px solid var(--violet);
+}
+
+.legend .split {
+  background: var(--amber-deep);
+  background-image: repeating-linear-gradient(-45deg, transparent 0 3px, var(--amber) 3px 4.5px);
+  border-top: 1.5px solid var(--amber);
+}
+
+.legend .lost {
+  background: var(--red-deep);
+  border-top: 2px solid var(--red);
+}
+
+@media (max-width: 960px) {
+  /* La hauteur du tracé est calculée en JS et graduée en décades : la réduire
+     ici couperait la décade 1 k. Seule la gouttière des libellés se resserre. */
+  .frieze {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+}

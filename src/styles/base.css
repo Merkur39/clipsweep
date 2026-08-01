@@ -1,0 +1,90 @@
+/* Jetons, remise à zéro, éléments nus. Rien qui appartienne à un composant. */
+
+:root {
+  color-scheme: dark;
+
+  /* Graphite froid, teinté bleu-violet : le châssis, pas le fond de Twitch. */
+  --ground: #090b12;
+  --chassis: #0f121c;
+  --surface: #141824;
+  --surface-raised: #1b2030;
+  --surface-hover: #212739;
+
+  /* Deux niveaux de filet : le trait de séparation et la couture structurelle. */
+  --rule: #262c3d;
+  --rule-strong: #39415c;
+
+  --text: #e7e9f1;
+  --text-dim: #a2a9bd;
+  /* Le tiers le plus éteint doit encore tenir 4.5:1 sur la ligne survolée,
+     pas seulement sur le fond de repos : c'est là qu'on lit une date. */
+  --text-faint: #8d97b0;
+
+  /* Trois encres, trois sens. Rien d'autre ne prend de couleur.
+     violet = la trace normale · ambre = recoupée · rouge = perdue */
+  --violet: #a481ff;
+  --violet-bright: #c3aaff;
+  --violet-deep: #6a45c8;
+  --violet-wash: rgb(164 129 255 / 14%);
+  --amber: #f0a63c;
+  --amber-deep: #6a4611;
+  --red: #ff5d5d;
+  --red-bright: #ff9494;
+  --red-deep: #6d1f28;
+
+  --sans:
+    system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  --mono: ui-monospace, 'Cascadia Mono', 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  /* Une façade d'instrument n'a pas de coins mous. */
+  --r: 2px;
+
+  --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font:
+    14px/1.55 var(--sans),
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: var(--violet);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--violet-deep);
+}
+
+a:hover {
+  color: var(--violet-bright);
+  text-decoration-color: currentcolor;
+}
+
+:focus-visible {
+  outline: 2px solid var(--violet-bright);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

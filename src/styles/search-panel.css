@@ -1,0 +1,44 @@
+/* SearchPanel.tsx — l'état d'accès. */
+
+/* Une façade d'instrument signale son état par une lampe, pas par un liseré
+   collé sur la tranche d'un encadré. */
+.status {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 9px 11px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  margin-bottom: var(--s-3);
+  color: var(--text-dim);
+  background: var(--chassis);
+}
+
+.status::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--rule-strong);
+}
+
+.status.ok::before {
+  background: var(--violet);
+  box-shadow: 0 0 7px 1px rgb(164 129 255 / 55%);
+}
+
+.status.bad {
+  border-color: var(--red-deep);
+  background: rgb(255 93 93 / 6%);
+  color: var(--red-bright);
+}
+
+.status.bad::before {
+  background: var(--red);
+  box-shadow: 0 0 7px 1px rgb(255 93 93 / 55%);
+}

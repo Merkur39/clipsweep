@@ -1,0 +1,210 @@
+/* Le vocabulaire de contrôle partagé : champs, boutons, cases, icônes.
+   Les composants qui le spécialisent (`.multiselect-button`, `.col-sort`,
+   `.field-clear`) sont importés après ce fichier. */
+
+label {
+  display: block;
+  margin: 0 0 var(--s-3);
+}
+
+.field-label,
+label > span {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 5px;
+}
+
+input:not([type='checkbox']) {
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  background: var(--ground);
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color 0.12s var(--ease),
+    background 0.12s var(--ease);
+}
+
+input:not([type='checkbox']):hover {
+  border-color: var(--rule-strong);
+}
+
+input:not([type='checkbox']):focus {
+  border-color: var(--violet);
+  background: var(--chassis);
+}
+
+input::placeholder {
+  color: var(--text-faint);
+}
+
+/* Sans `min-width: 0`, la largeur intrinsèque d'un `input[type=date]` — avec
+   son icône de sélecteur — dépasse sa colonne et pousse la grille. */
+.duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+}
+
+.duo > * {
+  min-width: 0;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 550;
+  font-size: 13px;
+  padding: 9px 15px;
+  transition:
+    background 0.12s var(--ease),
+    border-color 0.12s var(--ease),
+    color 0.12s var(--ease);
+}
+
+button:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--violet);
+}
+
+button:active:not(:disabled) {
+  background: var(--surface);
+}
+
+/* L'opacité fait passer le libellé sous le seuil de contraste : on éteint
+   explicitement, on ne dilue pas. */
+button:disabled {
+  background: transparent;
+  border-color: var(--rule);
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+button.primary {
+  background: var(--violet);
+  border-color: var(--violet);
+  color: #17102c;
+  font-weight: 650;
+}
+
+button.primary:hover:not(:disabled) {
+  background: var(--violet-bright);
+  border-color: var(--violet-bright);
+}
+
+button.primary:active:not(:disabled) {
+  background: var(--violet-deep);
+  border-color: var(--violet-deep);
+  color: var(--text);
+}
+
+/* Le liseré violet sur fond violet est invisible : on le décolle. */
+button.primary:focus-visible {
+  outline-color: var(--text);
+}
+
+button.wide {
+  width: 100%;
+}
+
+button.link {
+  background: none;
+  border: none;
+  color: var(--violet);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 0 var(--s-3);
+  text-align: left;
+  justify-content: flex-start;
+}
+
+button.link:hover:not(:disabled) {
+  background: none;
+  color: var(--violet-bright);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+button.link:disabled {
+  border: none;
+  background: none;
+}
+
+.icon {
+  flex: none;
+  display: block;
+}
+
+/* ---- cases à cocher ----
+   Tout démarre coché : la case ne doit donc pas être l'encre la plus lourde
+   de la table. Contour au repos, teinte légère une fois cochée. */
+
+input[type='checkbox'] {
+  appearance: none;
+  position: relative;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  padding: 0;
+  background: var(--ground);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r);
+  cursor: pointer;
+  transition:
+    background 0.12s var(--ease),
+    border-color 0.12s var(--ease);
+}
+
+input[type='checkbox']:hover:not(:disabled) {
+  border-color: var(--violet);
+}
+
+input[type='checkbox']:checked,
+input[type='checkbox']:indeterminate {
+  background: var(--violet-wash);
+  border-color: var(--violet);
+}
+
+input[type='checkbox']:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--violet-bright);
+  border-width: 0 1.6px 1.6px 0;
+  transform: rotate(43deg);
+}
+
+input[type='checkbox']:indeterminate::after {
+  content: '';
+  position: absolute;
+  inset: 6px 3px auto;
+  height: 0;
+  border-top: 1.6px solid var(--violet-bright);
+}
+
+input[type='checkbox']:disabled {
+  cursor: default;
+  border-color: var(--rule);
+  background: transparent;
+}

@@ -1,0 +1,175 @@
+/* FiltersBar.tsx, NumberField.tsx, MultiSelect.tsx — la rangée de filtres.
+   Elle est soudée au haut de la table (bord bas retiré, rayon coupé) : les
+   deux forment un seul panneau, pas deux cartes empilées. */
+
+.result-count {
+  margin: 0 0 var(--s-3);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+}
+
+.filters {
+  display: flex;
+  gap: var(--s-3);
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--rule);
+  border-bottom: 0;
+  border-radius: var(--r) var(--r) 0 0;
+  background: var(--chassis);
+}
+
+.field,
+.multiselect {
+  margin: 0;
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
+/* Le bouton d'effacement est superposé, pas inséré : son apparition ne doit
+   déplacer ni le champ ni ses voisins. */
+.field-control {
+  position: relative;
+  display: block;
+}
+
+.field-control input {
+  padding-right: 30px;
+}
+
+/* Les flèches natives volent la place du bouton. */
+.field-control input::-webkit-outer-spin-button,
+.field-control input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.field-control input[type='number'] {
+  appearance: textfield;
+}
+
+.field-clear {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: var(--r);
+  color: var(--text-faint);
+}
+
+.field-clear:hover:not(:disabled) {
+  background: var(--surface-raised);
+  border-color: transparent;
+  color: var(--text);
+}
+
+.filters-reset {
+  width: auto;
+  padding: 0 0 9px;
+  flex: none;
+}
+
+/* ---- sélection multiple ---- */
+
+.multiselect {
+  position: relative;
+}
+
+.multiselect-button {
+  gap: var(--s-2);
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--ground);
+  border: 1px solid var(--rule);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.multiselect-button:hover:not(:disabled) {
+  background: var(--ground);
+  border-color: var(--rule-strong);
+}
+
+.multiselect-button[aria-expanded='true'] {
+  border-color: var(--violet);
+}
+
+.multiselect-button .icon {
+  color: var(--text-faint);
+  transition: transform 0.16s var(--ease);
+}
+
+.multiselect-button[aria-expanded='true'] .icon {
+  transform: rotate(180deg);
+}
+
+.multiselect-value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.multiselect-panel {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  min-width: 230px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 5px;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r);
+  box-shadow: 0 12px 28px -6px rgb(0 0 0 / 65%);
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+
+.multiselect-panel .link {
+  width: 100%;
+  padding: 4px 8px 8px;
+}
+
+.multiselect-option {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 5px 8px;
+  border-radius: var(--r);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.multiselect-option:hover {
+  background: var(--surface-hover);
+}
+
+.multiselect-option-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.multiselect-option-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}

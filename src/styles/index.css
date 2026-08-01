@@ -1,0 +1,30 @@
+/* ============================================================================
+   GetClipTwitch — « Enregistreur »
+   Le monde d'une station d'enregistrement : châssis à panneaux jointés par
+   filets, façade sérigraphiée, et une bande de papier graduée pour trace.
+   Aucun rayon mou, aucune carte flottante, aucun gris de Twitch.
+
+   Voir DESIGN.md pour les décisions durables.
+
+   ---- Où écrire une règle ----
+   Une classe vit dans le fichier du composant qui la possède. Le vocabulaire
+   partagé par plusieurs composants vit dans `base.css` (éléments nus, jetons)
+   ou `controls.css` (champs, boutons, cases).
+
+   ---- Ordre du cascade ----
+   L'ordre ci-dessous est significatif : à spécificité égale, le dernier gagne.
+   Les fichiers de composants viennent après `controls.css` parce qu'ils
+   surchargent le bouton et le champ nus (`.multiselect-button`, `.col-sort`,
+   `.field-clear`). Chaque `@media` reste dans le fichier des règles qu'il
+   surcharge, jamais rassemblé en fin de course.
+   ========================================================================= */
+
+@import './base.css';
+@import './chassis.css';
+@import './controls.css';
+@import './search-panel.css';
+@import './search-progress.css';
+@import './chart.css';
+@import './filters.css';
+@import './table.css';
+@import './export-panel.css';

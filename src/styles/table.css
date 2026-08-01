@@ -1,0 +1,179 @@
+/* ClipTable.tsx — la table de relevé, surface de travail principale : réglures
+   visibles, colonnes chiffrées alignées à droite, une ligne suivie par le
+   curseur.
+
+   Attention : `ROW_HEIGHT` vit dans `ClipTable.tsx` et pilote le virtualiseur.
+   La hauteur d'une ligne se fixe là-bas, pas ici. */
+
+.table {
+  border: 1px solid var(--rule);
+  border-radius: 0 0 var(--r) var(--r);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.table-head,
+.table-row {
+  display: grid;
+  grid-template-columns: 30px 84px 104px minmax(0, 1fr) 152px;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0 var(--s-3) 0 var(--s-4);
+}
+
+.table-head {
+  height: 34px;
+  background: var(--chassis);
+  border-bottom: 1px solid var(--rule-strong);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.table-body {
+  height: clamp(300px, 52vh, 760px);
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+
+.table-empty {
+  margin: 0;
+  padding: 26px var(--s-4);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.table-empty .link {
+  padding: 0;
+  width: auto;
+  font-size: 13px;
+}
+
+/* Toute la ligne coche : voir `rowClick` dans ClipTable.tsx pour les deux
+   cibles qui en sont exclues. */
+.table-row {
+  border-bottom: 1px solid var(--rule);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.table-row:nth-child(even) {
+  background: rgb(255 255 255 / 2.2%);
+}
+
+.table-row:hover {
+  background: var(--surface-hover);
+}
+
+.col-pick {
+  display: flex;
+  align-items: center;
+}
+
+.col-sort {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.col-sort:hover:not(:disabled) {
+  background: none;
+  border-color: transparent;
+  color: var(--text);
+}
+
+/* Largeur réservée : la flèche apparaît sans décaler le libellé. */
+.col-sort-arrow {
+  display: inline-flex;
+  width: 9px;
+  color: var(--violet);
+}
+
+.table-head [aria-sort='ascending'],
+.table-head [aria-sort='descending'] {
+  color: var(--text);
+}
+
+/* Colonne chiffrée : le libellé doit s'aligner sur ses valeurs, la flèche se
+   range donc à sa gauche plutôt que d'écarter l'en-tête du bord. */
+.table-head .col-views .col-sort,
+.table-head .col-date .col-sort {
+  flex-direction: row-reverse;
+  justify-content: flex-start;
+}
+
+.col-views {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text-dim);
+}
+
+.table-row .col-views {
+  color: var(--text);
+}
+
+/* Zéro vue : le cas que la fouille existe pour exhumer. */
+.table-row .col-views.zero {
+  color: var(--amber);
+}
+
+.col-date {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text-faint);
+}
+
+.col-title,
+.col-author {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Toute la colonne est cliquable : le soulignement sur chaque ligne serait du
+   bruit, l'affordance est la colonne elle-même. */
+.table-row .col-title a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.table-row .col-title a:hover {
+  color: var(--violet-bright);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.col-author {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+@media (max-width: 960px) {
+  .table-head,
+  .table-row {
+    grid-template-columns: 26px 58px 80px minmax(0, 1fr);
+    gap: var(--s-2);
+    padding: 0 var(--s-3);
+  }
+
+  .col-author {
+    display: none;
+  }
+}
