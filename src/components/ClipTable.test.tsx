@@ -25,21 +25,53 @@ const clip = (id: string, viewCount = 1): Clip =>
 
 const setup = (options: { clips?: Clip[]; sort?: ClipSort } = {}) => {
   const onSortChange = vi.fn()
+  const onToggle = vi.fn()
   const view = render(
     <ClipTable
       clips={options.clips ?? [clip('a'), clip('b')]}
       deselected={new Set()}
-      onToggle={vi.fn()}
+      onToggle={onToggle}
       onToggleAll={vi.fn()}
       emptyMessage="rien"
       sort={options.sort ?? DEFAULT_SORT}
       onSortChange={onSortChange}
     />,
   )
-  return { onSortChange, view }
+  return { onSortChange, onToggle, view }
 }
 
 const header = (name: string) => screen.getByRole('button', { name })
+
+describe('ClipTable, sélection à la ligne', () => {
+  const row = (title: string) => screen.getByTitle(title).closest('.table-row')!
+
+  it('coche la ligne cliquée', () => {
+    const { onToggle } = setup()
+
+    fireEvent.click(row('Titre a'))
+
+    expect(onToggle).toHaveBeenCalledWith('a')
+  })
+
+  // Le titre est un lien vers le clip : le clic doit l'ouvrir, pas cocher.
+  it('laisse le lien du titre ouvrir le clip', () => {
+    const { onToggle } = setup()
+
+    fireEvent.click(screen.getByTitle('Titre a'))
+
+    expect(onToggle).not.toHaveBeenCalled()
+  })
+
+  // La case déclenche déjà son propre onChange : sans garde, le clic
+  // remonterait à la ligne et annulerait aussitôt le basculement.
+  it('ne bascule qu’une fois quand on clique la case elle-même', () => {
+    const { onToggle } = setup()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Titre a' }))
+
+    expect(onToggle).toHaveBeenCalledTimes(1)
+  })
+})
 
 describe('ClipTable, tri', () => {
   it('rend chaque colonne triable comme un bouton', () => {

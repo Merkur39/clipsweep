@@ -108,6 +108,10 @@ Surface de travail principale, donc la plus réglée :
   fois cochées : tout démarre coché, elles ne peuvent pas être l'encre la plus lourde du tableau.
 - Les titres ne sont pas soulignés ligne à ligne : toute la colonne est cliquable, l'affordance
   est la colonne.
+- **Toute la ligne coche**, sauf sur ses deux cibles propres — le lien du titre ouvre le clip, la
+  case déclenche déjà son `onChange`. Une sélection de texte en cours ne coche rien. Pas de
+  `tabIndex` ni de `role="button"` sur la ligne : la case porte l'accès clavier, en dupliquer un
+  par ligne mettrait des milliers d'arrêts de tabulation dans la table.
 
 ## Règles transverses
 
