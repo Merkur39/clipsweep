@@ -135,7 +135,7 @@
   background: var(--surface-raised);
   border: 1px solid var(--rule-strong);
   border-radius: var(--r);
-  box-shadow: 0 12px 28px -6px rgb(0 0 0 / 65%);
+  box-shadow: 0 12px 28px -6px var(--shadow-panel);
   scrollbar-width: thin;
   scrollbar-color: var(--rule-strong) transparent;
 }

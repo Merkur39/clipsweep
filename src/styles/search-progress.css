@@ -24,7 +24,7 @@
   padding: 10px 13px;
   border: 1px solid var(--red-deep);
   border-radius: var(--r);
-  background: rgb(255 93 93 / 7%);
+  background: var(--red-wash);
   color: var(--red-bright);
   font-size: 13px;
 }

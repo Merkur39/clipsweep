@@ -91,7 +91,7 @@ button:active:not(:disabled) {
 button.primary {
   background: var(--violet);
   border-color: var(--violet);
-  color: #17102c;
+  color: var(--on-violet);
   font-weight: 650;
 }
 

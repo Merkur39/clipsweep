@@ -61,7 +61,7 @@
 }
 
 .table-row:nth-child(even) {
-  background: rgb(255 255 255 / 2.2%);
+  background: var(--zebra);
 }
 
 .table-row:hover {

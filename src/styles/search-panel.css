@@ -29,18 +29,18 @@
 
 .status.ok::before {
   background: var(--violet);
-  box-shadow: 0 0 7px 1px rgb(164 129 255 / 55%);
+  box-shadow: 0 0 7px 1px var(--glow-violet);
 }
 
 .status.bad {
   border-color: var(--red-deep);
-  background: rgb(255 93 93 / 6%);
+  background: var(--red-wash);
   color: var(--red-bright);
 }
 
 .status.bad::before {
   background: var(--red);
-  box-shadow: 0 0 7px 1px rgb(255 93 93 / 55%);
+  box-shadow: 0 0 7px 1px var(--glow-red);
 }
 
 /* Posée sous les champs fautifs : l'erreur se lit là où elle se corrige.

@@ -126,7 +126,7 @@
   bottom: 0;
   width: 1px;
   background: var(--violet-bright);
-  box-shadow: 0 0 8px 1px rgb(164 129 255 / 45%);
+  box-shadow: 0 0 8px 1px var(--glow-violet);
   animation: pen 1.4s ease-in-out infinite;
   pointer-events: none;
   z-index: 3;

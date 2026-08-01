@@ -31,6 +31,20 @@
   --red: #ff5d5d;
   --red-bright: #ff9494;
   --red-deep: #6d1f28;
+  --red-wash: rgb(255 93 93 / 7%);
+
+  /* Le seul texte qui ne soit pas une nuance de `--text` : le libellé posé sur
+     l'aplat violet plein, qui doit s'y détacher. */
+  --on-violet: #17102c;
+
+  /* Ce qui n'est ni aplat ni filet : halos de lampe, zébra de la table, ombre
+     du panneau flottant. Chacun tient à un rapport au fond, pas à une teinte —
+     c'est ce qui les rend incapables de traverser un changement de thème sans
+     être nommés. */
+  --glow-violet: rgb(164 129 255 / 55%);
+  --glow-red: rgb(255 93 93 / 55%);
+  --zebra: rgb(255 255 255 / 2.2%);
+  --shadow-panel: rgb(0 0 0 / 65%);
 
   --sans:
     system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
