@@ -57,15 +57,20 @@
 
 /* `overflow-y: auto` fait passer `overflow-x` de `visible` à `auto` : le
    moindre débordement horizontal — un liseré de focus, la largeur intrinsèque
-   d'un champ date — sort une barre de défilement. La gouttière droite est donc
-   à l'intérieur du conteneur qui défile, pas sur le panneau. */
+   d'un champ date — sort une barre de défilement. Les gouttières sont donc à
+   l'intérieur du conteneur qui défile, pas sur le panneau.
+
+   Celle de gauche vaut la portée exacte du liseré de focus, `outline-width`
+   plus `outline-offset` : ce qui dépasse à gauche d'un conteneur défilant est
+   rogné, et non rattrapable au défilement. La marge négative annule le décalage
+   que cette gouttière imposerait au contenu. */
 .rail-inner {
   position: sticky;
   top: 0;
   max-height: 100vh;
   overflow-y: auto;
-  padding: 2px var(--s-5) 0 2px;
-  margin-left: -2px;
+  padding: 4px var(--s-5) 0 4px;
+  margin-left: -4px;
   scrollbar-width: thin;
   scrollbar-color: var(--rule-strong) transparent;
 }
