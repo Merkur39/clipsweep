@@ -6,7 +6,9 @@ dist
 .DS_Store
 
 # Outillage local, réinstallable, sans rapport avec le produit.
-# La skill Impeccable s'installe en double, une fois par convention d'agent.
+# La skill Impeccable s'installe en double, une fois par convention d'agent ;
+# `.impeccable/` est son état local — cache du hook et configuration de poste.
 .claude/
 .github/skills/
 .github/hooks/
+.impeccable/
