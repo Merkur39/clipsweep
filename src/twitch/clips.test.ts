@@ -21,7 +21,10 @@ const key = (w: DateWindow) => `${w.startedAt}|${w.endedAt}`
 
 const twoDays: DateWindow = { startedAt: '2024-01-01T00:00:00Z', endedAt: '2024-01-03T00:00:00Z' }
 const firstHalf: DateWindow = { startedAt: '2024-01-01T00:00:00Z', endedAt: '2024-01-02T00:00:00Z' }
-const secondHalf: DateWindow = { startedAt: '2024-01-02T00:00:00Z', endedAt: '2024-01-03T00:00:00Z' }
+const secondHalf: DateWindow = {
+  startedAt: '2024-01-02T00:00:00Z',
+  endedAt: '2024-01-03T00:00:00Z',
+}
 const oneHour: DateWindow = { startedAt: '2024-01-01T00:00:00Z', endedAt: '2024-01-01T01:00:00Z' }
 
 describe('collectClips', () => {
@@ -68,8 +71,15 @@ describe('collectClips', () => {
       key(secondHalf),
       key(oneHour),
     ])
-    expect(reports.find((r) => key(r.window) === key(twoDays))).toMatchObject({ saturated: true, split: true, depth: 0 })
-    expect(reports.find((r) => key(r.window) === key(firstHalf))).toMatchObject({ split: false, depth: 1 })
+    expect(reports.find((r) => key(r.window) === key(twoDays))).toMatchObject({
+      saturated: true,
+      split: true,
+      depth: 0,
+    })
+    expect(reports.find((r) => key(r.window) === key(firstHalf))).toMatchObject({
+      split: false,
+      depth: 1,
+    })
     expect(incomplete).toEqual([])
   })
 

@@ -9,7 +9,7 @@
   --violet: #a970ff;
   --rust: #e0603a;
   --red: #ff6b6b;
-  --mono: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+  --mono: ui-monospace, 'JetBrains Mono', Menlo, Consolas, monospace;
 }
 
 * {
@@ -20,7 +20,9 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 15px/1.5 system-ui, sans-serif;
+  font:
+    15px/1.5 system-ui,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 

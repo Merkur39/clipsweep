@@ -13,14 +13,20 @@ export function Frieze({ reports, span }: { reports: WindowReport[]; span: Span 
   if (!span || span.to <= span.from) {
     return (
       <div className="frieze">
-        <p className="frieze-empty">Chaque fenêtre explorée apparaîtra ici, sa hauteur donnant le nombre de clips.</p>
+        <p className="frieze-empty">
+          Chaque fenêtre explorée apparaîtra ici, sa hauteur donnant le nombre de clips.
+        </p>
       </div>
     )
   }
 
   const pct = (time: number) => ((time - span.from) / (span.to - span.from)) * 100
   const years: number[] = []
-  for (let year = new Date(span.from).getUTCFullYear(); year <= new Date(span.to).getUTCFullYear(); year += 1) {
+  for (
+    let year = new Date(span.from).getUTCFullYear();
+    year <= new Date(span.to).getUTCFullYear();
+    year += 1
+  ) {
     years.push(year)
   }
   const stride = Math.ceil(years.length / 8) || 1

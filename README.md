@@ -59,7 +59,7 @@ Trois réglages à faire une fois :
 1. **Settings → Pages → Source : GitHub Actions** sur le dépôt (sans ça le workflow échoue à l'étape
    `configure-pages`).
 2. **Settings → Secrets and variables → Actions → Variables** : ajouter `VITE_TWITCH_CLIENT_ID`. Une
-   *variable*, pas un secret — un Client ID n'est pas confidentiel, et un secret finirait de toute façon
+   _variable_, pas un secret — un Client ID n'est pas confidentiel, et un secret finirait de toute façon
    en clair dans le bundle servi.
 3. Ajouter l'URL Pages aux « OAuth Redirect URLs » de l'application Twitch, **slash final compris** :
    `https://merkur39.github.io/get-clip-twitch/`. Twitch compare la chaîne à l'octet près ; l'app
@@ -83,10 +83,10 @@ suffixe et renvoie **la vignette** avec un `200 OK` — un échec silencieux qui
 Le téléchargement est donc délégué à [yt-dlp](https://github.com/yt-dlp/yt-dlp), qui tourne sur la
 machine de l'utilisateur. Deux exports génèrent un script prêt à lancer :
 
-| Export | Usage |
-| --- | --- |
+| Export | Usage                                            |
+| ------ | ------------------------------------------------ |
 | `.bat` | Windows : placer dans un dossier, double-cliquer |
-| `.sh` | macOS / Linux : `chmod +x` puis lancer |
+| `.sh`  | macOS / Linux : `chmod +x` puis lancer           |
 
 Le script écrit la liste d'URLs, appelle yt-dlp avec des noms de fichiers lisibles, et tient un
 `archive.txt` : **relancer reprend là où ça s'est arrêté**. Si yt-dlp est absent, il propose de le
@@ -98,15 +98,15 @@ Twitch est écarté plutôt qu'échappé.
 
 ## Architecture
 
-| Fichier | Rôle |
-| --- | --- |
-| `src/twitch/windows.ts` | découpage et bissection des fenêtres temporelles |
-| `src/twitch/clips.ts` | parcours, pagination, dédoublonnage, rapport d'exhaustivité |
-| `src/twitch/auth.ts` | flux implicite, validation du jeton |
-| `src/twitch/api.ts` | client Helix : throttle, retry 429/5xx |
-| `src/components/Frieze.tsx` | frise du découpage temporel |
-| `src/components/ClipTable.tsx` | table virtualisée — affiche tout, sans plafond DOM |
-| `src/scripts.ts` | génération des scripts yt-dlp `.bat` / `.sh` |
+| Fichier                        | Rôle                                                        |
+| ------------------------------ | ----------------------------------------------------------- |
+| `src/twitch/windows.ts`        | découpage et bissection des fenêtres temporelles            |
+| `src/twitch/clips.ts`          | parcours, pagination, dédoublonnage, rapport d'exhaustivité |
+| `src/twitch/auth.ts`           | flux implicite, validation du jeton                         |
+| `src/twitch/api.ts`            | client Helix : throttle, retry 429/5xx                      |
+| `src/components/Frieze.tsx`    | frise du découpage temporel                                 |
+| `src/components/ClipTable.tsx` | table virtualisée — affiche tout, sans plafond DOM          |
+| `src/scripts.ts`               | génération des scripts yt-dlp `.bat` / `.sh`                |
 
 La logique de collecte est couverte par des tests ; l'UI ne l'est pas.
 
@@ -121,10 +121,17 @@ client respecte `Ratelimit-Reset` sur 429 et s'espace de 60 ms entre deux requê
 
 ## Scripts
 
-| Commande | Effet |
-| --- | --- |
-| `npm run dev` | serveur de dev |
-| `npm test` | Vitest |
-| `npm run typecheck` | `tsc -b` |
-| `npm run lint` | ESLint |
-| `npm run build` | build statique dans `dist/` |
+| Commande               | Effet                       |
+| ---------------------- | --------------------------- |
+| `npm run dev`          | serveur de dev              |
+| `npm test`             | Vitest                      |
+| `npm run typecheck`    | `tsc -b`                    |
+| `npm run lint`         | ESLint                      |
+| `npm run format`       | Prettier, écriture          |
+| `npm run format:check` | Prettier, vérification      |
+| `npm run build`        | build statique dans `dist/` |
+
+Le formatage est figé par [.prettierrc](.prettierrc) : quotes simples, pas de point-virgule, 100
+colonnes. Ces valeurs reprennent le style déjà en place — les défauts de Prettier (guillemets doubles,
+point-virgules, 80 colonnes) auraient réécrit tout le dépôt. `format:check` tourne en CI, donc un
+fichier mal formaté fait échouer le déploiement avant la mise en ligne.

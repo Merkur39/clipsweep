@@ -9,7 +9,9 @@ describe('makeLogAppender', () => {
   it('appends an entry', () => {
     const append = makeLogAppender(10)
 
-    expect(apply([], [append('bonjour', 'good')])).toEqual([{ id: 1, kind: 'good', text: 'bonjour' }])
+    expect(apply([], [append('bonjour', 'good')])).toEqual([
+      { id: 1, kind: 'good', text: 'bonjour' },
+    ])
   })
 
   it('gives distinct ids to entries queued in the same tick', () => {

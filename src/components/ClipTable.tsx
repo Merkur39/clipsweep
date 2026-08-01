@@ -49,7 +49,9 @@ export function ClipTable({ clips }: { clips: Clip[] }) {
           <div style={{ position: 'absolute', top: firstIndex * ROW_HEIGHT, left: 0, right: 0 }}>
             {slice.map((clip) => (
               <div className="table-row" role="row" key={clip.id} style={{ height: ROW_HEIGHT }}>
-                <span className={clip.view_count === 0 ? 'col-views zero' : 'col-views'}>{clip.view_count}</span>
+                <span className={clip.view_count === 0 ? 'col-views zero' : 'col-views'}>
+                  {clip.view_count}
+                </span>
                 <span className="col-date">{clip.created_at.slice(0, 10)}</span>
                 <span className="col-title">
                   <a href={clip.url} target="_blank" rel="noreferrer" title={clip.title}>

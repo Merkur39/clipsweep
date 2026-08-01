@@ -7,7 +7,8 @@ const YTDLP_RELEASE = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download
  * user executes, so anything that is not provably a clip URL is dropped rather
  * than escaped — an allowlist has no bypass to reason about.
  */
-const CLIP_URL = /^https:\/\/(?:www\.twitch\.tv\/[A-Za-z0-9_]{1,64}\/clip\/[A-Za-z0-9_-]{1,128}|clips\.twitch\.tv\/[A-Za-z0-9_-]{1,128})$/
+const CLIP_URL =
+  /^https:\/\/(?:www\.twitch\.tv\/[A-Za-z0-9_]{1,64}\/clip\/[A-Za-z0-9_-]{1,128}|clips\.twitch\.tv\/[A-Za-z0-9_-]{1,128})$/
 
 function keepClipUrls(urls: string[]): string[] {
   return urls.filter((url) => CLIP_URL.test(url))

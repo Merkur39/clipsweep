@@ -15,14 +15,23 @@ describe('visibleRange', () => {
   })
 
   it('never runs past the end of the list', () => {
-    expect(visibleRange({ ...base, scrollTop: 9_900, count: 1000 })).toEqual({ firstIndex: 988, endIndex: 1000 })
+    expect(visibleRange({ ...base, scrollTop: 9_900, count: 1000 })).toEqual({
+      firstIndex: 988,
+      endIndex: 1000,
+    })
   })
 
   it('renders everything when the list is shorter than the viewport', () => {
-    expect(visibleRange({ ...base, scrollTop: 0, count: 4 })).toEqual({ firstIndex: 0, endIndex: 4 })
+    expect(visibleRange({ ...base, scrollTop: 0, count: 4 })).toEqual({
+      firstIndex: 0,
+      endIndex: 4,
+    })
   })
 
   it('handles an empty list', () => {
-    expect(visibleRange({ ...base, scrollTop: 0, count: 0 })).toEqual({ firstIndex: 0, endIndex: 0 })
+    expect(visibleRange({ ...base, scrollTop: 0, count: 0 })).toEqual({
+      firstIndex: 0,
+      endIndex: 0,
+    })
   })
 })

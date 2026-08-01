@@ -54,7 +54,10 @@ export async function collectClips({
   onWindow,
   signal,
 }: CollectClipsOptions): Promise<CollectResult> {
-  const queue: { window: DateWindow; depth: number }[] = windows.map((window) => ({ window, depth: 0 }))
+  const queue: { window: DateWindow; depth: number }[] = windows.map((window) => ({
+    window,
+    depth: 0,
+  }))
   const byId = new Map<string, Clip>()
   const reports: WindowReport[] = []
   let windowsDone = 0
@@ -88,7 +91,13 @@ export async function collectClips({
       windowsTotal += halves.length
     }
 
-    const report: WindowReport = { window, depth, clipCount: collected, saturated, split: halves !== null }
+    const report: WindowReport = {
+      window,
+      depth,
+      clipCount: collected,
+      saturated,
+      split: halves !== null,
+    }
     reports.push(report)
     onWindow?.(report)
 
@@ -107,5 +116,7 @@ export async function collectClips({
 /** Keeps clips up to `maxViews` (all of them when null), least viewed first. */
 export function filterByMaxViews(clips: Clip[], maxViews: number | null): Clip[] {
   const kept = maxViews === null ? [...clips] : clips.filter((clip) => clip.view_count <= maxViews)
-  return kept.sort((a, b) => a.view_count - b.view_count || a.created_at.localeCompare(b.created_at))
+  return kept.sort(
+    (a, b) => a.view_count - b.view_count || a.created_at.localeCompare(b.created_at),
+  )
 }

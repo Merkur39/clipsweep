@@ -39,7 +39,15 @@ function download(name: string, text: string, mime: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-const CSV_COLUMNS = ['id', 'url', 'title', 'view_count', 'created_at', 'creator_name', 'duration'] as const
+const CSV_COLUMNS = [
+  'id',
+  'url',
+  'title',
+  'view_count',
+  'created_at',
+  'creator_name',
+  'duration',
+] as const
 
 function toCsv(clips: Clip[]): string {
   const cell = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`
@@ -49,13 +57,17 @@ function toCsv(clips: Clip[]): string {
 }
 
 export default function App({ authError }: { authError: string | null }) {
-  const [clientId, setClientId] = useState(() => resolveClientId(clientIdStore.read(), BUILD_TIME_CLIENT_ID))
+  const [clientId, setClientId] = useState(() =>
+    resolveClientId(clientIdStore.read(), BUILD_TIME_CLIENT_ID),
+  )
   // Frozen at mount: recomputing it would snap the panel shut mid-typing, and
   // would fight the user's own toggling.
   const [setupOpen] = useState(() => !resolveClientId(clientIdStore.read(), BUILD_TIME_CLIENT_ID))
   const [session, setSession] = useState<Session | null>(null)
   const [authMessage, setAuthMessage] = useState(
-    authError ? `Twitch a refusé la connexion : ${authError}` : 'Aucun jeton. Connecte-toi à Twitch pour commencer.',
+    authError
+      ? `Twitch a refusé la connexion : ${authError}`
+      : 'Aucun jeton. Connecte-toi à Twitch pour commencer.',
   )
   const [authKind, setAuthKind] = useState<'ok' | 'bad' | ''>(authError ? 'bad' : '')
 
@@ -95,7 +107,9 @@ export default function App({ authError }: { authError: string | null }) {
       .then((validated) => {
         setSession(validated)
         setClientId(validated.clientId)
-        setAuthMessage(`Connecté — jeton valide encore ${Math.round(validated.expiresInSeconds / 3600)} h.`)
+        setAuthMessage(
+          `Connecté — jeton valide encore ${Math.round(validated.expiresInSeconds / 3600)} h.`,
+        )
         setAuthKind('ok')
       })
       .catch(() => {
@@ -156,9 +170,15 @@ export default function App({ authError }: { authError: string | null }) {
       const api = new TwitchApi(session, controller.signal)
       const user: TwitchUser = await api.fetchUser(channel)
       setChannelCreatedAt(user.created_at.slice(0, 10))
-      log(`Chaîne : ${user.display_name} (id ${user.id}), créée le ${user.created_at.slice(0, 10)}.`, 'good')
+      log(
+        `Chaîne : ${user.display_name} (id ${user.id}), créée le ${user.created_at.slice(0, 10)}.`,
+        'good',
+      )
       if (Date.parse(user.created_at) < from.getTime()) {
-        log(`La chaîne est antérieure au ${since} : les clips plus anciens sont hors périmètre.`, 'warn')
+        log(
+          `La chaîne est antérieure au ${since} : les clips plus anciens sont hors périmètre.`,
+          'warn',
+        )
       }
 
       const windows = splitRange(from, to, Math.max(1, Number(chunkDays) || 30) * DAY_MS)
@@ -173,8 +193,13 @@ export default function App({ authError }: { authError: string | null }) {
           setReports((previous) => [...previous, report])
           const label = `${report.window.startedAt.slice(0, 10)} → ${report.window.endedAt.slice(0, 10)}`
           const pad = '  '.repeat(report.depth)
-          if (report.split) log(`${pad}${label} saturée (${report.clipCount}), recoupée en deux`, 'warn')
-          else if (report.saturated) log(`${pad}${label} : ${report.clipCount} clips — encore saturée au plancher, des clips manquent`, 'err')
+          if (report.split)
+            log(`${pad}${label} saturée (${report.clipCount}), recoupée en deux`, 'warn')
+          else if (report.saturated)
+            log(
+              `${pad}${label} : ${report.clipCount} clips — encore saturée au plancher, des clips manquent`,
+              'err',
+            )
           else if (report.clipCount) log(`${pad}${label} : ${report.clipCount} clips`)
         },
       })
@@ -206,19 +231,30 @@ export default function App({ authError }: { authError: string | null }) {
     <div className="page">
       <header>
         <h1>GetClipTwitch</h1>
-        <p className="lede">L'inventaire complet des clips d'une chaîne, du plus vu au jamais vu.</p>
+        <p className="lede">
+          L'inventaire complet des clips d'une chaîne, du plus vu au jamais vu.
+        </p>
       </header>
 
       <div className="layout">
         <aside className="rail">
           <p className="eyebrow">Accès</p>
           <div className={`status ${authKind}`}>{authMessage}</div>
-          <button type="button" className="primary wide" onClick={connect} disabled={session !== null}>
+          <button
+            type="button"
+            className="primary wide"
+            onClick={connect}
+            disabled={session !== null}
+          >
             {session ? 'Connecté à Twitch' : 'Se connecter à Twitch'}
           </button>
 
           <details open={setupOpen}>
-            <summary>{BUILD_TIME_CLIENT_ID ? 'Utiliser ta propre application' : 'Configurer une application'}</summary>
+            <summary>
+              {BUILD_TIME_CLIENT_ID
+                ? 'Utiliser ta propre application'
+                : 'Configurer une application'}
+            </summary>
             <p>
               Le Client ID identifie l'application, pas ton compte : il n'est pas secret.
               {BUILD_TIME_CLIENT_ID
@@ -237,7 +273,10 @@ export default function App({ authError }: { authError: string | null }) {
             </ol>
             <div className="copyline">
               <input readOnly value={redirectUri()} />
-              <button type="button" onClick={() => void navigator.clipboard.writeText(redirectUri())}>
+              <button
+                type="button"
+                onClick={() => void navigator.clipboard.writeText(redirectUri())}
+              >
                 Copier
               </button>
             </div>
@@ -268,7 +307,11 @@ export default function App({ authError }: { authError: string | null }) {
           <p className="eyebrow">Cible</p>
           <label>
             <span>Chaîne</span>
-            <input value={channel} onChange={(event) => setChannel(event.target.value)} spellCheck={false} />
+            <input
+              value={channel}
+              onChange={(event) => setChannel(event.target.value)}
+              spellCheck={false}
+            />
           </label>
           <div className="duo">
             <label>
@@ -351,8 +394,9 @@ export default function App({ authError }: { authError: string | null }) {
 
           {incomplete.length > 0 && (
             <p className="alert">
-              {incomplete.length} fenêtre(s) encore saturée(s) au plancher de 6 h : le résultat n'est pas
-              exhaustif sur ces périodes. Réduis la fenêtre de départ ou resserre l'intervalle de dates.
+              {incomplete.length} fenêtre(s) encore saturée(s) au plancher de 6 h : le résultat
+              n'est pas exhaustif sur ces périodes. Réduis la fenêtre de départ ou resserre
+              l'intervalle de dates.
             </p>
           )}
 
@@ -371,20 +415,32 @@ export default function App({ authError }: { authError: string | null }) {
 
           <p className="eyebrow">Résultats</p>
           <div className="bar">
-            <button type="button" disabled={!shown.length} onClick={() => download(`${stamp}.csv`, toCsv(shown), 'text/csv')}>
+            <button
+              type="button"
+              disabled={!shown.length}
+              onClick={() => download(`${stamp}.csv`, toCsv(shown), 'text/csv')}
+            >
               CSV
             </button>
             <button
               type="button"
               disabled={!shown.length}
-              onClick={() => download(`${stamp}.json`, JSON.stringify(shown, null, 2), 'application/json')}
+              onClick={() =>
+                download(`${stamp}.json`, JSON.stringify(shown, null, 2), 'application/json')
+              }
             >
               JSON
             </button>
             <button
               type="button"
               disabled={!shown.length}
-              onClick={() => download(`${stamp}_urls.txt`, shown.map((clip) => clip.url).join('\n'), 'text/plain')}
+              onClick={() =>
+                download(
+                  `${stamp}_urls.txt`,
+                  shown.map((clip) => clip.url).join('\n'),
+                  'text/plain',
+                )
+              }
             >
               URLs
             </button>
@@ -395,7 +451,11 @@ export default function App({ authError }: { authError: string | null }) {
               onClick={() =>
                 download(
                   `${stamp}.bat`,
-                  buildDownloadScript('bat', channel, shown.map((clip) => clip.url)),
+                  buildDownloadScript(
+                    'bat',
+                    channel,
+                    shown.map((clip) => clip.url),
+                  ),
                   'text/plain',
                 )
               }
@@ -409,7 +469,11 @@ export default function App({ authError }: { authError: string | null }) {
               onClick={() =>
                 download(
                   `${stamp}.sh`,
-                  buildDownloadScript('sh', channel, shown.map((clip) => clip.url)),
+                  buildDownloadScript(
+                    'sh',
+                    channel,
+                    shown.map((clip) => clip.url),
+                  ),
                   'text/plain',
                 )
               }

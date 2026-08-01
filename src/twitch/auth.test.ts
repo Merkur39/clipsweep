@@ -16,7 +16,10 @@ describe('parseAuthFragment', () => {
   })
 
   it('falls back to the raw error code when no description is given', () => {
-    expect(parseAuthFragment('#error=access_denied')).toEqual({ status: 'error', message: 'access_denied' })
+    expect(parseAuthFragment('#error=access_denied')).toEqual({
+      status: 'error',
+      message: 'access_denied',
+    })
   })
 
   it('ignores a fragment that carries no auth payload', () => {
