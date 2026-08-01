@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { authorizeUrl, normalizeRedirectUri, parseAuthFragment, resolveClientId } from './auth'
+import { authorizeUrl, normalizeRedirectUri, parseAuthFragment } from './auth'
 
 describe('parseAuthFragment', () => {
   it('extracts the access token returned by the implicit flow', () => {
@@ -25,33 +25,6 @@ describe('parseAuthFragment', () => {
   it('ignores a fragment that carries no auth payload', () => {
     expect(parseAuthFragment('')).toEqual({ status: 'none' })
     expect(parseAuthFragment('#section=results')).toEqual({ status: 'none' })
-  })
-})
-
-describe('resolveClientId', () => {
-  // Le champ de saisie n'est rendu qu'en auto-hébergement : un identifiant
-  // buildé doit donc l'emporter, sinon un override oublié en localStorage
-  // casserait la connexion sans aucun moyen de l'effacer.
-  it('donne la priorité à l’identifiant buildé', () => {
-    expect(resolveClientId('stocke', 'builde')).toBe('builde')
-  })
-
-  it('retombe sur l’identifiant stocké quand rien n’est build', () => {
-    expect(resolveClientId('stocke', '')).toBe('stocke')
-  })
-
-  it('ignore une valeur vide de part et d’autre', () => {
-    expect(resolveClientId('   ', 'builde')).toBe('builde')
-    expect(resolveClientId('stocke', '   ')).toBe('stocke')
-  })
-
-  it('élague ce qu’il renvoie', () => {
-    expect(resolveClientId(' stocke ', '')).toBe('stocke')
-    expect(resolveClientId(null, ' builde ')).toBe('builde')
-  })
-
-  it('renvoie une chaîne vide quand ni l’un ni l’autre n’est défini', () => {
-    expect(resolveClientId(null, '')).toBe('')
   })
 })
 

@@ -2,7 +2,6 @@ const AUTHORIZE_URL = 'https://id.twitch.tv/oauth2/authorize'
 const VALIDATE_URL = 'https://id.twitch.tv/oauth2/validate'
 
 const TOKEN_KEY = 'getclip.token'
-const CLIENT_ID_KEY = 'getclip.clientId'
 
 export type AuthFragment =
   | { status: 'token'; accessToken: string }
@@ -54,27 +53,15 @@ export const tokenStore = {
   clear: () => sessionStorage.removeItem(TOKEN_KEY),
 }
 
-export const clientIdStore = {
-  read: () => localStorage.getItem(CLIENT_ID_KEY),
-  write: (clientId: string) => localStorage.setItem(CLIENT_ID_KEY, clientId),
-  clear: () => localStorage.removeItem(CLIENT_ID_KEY),
-}
-
 /**
- * The client id identifies the application, not the person — it is public by
- * design (it travels in the authorize URL and in every Helix header). One
- * registered app therefore serves every visitor, who each sign in with their own
- * Twitch account.
+ * The one application every visitor signs in through, set at build time via
+ * `VITE_TWITCH_CLIENT_ID`. Public by design — it travels in the authorize URL
+ * and in every Helix header — and the tokens it mints carry no scope, so it
+ * unlocks nothing beyond public data.
  *
- * The build-time value wins: the input field only exists when there is none, so
- * a stale localStorage entry would otherwise hijack the login with no way left
- * to clear it. The stored value is the self-hosting fallback.
+ * Empty means the deployment is misconfigured, not that the visitor has
+ * something to fill in: self-hosting goes through `.env.local`.
  */
-export function resolveClientId(stored: string | null, buildTime: string): string {
-  return buildTime.trim() || stored?.trim() || ''
-}
-
-/** Registered at build time via `VITE_TWITCH_CLIENT_ID`; empty falls back to the field. */
 export const BUILD_TIME_CLIENT_ID: string = import.meta.env.VITE_TWITCH_CLIENT_ID ?? ''
 
 /**

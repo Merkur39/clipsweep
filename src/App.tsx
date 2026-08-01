@@ -10,9 +10,7 @@ import { TokenRejectedError, TwitchApi } from './twitch/api'
 import {
   authorizeUrl,
   BUILD_TIME_CLIENT_ID,
-  clientIdStore,
   redirectUri,
-  resolveClientId,
   tokenStore,
   validateToken,
   type Session,
@@ -63,16 +61,19 @@ function toCsv(clips: Clip[]): string {
 }
 
 export default function App({ authError }: { authError: string | null }) {
-  const [clientId, setClientId] = useState(() =>
-    resolveClientId(clientIdStore.read(), BUILD_TIME_CLIENT_ID),
-  )
   const [session, setSession] = useState<Session | null>(null)
-  const [authMessage, setAuthMessage] = useState(
-    authError
-      ? `Twitch a refusé la connexion : ${authError}`
-      : 'Aucun jeton. Connecte-toi à Twitch pour commencer.',
+  const [authMessage, setAuthMessage] = useState(() => {
+    if (authError) return `Twitch a refusé la connexion : ${authError}`
+    // Auto-hébergement mal configuré : sans identifiant, aucun bouton ne peut
+    // rien faire — autant dire tout de suite quoi renseigner, et où.
+    if (!BUILD_TIME_CLIENT_ID) {
+      return `Aucune application configurée. Renseigne VITE_TWITCH_CLIENT_ID dans .env.local, et déclare ${redirectUri()} dans les « OAuth Redirect URLs » de ton application Twitch.`
+    }
+    return 'Aucun jeton. Connecte-toi à Twitch pour commencer.'
+  })
+  const [authKind, setAuthKind] = useState<'ok' | 'bad' | ''>(
+    authError || !BUILD_TIME_CLIENT_ID ? 'bad' : '',
   )
-  const [authKind, setAuthKind] = useState<'ok' | 'bad' | ''>(authError ? 'bad' : '')
 
   const [channel, setChannel] = usePersistedState('channel', 'kaliyami')
   const [since, setSince] = usePersistedState('since', '2019-01-01')
@@ -126,7 +127,6 @@ export default function App({ authError }: { authError: string | null }) {
     validateToken(stored)
       .then((validated) => {
         setSession(validated)
-        setClientId(validated.clientId)
         setAuthMessage(
           `Connecté — jeton valide encore ${Math.round(validated.expiresInSeconds / 3600)} h.`,
         )
@@ -139,17 +139,7 @@ export default function App({ authError }: { authError: string | null }) {
       })
   }, [])
 
-  const connect = () => {
-    const trimmed = clientId.trim()
-    if (!trimmed) {
-      setAuthMessage('Aucune application configurée : renseigne un Client ID ci-dessous.')
-      setAuthKind('bad')
-      return
-    }
-    // Only an actual override is worth persisting.
-    if (trimmed !== BUILD_TIME_CLIENT_ID) clientIdStore.write(trimmed)
-    location.href = authorizeUrl(trimmed, redirectUri())
-  }
+  const connect = () => location.assign(authorizeUrl(BUILD_TIME_CLIENT_ID, redirectUri()))
 
   const maxViews = numberOrNull(maxViewsInput)
   const filters: ClipFilters = {
@@ -315,51 +305,10 @@ export default function App({ authError }: { authError: string | null }) {
             type="button"
             className="primary wide"
             onClick={connect}
-            disabled={session !== null}
+            disabled={session !== null || !BUILD_TIME_CLIENT_ID}
           >
             {session ? 'Connecté à Twitch' : 'Se connecter à Twitch'}
           </button>
-
-          {/* Auto-hébergement seulement : sur le site déployé, l'application est
-              buildée et le visiteur n'a rien à configurer. */}
-          {!BUILD_TIME_CLIENT_ID && (
-            <details open>
-              <summary>Configurer une application</summary>
-              <p>
-                Le Client ID identifie l'application, pas ton compte : il n'est pas secret. Tu te
-                connectes ensuite avec ton propre compte Twitch.
-              </p>
-              <ol>
-                <li>
-                  Crée une application sur{' '}
-                  <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noreferrer">
-                    dev.twitch.tv/console/apps
-                  </a>
-                  , catégorie « Application Integration ».
-                </li>
-                <li>Colle exactement cette adresse dans « OAuth Redirect URLs » :</li>
-              </ol>
-              <div className="copyline">
-                <input readOnly value={redirectUri()} />
-                <button
-                  type="button"
-                  onClick={() => void navigator.clipboard.writeText(redirectUri())}
-                >
-                  Copier
-                </button>
-              </div>
-              <label>
-                <span>Client ID</span>
-                <input
-                  value={clientId}
-                  onChange={(event) => setClientId(event.target.value)}
-                  placeholder="ex. hof5gwx0su6owfnys0nyac87zr6t"
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-              </label>
-            </details>
-          )}
 
           <p className="eyebrow">Cible</p>
           <label>

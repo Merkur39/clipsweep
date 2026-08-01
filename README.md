@@ -27,23 +27,27 @@ Le filtre « vues max » est **optionnel** et purement local : par défaut tout 
 1. Créer une application sur [dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps), catégorie
    « Application Integration ».
 2. Déclarer chaque origine servant l'app dans « OAuth Redirect URLs », à l'identique et **slash final
-   compris** : `http://localhost:5173/` en dev, l'URL Pages en production. L'app affiche l'URL attendue
-   avec un bouton « Copier ».
+   compris** : `http://localhost:5173/` en dev, l'URL Pages en production.
 3. `cp .env.example .env.local`, y coller `VITE_TWITCH_CLIENT_ID`.
 4. `npm install && npm run dev`.
 
 Ensuite chaque visiteur clique « Se connecter à Twitch » et s'authentifie avec **son propre compte** —
-rien à saisir. Le Client ID identifie l'application, pas la personne : ce n'est pas un secret, il transite
-en clair dans l'URL d'autorisation et dans chaque en-tête `Client-Id`.
+rien à saisir, aucun formulaire de configuration. Le Client ID identifie l'application, pas la personne :
+ce n'est pas un secret, il transite en clair dans l'URL d'autorisation et dans chaque en-tête `Client-Id`.
+
+**Il n'existe pas de variable pour l'URL de redirection**, et c'est délibéré. `redirectUri()` la dérive à
+l'exécution de `location.origin + location.pathname`, normalisée : elle vaut par construction l'endroit
+exact d'où la page est servie. La configurer permettrait de la faire diverger de la réalité, ce qui
+produit un `redirect_mismatch` difficile à diagnostiquer. Seule la liste côté Twitch se configure, à
+l'étape 2.
+
+Sans `VITE_TWITCH_CLIENT_ID`, l'app ne propose rien à saisir : elle affiche l'URL de redirection à
+déclarer, désactive la connexion, et renvoie vers `.env.local`.
 
 Les jetons émis ne portent **aucun scope** ([auth.ts](src/twitch/auth.ts)) : ils ne déverrouillent que
 des données publiques, jamais l'email, la gestion de chaîne ou la modération. C'est ce qui rend le partage
 d'une application sans risque pratique. Ce qui subsiste : le Contrat Développeur Twitch rend le
 propriétaire de l'application comptable de l'activité menée sous son Client ID.
-
-Le champ Client ID reste accessible dans « Utiliser ta propre application », replié : il ne sert qu'à
-héberger l'outil sur une origine que l'application par défaut n'a pas déclarée. Sans
-`VITE_TWITCH_CLIENT_ID`, l'app retombe simplement sur ce champ.
 
 Aucun secret nulle part : flux implicite, le jeton revient dans le fragment d'URL et reste en
 `sessionStorage`. Le navigateur parle directement à Helix (CORS autorisé), il n'y a pas de backend — le
