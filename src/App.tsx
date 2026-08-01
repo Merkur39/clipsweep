@@ -5,6 +5,7 @@ import { Frieze, type Span } from './components/Frieze'
 import { makeLogAppender, type LogEntry, type LogKind } from './log'
 import { describeEmptyResults } from './results'
 import { buildDownloadScript, detectScriptFlavor, type ScriptFlavor } from './scripts'
+import { selectedClips, toggle, toggleAll } from './selection'
 import { TokenRejectedError, TwitchApi } from './twitch/api'
 import {
   authorizeUrl,
@@ -86,6 +87,9 @@ export default function App({ authError }: { authError: string | null }) {
   const [progress, setProgress] = useState<Progress | null>(null)
   const [logEntries, setLogEntries] = useState<LogEntry[]>([])
   const [channelCreatedAt, setChannelCreatedAt] = useState<string | null>(null)
+  // Exclusions, not selections: everything starts checked, including clips that
+  // appear later when the threshold is raised.
+  const [deselected, setDeselected] = useState<ReadonlySet<string>>(() => new Set())
   // Read once: the visitor's machine does not change mid-session.
   const [flavor] = useState(() =>
     detectScriptFlavor({
@@ -145,6 +149,7 @@ export default function App({ authError }: { authError: string | null }) {
     () => filterByMaxViews(clips, maxViews !== null && Number.isFinite(maxViews) ? maxViews : null),
     [clips, maxViews],
   )
+  const selected = useMemo(() => selectedClips(shown, deselected), [shown, deselected])
 
   const run = async () => {
     if (running) {
@@ -169,6 +174,7 @@ export default function App({ authError }: { authError: string | null }) {
     abortRef.current = controller
     setRunning(true)
     setClips([])
+    setDeselected(new Set())
     setReports([])
     setIncomplete([])
     setProgress(null)
@@ -236,8 +242,8 @@ export default function App({ authError }: { authError: string | null }) {
 
   const stamp = `${channel || 'clips'}_${day(new Date())}`
 
-  const downloadLabel = shown.length
-    ? `Télécharger ${shown.length === 1 ? 'le clip' : `les ${shown.length} clips`}`
+  const downloadLabel = selected.length
+    ? `Télécharger ${selected.length === 1 ? 'le clip' : `les ${selected.length} clips`}`
     : 'Télécharger les clips'
 
   const downloadScript = (target: ScriptFlavor) =>
@@ -246,7 +252,7 @@ export default function App({ authError }: { authError: string | null }) {
       buildDownloadScript(
         target,
         channel,
-        shown.map((clip) => clip.url),
+        selected.map((clip) => clip.url),
       ),
       'text/plain',
     )
@@ -411,8 +417,8 @@ export default function App({ authError }: { authError: string | null }) {
               <dd>{clips.length || progress?.clipsFound || 0}</dd>
             </div>
             <div>
-              <dt>Affichés</dt>
-              <dd>{shown.length}</dd>
+              <dt>Sélectionnés</dt>
+              <dd>{selected.length}</dd>
             </div>
           </dl>
 
@@ -450,7 +456,7 @@ export default function App({ authError }: { authError: string | null }) {
                 <button
                   type="button"
                   className={flavor ? 'primary' : ''}
-                  disabled={!shown.length}
+                  disabled={!selected.length}
                   title="Enregistrer dans un dossier, puis double-cliquer."
                   onClick={() => downloadScript('bat')}
                 >
@@ -461,7 +467,7 @@ export default function App({ authError }: { authError: string | null }) {
                 <button
                   type="button"
                   className={flavor ? 'primary' : ''}
-                  disabled={!shown.length}
+                  disabled={!selected.length}
                   title="Enregistrer, puis : chmod +x fichier.sh && ./fichier.sh"
                   onClick={() => downloadScript('sh')}
                 >
@@ -477,7 +483,7 @@ export default function App({ authError }: { authError: string | null }) {
                 <button
                   type="button"
                   className="link"
-                  disabled={!shown.length}
+                  disabled={!selected.length}
                   onClick={() => downloadScript(flavor === 'bat' ? 'sh' : 'bat')}
                 >
                   {flavor === 'bat' ? 'Je suis sur macOS ou Linux' : 'Je suis sur Windows'}
@@ -494,28 +500,28 @@ export default function App({ authError }: { authError: string | null }) {
             <div className="group-actions">
               <button
                 type="button"
-                disabled={!shown.length}
-                onClick={() => download(`${stamp}.csv`, toCsv(shown), 'text/csv')}
+                disabled={!selected.length}
+                onClick={() => download(`${stamp}.csv`, toCsv(selected), 'text/csv')}
               >
                 CSV
               </button>
               <button
                 type="button"
-                disabled={!shown.length}
+                disabled={!selected.length}
                 onClick={() =>
-                  download(`${stamp}.json`, JSON.stringify(shown, null, 2), 'application/json')
+                  download(`${stamp}.json`, JSON.stringify(selected, null, 2), 'application/json')
                 }
               >
                 JSON
               </button>
               <button
                 type="button"
-                disabled={!shown.length}
+                disabled={!selected.length}
                 title="Une URL par ligne, pour yt-dlp -a"
                 onClick={() =>
                   download(
                     `${stamp}_urls.txt`,
-                    shown.map((clip) => clip.url).join('\n'),
+                    selected.map((clip) => clip.url).join('\n'),
                     'text/plain',
                   )
                 }
@@ -524,7 +530,7 @@ export default function App({ authError }: { authError: string | null }) {
               </button>
               <span className="count">
                 {clips.length
-                  ? `${shown.length} sur ${clips.length} clip${clips.length > 1 ? 's' : ''} récupéré${clips.length > 1 ? 's' : ''}`
+                  ? `${selected.length} sélectionné${selected.length > 1 ? 's' : ''} sur ${clips.length} récupéré${clips.length > 1 ? 's' : ''}`
                   : ''}
               </span>
             </div>
@@ -532,11 +538,22 @@ export default function App({ authError }: { authError: string | null }) {
 
           <ClipTable
             clips={shown}
+            deselected={deselected}
+            onToggle={(id) => setDeselected((previous) => toggle(previous, id))}
+            onToggleAll={() => setDeselected((previous) => toggleAll(shown, previous))}
             emptyMessage={describeEmptyResults({
               searched: progress !== null,
               clipsFound: clips.length,
               maxViews,
             })}
+            emptyAction={
+              clips.length > 0 && maxViews !== null
+                ? {
+                    label: `Voir les ${clips.length}`,
+                    onClick: () => setMaxViewsInput(''),
+                  }
+                : undefined
+            }
           />
         </main>
       </div>

@@ -455,10 +455,30 @@ details li {
 .table-head,
 .table-row {
   display: grid;
-  grid-template-columns: 72px 108px 1fr 160px;
+  grid-template-columns: 22px 72px 108px 1fr 160px;
   align-items: center;
   gap: 12px;
   padding: 0 14px;
+}
+
+.col-pick {
+  display: flex;
+  align-items: center;
+}
+
+/* Les champs du formulaire sont en width:100% ; pas les cases à cocher. */
+.col-pick input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--violet);
+  cursor: pointer;
+}
+
+.col-pick input[type='checkbox']:disabled {
+  cursor: default;
+  opacity: 0.4;
 }
 
 .table-head {
@@ -551,7 +571,7 @@ a:hover {
 
   .table-head,
   .table-row {
-    grid-template-columns: 60px 92px 1fr;
+    grid-template-columns: 22px 60px 92px 1fr;
   }
 
   .col-author {
