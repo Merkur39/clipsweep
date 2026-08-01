@@ -6,6 +6,8 @@ import { FiltersBar } from './components/FiltersBar'
 import { SearchPanel } from './components/SearchPanel'
 import { Mark } from './components/Icon'
 import { SearchProgress } from './components/SearchProgress'
+import { ThemeToggle } from './components/ThemeToggle'
+import { applyTheme, parseTheme } from './domain/theme'
 import { describeAccess, describeTokenLife, TOKEN_EXPIRED } from './domain/access'
 import { applyFilters, facets } from './domain/filters'
 import { clampSince, clampUntil, describePeriodError } from './domain/period'
@@ -33,9 +35,12 @@ const numberOrNull = (raw: string) => {
   return raw.trim() === '' || !Number.isFinite(value) ? null : value
 }
 
+/** Exporté pour que `main.tsx` lise le thème sous la même clé, avant le rendu. */
+export const persistedKey = (key: string) => `getclip.${key}`
+
 function usePersistedState(key: string, initial: string) {
-  const [value, setValue] = useState(() => localStorage.getItem(`getclip.${key}`) ?? initial)
-  useEffect(() => localStorage.setItem(`getclip.${key}`, value), [key, value])
+  const [value, setValue] = useState(() => localStorage.getItem(persistedKey(key)) ?? initial)
+  useEffect(() => localStorage.setItem(persistedKey(key), value), [key, value])
   return [value, setValue] as const
 }
 
@@ -81,6 +86,12 @@ export default function App({ authError }: { authError: string | null }) {
   const [authMessage, setAuthMessage] = useState(access.message)
   const [authKind, setAuthKind] = useState<'ok' | 'bad' | ''>(access.kind)
   const [presumedConnected, setPresumedConnected] = useState(access.presumedConnected)
+
+  // Déjà posé sur `<html>` par `main.tsx` avant le premier rendu ; l'effet ne
+  // sert qu'aux changements qui suivent.
+  const [storedTheme, setTheme] = usePersistedState('theme', 'system')
+  const theme = parseTheme(storedTheme)
+  useEffect(() => applyTheme(document.documentElement, theme), [theme])
 
   const [channel, setChannel] = usePersistedState('channel', 'kaliyami')
   const [since, setSince] = usePersistedState('since', '2019-01-01')
@@ -236,6 +247,7 @@ export default function App({ authError }: { authError: string | null }) {
         <p className="lede">
           L'inventaire complet des clips d'une chaîne, du plus vu au jamais vu.
         </p>
+        <ThemeToggle theme={theme} onChange={setTheme} />
       </header>
 
       <div className="layout">

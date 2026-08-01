@@ -146,6 +146,19 @@ a:hover {
   outline-offset: 2px;
 }
 
+/* Un libellé que seuls le clavier et le lecteur d'écran atteignent. Pas
+   `display: none`, qui le retirerait aussi de l'arbre d'accessibilité. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;

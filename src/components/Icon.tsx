@@ -61,6 +61,37 @@ export function LogoutIcon() {
   )
 }
 
+/* ---- les trois thèmes ----
+   Le soleil et la lune sont les deux affirmations ; la façade est le fait de
+   n'en faire aucune et de suivre la machine. */
+
+export function SunIcon() {
+  return (
+    <svg {...base} width={13} height={13}>
+      <circle cx="8" cy="8" r="3.1" />
+      <path d="M8 1.4v1.3M8 13.3v1.3M1.4 8h1.3M13.3 8h1.3M3.3 3.3l.9.9M11.8 11.8l.9.9M12.7 3.3l-.9.9M4.2 11.8l-.9.9" />
+    </svg>
+  )
+}
+
+export function MoonIcon() {
+  return (
+    <svg {...base} width={13} height={13}>
+      <path d="M13 9.6A5.6 5.6 0 0 1 6.4 3a5.7 5.7 0 1 0 6.6 6.6Z" />
+    </svg>
+  )
+}
+
+/** Une façade d'instrument : ce que la machine décide, l'outil le reprend. */
+export function SystemIcon() {
+  return (
+    <svg {...base} width={13} height={13}>
+      <rect x="2" y="3" width="12" height="8.5" rx="1" />
+      <path d="M6 14h4" />
+    </svg>
+  )
+}
+
 export function AlertIcon() {
   return (
     <svg {...base} width={14} height={14}>

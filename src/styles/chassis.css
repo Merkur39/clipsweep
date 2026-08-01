@@ -40,6 +40,47 @@
   color: var(--text-dim);
 }
 
+/* ---- rangée des thèmes ----
+   Une préférence d'affichage, pas une action de la tâche : elle se range au
+   bout de la plaque et ne pèse que ses trois pastilles. Le châssis aligne sur
+   la ligne de base, ce qui coucherait la rangée de travers.
+
+   Pas d'`overflow: hidden` pour couper les coins : ici il rognerait le liseré
+   de focus, comme il l'a déjà fait au bord du rail. */
+.theme-toggle {
+  display: flex;
+  align-self: center;
+  margin-left: auto;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+}
+
+.theme-toggle button {
+  padding: 6px 9px;
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--rule);
+  border-radius: 0;
+  color: var(--text-faint);
+}
+
+.theme-toggle button:last-child {
+  border-right: 0;
+}
+
+/* Le bouton nu vire au violet sur son contour ; ici le contour est une couture
+   partagée entre trois pastilles, il ne suit pas le survol de l'une d'elles. */
+.theme-toggle button:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--rule);
+  color: var(--text);
+}
+
+.theme-toggle button[aria-pressed='true'] {
+  background: var(--violet-wash);
+  color: var(--violet);
+}
+
 /* ---- châssis ---- */
 
 .layout {
