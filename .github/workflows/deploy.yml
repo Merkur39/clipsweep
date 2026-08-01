@@ -30,7 +30,11 @@ jobs:
       - run: npm run lint
       - run: npm test
       # `npm run build` enchaîne `tsc -b` puis `vite build`.
+      # Variable de dépôt et non secret : un Client ID n'est pas confidentiel, et
+      # un secret serait de toute façon masqué dans un bundle servi en clair.
       - run: npm run build
+        env:
+          VITE_TWITCH_CLIENT_ID: ${{ vars.VITE_TWITCH_CLIENT_ID }}
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

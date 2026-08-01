@@ -4,7 +4,16 @@ import { ClipTable } from './components/ClipTable'
 import { Frieze, type Span } from './components/Frieze'
 import { makeLogAppender, type LogEntry, type LogKind } from './log'
 import { TokenRejectedError, TwitchApi } from './twitch/api'
-import { authorizeUrl, clientIdStore, redirectUri, tokenStore, validateToken, type Session } from './twitch/auth'
+import {
+  authorizeUrl,
+  BUILD_TIME_CLIENT_ID,
+  clientIdStore,
+  redirectUri,
+  resolveClientId,
+  tokenStore,
+  validateToken,
+  type Session,
+} from './twitch/auth'
 import { collectClips, filterByMaxViews, type WindowReport } from './twitch/clips'
 import type { Clip, Progress, TwitchUser } from './twitch/types'
 import { splitRange } from './twitch/windows'
@@ -39,10 +48,10 @@ function toCsv(clips: Clip[]): string {
 }
 
 export default function App({ authError }: { authError: string | null }) {
-  const [clientId, setClientId] = useState(clientIdStore.read)
+  const [clientId, setClientId] = useState(() => resolveClientId(clientIdStore.read(), BUILD_TIME_CLIENT_ID))
   // Frozen at mount: recomputing it would snap the panel shut mid-typing, and
   // would fight the user's own toggling.
-  const [setupOpen] = useState(() => !clientIdStore.read())
+  const [setupOpen] = useState(() => !resolveClientId(clientIdStore.read(), BUILD_TIME_CLIENT_ID))
   const [session, setSession] = useState<Session | null>(null)
   const [authMessage, setAuthMessage] = useState(
     authError ? `Twitch a refusé la connexion : ${authError}` : 'Aucun jeton. Connecte-toi à Twitch pour commencer.',
@@ -98,11 +107,12 @@ export default function App({ authError }: { authError: string | null }) {
   const connect = () => {
     const trimmed = clientId.trim()
     if (!trimmed) {
-      setAuthMessage('Renseigne le Client ID de ton application ci-dessous.')
+      setAuthMessage('Aucune application configurée : renseigne un Client ID ci-dessous.')
       setAuthKind('bad')
       return
     }
-    clientIdStore.write(trimmed)
+    // Only an actual override is worth persisting.
+    if (trimmed !== BUILD_TIME_CLIENT_ID) clientIdStore.write(trimmed)
     location.href = authorizeUrl(trimmed, redirectUri())
   }
 
@@ -207,10 +217,12 @@ export default function App({ authError }: { authError: string | null }) {
           </button>
 
           <details open={setupOpen}>
-            <summary>Configurer une application</summary>
+            <summary>{BUILD_TIME_CLIENT_ID ? 'Utiliser ta propre application' : 'Configurer une application'}</summary>
             <p>
-              Le Client ID identifie l'application, pas ton compte : il n'est pas secret. Tu te connectes
-              ensuite avec ton propre compte Twitch.
+              Le Client ID identifie l'application, pas ton compte : il n'est pas secret.
+              {BUILD_TIME_CLIENT_ID
+                ? " Il n'est utile que pour héberger l'outil sur une autre adresse."
+                : ' Tu te connectes ensuite avec ton propre compte Twitch.'}
             </p>
             <ol>
               <li>
@@ -238,6 +250,18 @@ export default function App({ authError }: { authError: string | null }) {
                 spellCheck={false}
               />
             </label>
+            {BUILD_TIME_CLIENT_ID && clientId !== BUILD_TIME_CLIENT_ID && (
+              <button
+                type="button"
+                className="link"
+                onClick={() => {
+                  clientIdStore.clear()
+                  setClientId(BUILD_TIME_CLIENT_ID)
+                }}
+              >
+                Revenir à l'application par défaut
+              </button>
+            )}
           </details>
 
           <p className="eyebrow">Cible</p>

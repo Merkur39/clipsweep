@@ -54,16 +54,26 @@ export const tokenStore = {
   clear: () => sessionStorage.removeItem(TOKEN_KEY),
 }
 
+export const clientIdStore = {
+  read: () => localStorage.getItem(CLIENT_ID_KEY),
+  write: (clientId: string) => localStorage.setItem(CLIENT_ID_KEY, clientId),
+  clear: () => localStorage.removeItem(CLIENT_ID_KEY),
+}
+
 /**
  * The client id identifies the application, not the person — it is public by
- * design (it travels in the authorize URL and in every Helix header), so keeping
- * it in localStorage is fine. Each visitor registers their own application and
- * signs in with their own Twitch account.
+ * design (it travels in the authorize URL and in every Helix header). One
+ * registered app therefore serves every visitor, who each sign in with their own
+ * Twitch account. Tokens carry no scope, so what they unlock is public data
+ * only; the override exists for self-hosting on an origin the baked-in app has
+ * not registered as a redirect URI.
  */
-export const clientIdStore = {
-  read: () => localStorage.getItem(CLIENT_ID_KEY) ?? '',
-  write: (clientId: string) => localStorage.setItem(CLIENT_ID_KEY, clientId),
+export function resolveClientId(override: string | null, buildTime: string): string {
+  return override?.trim() || buildTime.trim()
 }
+
+/** Registered at build time via `VITE_TWITCH_CLIENT_ID`; empty falls back to the field. */
+export const BUILD_TIME_CLIENT_ID: string = import.meta.env.VITE_TWITCH_CLIENT_ID ?? ''
 
 /**
  * Twitch matches the redirect URI byte for byte, so it has to be stable however

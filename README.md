@@ -22,16 +22,28 @@ Le filtre « vues max » est **optionnel** et purement local : par défaut tout 
 
 ## Setup
 
+À faire **une seule fois**, par la personne qui héberge :
+
 1. Créer une application sur [dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps), catégorie
    « Application Integration ».
-2. Déclarer l'URL de redirection **exacte** dans « OAuth Redirect URLs » : `http://localhost:5173/`
-   (l'app affiche l'URL attendue avec un bouton « Copier »).
-3. `npm install && npm run dev`, coller le Client ID, « Se connecter à Twitch ».
+2. Déclarer chaque origine servant l'app dans « OAuth Redirect URLs », à l'identique et **slash final
+   compris** : `http://localhost:5173/` en dev, l'URL Pages en production. L'app affiche l'URL attendue
+   avec un bouton « Copier ».
+3. `cp .env.example .env.local`, y coller `VITE_TWITCH_CLIENT_ID`.
+4. `npm install && npm run dev`.
 
-Chacun utilise sa propre application : le Client ID est saisi dans le formulaire et gardé en
-`localStorage`. Il identifie l'application, pas le compte, et n'est pas secret — il transite en clair dans
-l'URL d'autorisation et dans chaque en-tête `Client-Id`. Le quota Helix reste ainsi rattaché à ton app,
-pas à celle d'un tiers.
+Ensuite chaque visiteur clique « Se connecter à Twitch » et s'authentifie avec **son propre compte** —
+rien à saisir. Le Client ID identifie l'application, pas la personne : ce n'est pas un secret, il transite
+en clair dans l'URL d'autorisation et dans chaque en-tête `Client-Id`.
+
+Les jetons émis ne portent **aucun scope** ([auth.ts](src/twitch/auth.ts)) : ils ne déverrouillent que
+des données publiques, jamais l'email, la gestion de chaîne ou la modération. C'est ce qui rend le partage
+d'une application sans risque pratique. Ce qui subsiste : le Contrat Développeur Twitch rend le
+propriétaire de l'application comptable de l'activité menée sous son Client ID.
+
+Le champ Client ID reste accessible dans « Utiliser ta propre application », replié : il ne sert qu'à
+héberger l'outil sur une origine que l'application par défaut n'a pas déclarée. Sans
+`VITE_TWITCH_CLIENT_ID`, l'app retombe simplement sur ce champ.
 
 Aucun secret nulle part : flux implicite, le jeton revient dans le fragment d'URL et reste en
 `sessionStorage`. Le navigateur parle directement à Helix (CORS autorisé), il n'y a pas de backend — le
@@ -42,11 +54,14 @@ build est déployable en statique.
 Poussé sur `main`, [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) enchaîne lint, tests,
 build et mise en ligne sur GitHub Pages.
 
-Deux réglages à faire une fois :
+Trois réglages à faire une fois :
 
 1. **Settings → Pages → Source : GitHub Actions** sur le dépôt (sans ça le workflow échoue à l'étape
    `configure-pages`).
-2. Ajouter l'URL Pages aux « OAuth Redirect URLs » de l'application Twitch, **slash final compris** :
+2. **Settings → Secrets and variables → Actions → Variables** : ajouter `VITE_TWITCH_CLIENT_ID`. Une
+   *variable*, pas un secret — un Client ID n'est pas confidentiel, et un secret finirait de toute façon
+   en clair dans le bundle servi.
+3. Ajouter l'URL Pages aux « OAuth Redirect URLs » de l'application Twitch, **slash final compris** :
    `https://merkur39.github.io/get-clip-twitch/`. Twitch compare la chaîne à l'octet près ; l'app
    normalise l'URI (slash final ajouté, `index.html` retiré) pour qu'elle soit stable quel que soit le
    chemin d'arrivée.

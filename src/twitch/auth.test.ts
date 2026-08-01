@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { authorizeUrl, normalizeRedirectUri, parseAuthFragment } from './auth'
+import { authorizeUrl, normalizeRedirectUri, parseAuthFragment, resolveClientId } from './auth'
 
 describe('parseAuthFragment', () => {
   it('extracts the access token returned by the implicit flow', () => {
@@ -22,6 +22,29 @@ describe('parseAuthFragment', () => {
   it('ignores a fragment that carries no auth payload', () => {
     expect(parseAuthFragment('')).toEqual({ status: 'none' })
     expect(parseAuthFragment('#section=results')).toEqual({ status: 'none' })
+  })
+})
+
+describe('resolveClientId', () => {
+  it('uses the build-time application id when nothing is overridden', () => {
+    expect(resolveClientId(null, 'baked')).toBe('baked')
+  })
+
+  it('lets a stored override win over the build-time id', () => {
+    expect(resolveClientId('mine', 'baked')).toBe('mine')
+  })
+
+  it('ignores a blank override', () => {
+    expect(resolveClientId('   ', 'baked')).toBe('baked')
+  })
+
+  it('trims whatever it returns', () => {
+    expect(resolveClientId(' mine ', '')).toBe('mine')
+    expect(resolveClientId(null, ' baked ')).toBe('baked')
+  })
+
+  it('returns an empty string when neither is set', () => {
+    expect(resolveClientId(null, '')).toBe('')
   })
 })
 
