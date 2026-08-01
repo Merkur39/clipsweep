@@ -1,6 +1,24 @@
 import { describe, expect, it } from 'vitest'
 
-import { clampSince, clampUntil } from './period'
+import { clampSince, clampUntil, describePeriodError } from './period'
+
+describe('describePeriodError', () => {
+  it('ne dit rien d’une période valable', () => {
+    expect(describePeriodError('2019-01-01', '2026-08-01')).toBeNull()
+  })
+
+  // La fouille borne la fin à 23:59:59 : un début et une fin le même jour
+  // couvrent bien cette journée-là.
+  it('accepte une période d’un seul jour', () => {
+    expect(describePeriodError('2026-08-01', '2026-08-01')).toBeNull()
+  })
+
+  it('signale un début postérieur à la fin', () => {
+    expect(describePeriodError('2026-08-02', '2026-08-01')).toBe(
+      'La date de début doit précéder la date de fin.',
+    )
+  })
+})
 
 describe('clampUntil', () => {
   it('laisse la date intacte quand elle précède aujourd’hui', () => {

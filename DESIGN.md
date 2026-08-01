@@ -145,6 +145,20 @@ Surface de travail principale, donc la plus réglée :
 - **L'emphase suit ce qu'il reste à faire.** Le bouton primaire est « Se connecter » tant qu'on ne
   l'est pas, « Lancer la fouille » ensuite, et les exports ne deviennent primaires qu'avec une
   sélection non vide. Un bouton désactivé n'est jamais le plus lourd de la page.
+- **Toute borne posée dans le DOM est adossée à un `clamp`.** `min` et `max` grisent l'impossible
+  dans le sélecteur de date, mais n'empêchent pas une saisie au clavier : sans validation de
+  formulaire, l'attribut seul ne fait que marquer le champ invalide. La valeur affichée et celle
+  envoyée en fouille sont donc la même dérivée bornée (`clampSince`, `clampUntil`), et ne peuvent
+  pas diverger. Une borne sans son `clamp` est un défaut, pas une demi-mesure.
+- **Ces bornes sont dérivées, jamais écrites dans l'état.** La saisie reste intacte en mémoire et
+  redevient valable d'elle-même quand elle le peut : une date de début antérieure retrouve son
+  sens sur une chaîne plus ancienne, une date de fin trop lointaine le jour venu. Écraser le champ
+  ferait perdre une intention encore légitime ailleurs.
+- **Ce qu'aucune borne ne couvre s'annonce là où ça se corrige.** Les bornes contraignent chaque
+  date séparément, jamais leur ordre : un début postérieur à la fin reste possible. Il s'affiche
+  sous les champs fautifs — pas dans le seul journal, replié par défaut — et désactive la fouille
+  en même temps. Un bouton dont le clic n'a aucun effet visible est ce qui rend une erreur
+  introuvable.
 - **Un état déjà énoncé ne reprend pas la forme d'un bouton.** La ligne d'état dit « Connecté — 62
   j restants » ; un « Connecté à Twitch » désactivé en dessous ne serait pas un contrôle, juste
   une redite inerte. Le bouton porte donc l'action qui reste — « Se déconnecter ».

@@ -3,6 +3,7 @@ import { useCallback, useRef, useState } from 'react'
 import { channelCache } from '../domain/channelCache'
 import { makeLogAppender, type LogEntry, type LogKind } from '../domain/log'
 import { formatCount } from '../domain/numbers'
+import { PERIOD_ORDER_ERROR } from '../domain/period'
 import { TokenRejectedError, TwitchApi } from '../twitch/api'
 import type { Session } from '../twitch/auth'
 import { collectClips, type WindowReport } from '../twitch/clips'
@@ -70,8 +71,10 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
 
       const from = new Date(`${since}T00:00:00Z`)
       const to = new Date(`${until}T23:59:59Z`)
+      // L'interface interdit déjà ce cas ; le garde-fou reste, le hook étant
+      // appelable sans elle.
       if (!(from < to)) {
-        log('La date de début doit précéder la date de fin.', 'err')
+        log(PERIOD_ORDER_ERROR, 'err')
         return
       }
 

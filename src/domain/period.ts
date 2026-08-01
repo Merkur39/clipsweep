@@ -35,3 +35,20 @@ export function clampSince(since: string, channelCreatedAt: string | null): stri
 export function clampUntil(until: string, today: string): string {
   return until > today ? today : until
 }
+
+/**
+ * Le seul désordre que les bornes ne peuvent pas empêcher — elles contraignent
+ * chaque date séparément, jamais leur ordre.
+ *
+ * Une même chaîne sert l'interface et le journal : le message que lit celui qui
+ * corrige la période doit être celui qu'on retrouve dans la trace technique.
+ */
+export const PERIOD_ORDER_ERROR = 'La date de début doit précéder la date de fin.'
+
+/**
+ * La fouille borne la fin à `23:59:59`, donc un début et une fin le même jour
+ * couvrent bien cette journée-là : seul un début **postérieur** est fautif.
+ */
+export function describePeriodError(since: string, until: string): string | null {
+  return since > until ? PERIOD_ORDER_ERROR : null
+}

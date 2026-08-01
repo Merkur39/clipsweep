@@ -24,6 +24,7 @@ const setup = (props: Partial<SearchPanelProps> = {}) => {
       until="2026-08-01"
       onUntilChange={vi.fn()}
       today="2026-08-01"
+      periodError={null}
       channelCreatedAt={null}
       running={false}
       onRun={vi.fn()}
@@ -67,6 +68,32 @@ describe('SearchPanel, accès', () => {
     setup({ canConnect: false })
 
     expect(connexion()).toBeDisabled()
+  })
+
+  // Le journal est replié par défaut : une erreur qui n'y figure que là est
+  // introuvable, et le clic qui la déclenche n'a aucun effet visible.
+  it('annonce l’erreur de période hors du journal', () => {
+    setup({ connected: true, periodError: 'La date de début doit précéder la date de fin.' })
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'La date de début doit précéder la date de fin.',
+    )
+  })
+
+  it('interdit la fouille tant que la période est incohérente', () => {
+    setup({ connected: true, periodError: 'peu importe' })
+
+    expect(screen.getByRole('button', { name: 'Lancer la fouille' })).toBeDisabled()
+  })
+
+  // La région reste dans le document, vide : sa place est réservée pour que le
+  // message n'écarte rien en apparaissant, et un lecteur d'écran annonce plus
+  // fiablement un contenu injecté dans une région vive déjà là.
+  it('laisse fouiller quand la période est cohérente, la région restant vide', () => {
+    setup({ connected: true })
+
+    expect(screen.getByRole('button', { name: 'Lancer la fouille' })).toBeEnabled()
+    expect(screen.getByRole('alert')).toBeEmptyDOMElement()
   })
 
   it('lance la fouille, puis propose de l’arrêter', () => {
