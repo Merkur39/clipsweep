@@ -447,7 +447,7 @@ export default function App({ authError }: { authError: string | null }) {
             <button
               type="button"
               disabled={!shown.length}
-              title="Script Windows : à placer dans un dossier et double-cliquer"
+              title="Enregistrer dans un dossier, puis double-cliquer. Le script récupère yt-dlp au besoin, après confirmation."
               onClick={() =>
                 download(
                   `${stamp}.bat`,
@@ -460,12 +460,12 @@ export default function App({ authError }: { authError: string | null }) {
                 )
               }
             >
-              Script .bat
+              Script Windows (.bat)
             </button>
             <button
               type="button"
               disabled={!shown.length}
-              title="Script macOS / Linux : chmod +x puis lancer"
+              title="Enregistrer, puis : chmod +x fichier.sh && ./fichier.sh. Le script récupère yt-dlp au besoin, après confirmation."
               onClick={() =>
                 download(
                   `${stamp}.sh`,
@@ -478,7 +478,7 @@ export default function App({ authError }: { authError: string | null }) {
                 )
               }
             >
-              Script .sh
+              Script macOS · Linux (.sh)
             </button>
             <span className="count">
               {shown.length
