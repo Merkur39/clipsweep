@@ -15,6 +15,7 @@ import { selectedClips, toggle, toggleAll } from './domain/selection'
 import { DEFAULT_SORT, nextSort, sortClips, type ClipSort } from './domain/sort'
 import { useChannelLookup } from './hooks/useChannelLookup'
 import { useClipSearch } from './hooks/useClipSearch'
+import { useUnloadGuard } from './hooks/useUnloadGuard'
 import {
   authorizeUrl,
   BUILD_TIME_CLIENT_ID,
@@ -114,6 +115,11 @@ export default function App({ authError }: { authError: string | null }) {
 
   const search = useClipSearch(session, onTokenRejected)
   const { clips, reports, incomplete, progress, span, logEntries, gameNames, running } = search
+
+  // Une fouille en cours, ou ses résultats à l'écran, ne vivent que dans la
+  // mémoire de l'application : quitter la page les perd et impose de tout
+  // refouiller, quota Helix compris.
+  useUnloadGuard(running || clips.length > 0)
 
   // The fragment was already consumed in main.tsx; here we only confirm the
   // stored token is still live.
