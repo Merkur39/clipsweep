@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 
 import { channelCache } from '../domain/channelCache'
 import { makeLogAppender, type LogEntry, type LogKind } from '../domain/log'
+import { formatCount } from '../domain/numbers'
 import { TokenRejectedError, TwitchApi } from '../twitch/api'
 import type { Session } from '../twitch/auth'
 import { collectClips, type WindowReport } from '../twitch/clips'
@@ -132,7 +133,10 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
 
         setClips(result.clips)
         setIncomplete(result.incomplete)
-        log(`${result.clips.length} clips uniques en ${result.requests} requêtes.`, 'good')
+        log(
+          `${formatCount(result.clips.length)} clips uniques en ${formatCount(result.requests)} requêtes.`,
+          'good',
+        )
         if (controller.signal.aborted) {
           log('Fouille interrompue : le résultat est partiel.', 'warn')
         }

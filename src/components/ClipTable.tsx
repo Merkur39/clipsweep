@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 
+import { formatCount } from '../domain/numbers'
 import { selectionState } from '../domain/selection'
 import type { ClipSort, SortKey } from '../domain/sort'
 import type { Clip } from '../twitch/types'
@@ -176,7 +177,7 @@ export function ClipTable({
                   />
                 </span>
                 <span className={clip.view_count === 0 ? 'col-views zero' : 'col-views'}>
-                  {clip.view_count}
+                  {formatCount(clip.view_count)}
                 </span>
                 <span className="col-date">{clip.created_at.slice(0, 10)}</span>
                 <span className="col-title">
