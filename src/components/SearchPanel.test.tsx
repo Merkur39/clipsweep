@@ -23,6 +23,7 @@ const setup = (props: Partial<SearchPanelProps> = {}) => {
       onSinceChange={vi.fn()}
       until="2026-08-01"
       onUntilChange={vi.fn()}
+      today="2026-08-01"
       channelCreatedAt={null}
       running={false}
       onRun={vi.fn()}

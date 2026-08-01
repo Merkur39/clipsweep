@@ -15,6 +15,8 @@ export interface SearchPanelProps {
   onSinceChange: (next: string) => void
   until: string
   onUntilChange: (next: string) => void
+  /** `yyyy-mm-dd` en UTC : la fin de période ne peut pas aller au-delà. */
+  today: string
   /** `yyyy-mm-dd`, or null while the channel is unknown. */
   channelCreatedAt: string | null
 
@@ -36,6 +38,7 @@ export function SearchPanel({
   onSinceChange,
   until,
   onUntilChange,
+  today,
   channelCreatedAt,
   running,
   onRun,
@@ -72,16 +75,23 @@ export function SearchPanel({
         <div className="duo">
           <label>
             <span>Depuis</span>
+            {/* Le sélecteur grise ce qui précède la création de la chaîne ; la
+              valeur, elle, est déjà bornée en amont — `min` seul n'empêche pas
+              une saisie au clavier. */}
             <input
               type="date"
+              min={channelCreatedAt ?? undefined}
               value={since}
               onChange={(event) => onSinceChange(event.target.value)}
             />
           </label>
           <label>
             <span>Jusqu'au</span>
+            {/* Chaque borne posée ici est adossée à un `clamp` côté App : une
+              borne seule marque le champ invalide sans rien empêcher. */}
             <input
               type="date"
+              max={today}
               value={until}
               onChange={(event) => onUntilChange(event.target.value)}
             />
