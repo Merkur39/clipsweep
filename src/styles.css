@@ -316,11 +316,46 @@ details li {
   background: var(--red);
 }
 
+/* ---- avancement ---- */
+
+.progress-block {
+  margin-bottom: 8px;
+}
+
+.search-status {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.search-status.running {
+  color: var(--violet);
+}
+
+.technical {
+  margin: 10px 0 0;
+}
+
+.technical > summary {
+  color: var(--muted);
+}
+
+.technical .eyebrow:first-of-type {
+  margin-top: 14px;
+}
+
+.result-count {
+  margin: -4px 0 12px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+}
+
 /* ---- compteurs ---- */
 
 .tally {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   margin: 22px 0 0;
   border: 1px solid var(--border);
   border-radius: 6px;

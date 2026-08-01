@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 import type { LogEntry } from '../domain/log'
+import { describeSearchStatus } from '../domain/results'
 import type { WindowReport } from '../twitch/clips'
 import type { Progress } from '../twitch/types'
 import { Frieze, type Span } from './Frieze'
@@ -11,19 +12,25 @@ export interface SearchProgressProps {
   progress: Progress | null
   incomplete: WindowReport[]
   clipsFound: number
-  selectedCount: number
   logEntries: LogEntry[]
+  running: boolean
 }
 
-/** What the search is doing, while it does it: timeline, counters, journal. */
+/**
+ * L'avancement de la fouille. Une ligne d'état suffit à la plupart des
+ * visiteurs ; la frise et le journal répondent à « comment l'algorithme a
+ * procédé », question qui n'intéresse que si quelque chose cloche — d'où le
+ * repli. L'alerte d'exhaustivité reste dehors : ce n'est pas un détail
+ * technique mais un constat sur la validité du résultat.
+ */
 export function SearchProgress({
   reports,
   span,
   progress,
   incomplete,
   clipsFound,
-  selectedCount,
   logEntries,
+  running,
 }: SearchProgressProps) {
   const logRef = useRef<HTMLDivElement>(null)
 
@@ -31,63 +38,65 @@ export function SearchProgress({
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
   }, [logEntries])
 
-  return (
-    <>
-      <p className="eyebrow">Découpage du temps</p>
-      <Frieze reports={reports} span={span} />
-      <div className="legend">
-        <span>
-          <b className="done" />
-          fenêtre complète
-        </span>
-        <span>
-          <b className="split" />
-          saturée, recoupée
-        </span>
-        <span>
-          <b className="lost" />
-          saturée au plancher — clips manquants
-        </span>
-      </div>
+  const status = describeSearchStatus({ running, progress, clipsFound })
 
-      <dl className="tally">
-        <div>
-          <dt>Fenêtres</dt>
-          <dd>{progress ? `${progress.windowsDone}/${progress.windowsTotal}` : '0'}</dd>
-        </div>
-        <div>
-          <dt>Requêtes</dt>
-          <dd>{progress?.requests ?? 0}</dd>
-        </div>
-        <div>
-          <dt>Clips uniques</dt>
-          <dd>{clipsFound || progress?.clipsFound || 0}</dd>
-        </div>
-        <div>
-          <dt>Sélectionnés</dt>
-          <dd>{selectedCount}</dd>
-        </div>
-      </dl>
+  return (
+    <section className="progress-block">
+      {status && <p className={running ? 'search-status running' : 'search-status'}>{status}</p>}
 
       {incomplete.length > 0 && (
         <p className="alert">
-          {incomplete.length} fenêtre(s) encore saturée(s) au plancher de 6 h : le résultat n'est
-          pas exhaustif sur ces périodes. Resserre l'intervalle de dates.
+          {incomplete.length} période(s) n'ont pas pu être explorées entièrement : il manque des
+          clips sur celles-ci. Resserre l'intervalle de dates.
         </p>
       )}
 
-      <p className="eyebrow">Journal</p>
-      <div className="log" ref={logRef}>
-        {logEntries.length === 0 ? (
-          <p>En attente.</p>
-        ) : (
-          logEntries.map((entry) => (
-            <p key={entry.id} className={entry.kind}>
-              {entry.text}
-            </p>
-          ))
-        )}
-      </div>
-    </>
+      {/* Non contrôlé volontairement : React ne doit jamais refermer ce que
+          l'utilisateur vient d'ouvrir. */}
+      <details className="technical">
+        <summary>Détail de la fouille</summary>
+
+        <p className="eyebrow">Découpage du temps</p>
+        <Frieze reports={reports} span={span} />
+        <div className="legend">
+          <span>
+            <b className="done" />
+            période complète
+          </span>
+          <span>
+            <b className="split" />
+            saturée, recoupée
+          </span>
+          <span>
+            <b className="lost" />
+            saturée au plancher — clips manquants
+          </span>
+        </div>
+
+        <dl className="tally">
+          <div>
+            <dt>Périodes</dt>
+            <dd>{progress ? `${progress.windowsDone}/${progress.windowsTotal}` : '0'}</dd>
+          </div>
+          <div>
+            <dt>Requêtes</dt>
+            <dd>{progress?.requests ?? 0}</dd>
+          </div>
+        </dl>
+
+        <p className="eyebrow">Journal</p>
+        <div className="log" ref={logRef}>
+          {logEntries.length === 0 ? (
+            <p>En attente.</p>
+          ) : (
+            logEntries.map((entry) => (
+              <p key={entry.id} className={entry.kind}>
+                {entry.text}
+              </p>
+            ))
+          )}
+        </div>
+      </details>
+    </section>
   )
 }

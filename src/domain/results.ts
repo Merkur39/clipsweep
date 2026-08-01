@@ -1,3 +1,5 @@
+import type { Progress } from '../twitch/types'
+
 export interface EmptyResultsInput {
   /** A search has run at least once in this session. */
   searched: boolean
@@ -8,6 +10,54 @@ export interface EmptyResultsInput {
 
 const plural = (count: number, singular: string, pluralForm = `${singular}s`) =>
   `${count} ${count > 1 ? pluralForm : singular}`
+
+/** Accord d'un participe seul, sans son nom. */
+const agree = (count: number, word: string) => `${word}${count > 1 ? 's' : ''}`
+
+export interface SearchStatusInput {
+  running: boolean
+  progress: Progress | null
+  clipsFound: number
+}
+
+/**
+ * Une ligne d'état lisible sans rien connaître de l'algorithme. Elle remplace,
+ * pour l'essentiel des visiteurs, la frise et les compteurs techniques : ceux-ci
+ * répondent à « comment », celle-ci à « où ça en est ».
+ */
+export function describeSearchStatus({
+  running,
+  progress,
+  clipsFound,
+}: SearchStatusInput): string | null {
+  if (!progress) return null
+
+  if (running) {
+    return `Fouille en cours — ${progress.windowsDone}/${progress.windowsTotal} périodes, ${plural(progress.clipsFound, 'clip')} trouvé${agree(progress.clipsFound, '')}.`
+  }
+
+  const total = clipsFound || progress.clipsFound
+  return `Fouille terminée — ${plural(total, 'clip')} ${agree(total, 'trouvé')}.`
+}
+
+export interface ResultCountInput {
+  /** Avant tout filtre. */
+  found: number
+  /** Après les filtres d'affichage. */
+  shown: number
+  selected: number
+}
+
+/** Les trois nombres qui comptent, toujours dans le même ordre. */
+export function describeResultCount({ found, shown, selected }: ResultCountInput): string {
+  if (found === 0) return ''
+
+  return [
+    `${plural(found, 'clip')} ${agree(found, 'récupéré')}`,
+    `${shown} ${agree(shown, 'affiché')}`,
+    `${selected} ${agree(selected, 'sélectionné')}`,
+  ].join(' · ')
+}
 
 /**
  * Why the table is empty, and what to do about it. Silence here is the worst

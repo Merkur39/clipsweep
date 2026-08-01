@@ -6,7 +6,7 @@ import { FiltersBar } from './components/FiltersBar'
 import { SearchPanel } from './components/SearchPanel'
 import { SearchProgress } from './components/SearchProgress'
 import { applyFilters, facets } from './domain/filters'
-import { describeEmptyResults } from './domain/results'
+import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
 import { selectedClips, toggle, toggleAll } from './domain/selection'
 import { useChannelLookup } from './hooks/useChannelLookup'
@@ -205,11 +205,20 @@ export default function App({ authError }: { authError: string | null }) {
             progress={progress}
             incomplete={incomplete}
             clipsFound={clips.length}
-            selectedCount={selected.length}
             logEntries={logEntries}
+            running={running}
           />
 
           <p className="eyebrow">Résultats</p>
+          {clips.length > 0 && (
+            <p className="result-count">
+              {describeResultCount({
+                found: clips.length,
+                shown: shown.length,
+                selected: selected.length,
+              })}
+            </p>
+          )}
 
           <FiltersBar
             minViews={minViewsInput}
