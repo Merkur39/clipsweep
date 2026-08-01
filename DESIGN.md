@@ -138,6 +138,10 @@ Surface de travail principale, donc la plus réglée :
 
 ## Règles transverses
 
+- **Pas d'état d'attente qui ne dure qu'une requête.** Un jeton en `sessionStorage` est lu avant
+  le premier rendu : on s'affiche connecté sur sa foi, et on se dédit en rouge si Twitch le
+  refuse. Un « vérification en cours » de 200 ms ne se lit pas, il ne fait que clignoter — et
+  annoncer « aucun jeton » alors qu'on en tient un est simplement faux.
 - **L'emphase suit ce qu'il reste à faire.** Le bouton primaire est « Se connecter » tant qu'on ne
   l'est pas, « Lancer la fouille » ensuite, et les exports ne deviennent primaires qu'avec une
   sélection non vide. Un bouton désactivé n'est jamais le plus lourd de la page.

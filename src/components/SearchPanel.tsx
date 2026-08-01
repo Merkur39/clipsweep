@@ -1,6 +1,7 @@
 export interface SearchPanelProps {
   authMessage: string
   authKind: 'ok' | 'bad' | ''
+  /** Connecté, ou présumé tel sur la foi d'un jeton stocké. */
   connected: boolean
   canConnect: boolean
   onConnect: () => void
