@@ -6,6 +6,7 @@ import { FiltersBar } from './components/FiltersBar'
 import { SearchPanel } from './components/SearchPanel'
 import { Mark } from './components/Icon'
 import { SearchProgress } from './components/SearchProgress'
+import { describeAccess, describeTokenLife, TOKEN_EXPIRED } from './domain/access'
 import { applyFilters, facets } from './domain/filters'
 import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
@@ -64,18 +65,20 @@ function toCsv(clips: Clip[]): string {
 
 export default function App({ authError }: { authError: string | null }) {
   const [session, setSession] = useState<Session | null>(null)
-  const [authMessage, setAuthMessage] = useState(() => {
-    if (authError) return `Twitch a refusé la connexion : ${authError}`
-    // Auto-hébergement mal configuré : sans identifiant, aucun bouton ne peut
-    // rien faire — autant dire tout de suite quoi renseigner, et où.
-    if (!BUILD_TIME_CLIENT_ID) {
-      return `Aucune application configurée. Renseigne VITE_TWITCH_CLIENT_ID dans .env.local, et déclare ${redirectUri()} dans les « OAuth Redirect URLs » de ton application Twitch.`
-    }
-    return 'Aucun jeton. Connecte-toi à Twitch pour commencer.'
-  })
-  const [authKind, setAuthKind] = useState<'ok' | 'bad' | ''>(
-    authError || !BUILD_TIME_CLIENT_ID ? 'bad' : '',
+  // Lu une seule fois, avant le premier rendu : c'est ce qui permet d'annoncer
+  // « vérification » plutôt que « aucun jeton » pendant l'aller-retour.
+  const [storedToken] = useState(() => tokenStore.read())
+  const [access] = useState(() =>
+    describeAccess({
+      authError,
+      clientId: BUILD_TIME_CLIENT_ID,
+      hasStoredToken: storedToken !== null,
+      redirectUri: redirectUri(),
+    }),
   )
+  const [authMessage, setAuthMessage] = useState(access.message)
+  const [authKind, setAuthKind] = useState<'ok' | 'bad' | ''>(access.kind)
+  const [presumedConnected, setPresumedConnected] = useState(access.presumedConnected)
 
   const [channel, setChannel] = usePersistedState('channel', 'kaliyami')
   const [since, setSince] = usePersistedState('since', '2019-01-01')
@@ -103,7 +106,8 @@ export default function App({ authError }: { authError: string | null }) {
     // Drop the session, otherwise the disabled connect button traps the user.
     tokenStore.clear()
     setSession(null)
-    setAuthMessage('Jeton expiré. Reconnecte-toi.')
+    setPresumedConnected(false)
+    setAuthMessage(TOKEN_EXPIRED)
     setAuthKind('bad')
   }, [])
 
@@ -113,23 +117,22 @@ export default function App({ authError }: { authError: string | null }) {
   // The fragment was already consumed in main.tsx; here we only confirm the
   // stored token is still live.
   useEffect(() => {
-    const stored = tokenStore.read()
-    if (!stored) return
+    if (!storedToken) return
 
-    validateToken(stored)
+    validateToken(storedToken)
       .then((validated) => {
         setSession(validated)
-        setAuthMessage(
-          `Connecté — jeton valide encore ${Math.round(validated.expiresInSeconds / 3600)} h.`,
-        )
+        setAuthMessage(`Connecté — ${describeTokenLife(validated.expiresInSeconds)}.`)
         setAuthKind('ok')
       })
+      // Le pari optimiste se dédit ici, et seulement ici.
       .catch(() => {
         tokenStore.clear()
-        setAuthMessage('Jeton expiré. Reconnecte-toi.')
+        setPresumedConnected(false)
+        setAuthMessage(TOKEN_EXPIRED)
         setAuthKind('bad')
       })
-  }, [])
+  }, [storedToken])
 
   const connect = () => location.assign(authorizeUrl(BUILD_TIME_CLIENT_ID, redirectUri()))
 
@@ -160,9 +163,16 @@ export default function App({ authError }: { authError: string | null }) {
       search.stop()
       return
     }
+    // Le pari optimiste ouvre une fenêtre — le temps d'une requête — où l'on
+    // s'affiche connecté sans l'être encore. Elle est trop courte pour qu'on
+    // l'atteigne à la souris, mais pas pour qu'on y mente.
     if (!session) {
-      setAuthMessage('Connecte-toi à Twitch avant de lancer la fouille.')
-      setAuthKind('bad')
+      setAuthMessage(
+        presumedConnected
+          ? 'Vérification du jeton, réessaie.'
+          : 'Connecte-toi à Twitch avant de lancer la fouille.',
+      )
+      setAuthKind(presumedConnected ? '' : 'bad')
       return
     }
     // Une nouvelle fouille repart d'une sélection et de filtres vierges : garder
@@ -192,7 +202,7 @@ export default function App({ authError }: { authError: string | null }) {
         <SearchPanel
           authMessage={authMessage}
           authKind={authKind}
-          connected={session !== null}
+          connected={session !== null || presumedConnected}
           canConnect={Boolean(BUILD_TIME_CLIENT_ID)}
           onConnect={connect}
           channel={channel}
