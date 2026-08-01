@@ -155,7 +155,7 @@
 }
 
 .table-row .col-title a:hover {
-  color: var(--violet-bright);
+  color: var(--violet-strong);
   text-decoration: underline;
   text-underline-offset: 3px;
 }

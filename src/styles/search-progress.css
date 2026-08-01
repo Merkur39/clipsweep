@@ -14,7 +14,7 @@
 }
 
 .search-status.running {
-  color: var(--violet-bright);
+  color: var(--violet-strong);
 }
 
 .alert {
@@ -22,10 +22,10 @@
   gap: 10px;
   margin: var(--s-3) 0 0;
   padding: 10px 13px;
-  border: 1px solid var(--red-deep);
+  border: 1px solid var(--red-fill);
   border-radius: var(--r);
   background: var(--red-wash);
-  color: var(--red-bright);
+  color: var(--red-strong);
   font-size: 13px;
 }
 
@@ -150,7 +150,7 @@
 }
 
 .log .good {
-  color: var(--violet-bright);
+  color: var(--violet-strong);
 }
 
 .log .warn {
@@ -158,5 +158,5 @@
 }
 
 .log .err {
-  color: var(--red-bright);
+  color: var(--red-strong);
 }

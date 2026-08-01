@@ -86,8 +86,8 @@ export function Mark() {
     >
       <rect x="1" y="2.4" width="14" height="2.2" rx="0.6" fill="var(--rule-strong)" />
       <rect x="1" y="6.9" width="6.4" height="2.2" rx="0.6" fill="var(--rule-strong)" />
-      <rect x="8.6" y="6.9" width="6.4" height="2.2" rx="0.6" fill="var(--violet-deep)" />
-      <rect x="1" y="11.4" width="2.8" height="2.2" rx="0.6" fill="var(--violet-deep)" />
+      <rect x="8.6" y="6.9" width="6.4" height="2.2" rx="0.6" fill="var(--violet-half)" />
+      <rect x="1" y="11.4" width="2.8" height="2.2" rx="0.6" fill="var(--violet-half)" />
       <rect x="5" y="11.4" width="2.4" height="2.2" rx="0.6" fill="var(--violet)" />
       <rect x="8.6" y="11.4" width="2.4" height="2.2" rx="0.6" fill="var(--violet)" />
       <rect x="12.2" y="11.4" width="2.8" height="2.2" rx="0.6" fill="var(--red)" />

@@ -1,50 +1,89 @@
 /* Jetons, remise à zéro, éléments nus. Rien qui appartienne à un composant. */
 
-:root {
-  color-scheme: dark;
+/* ---- les deux mondes ----
+   Un `light-dark()` par jeton : une seule déclaration, et c'est le CSS lui-même
+   qui résout la préférence système. Le premier paint est donc déjà juste, ce
+   qu'un `data-theme` posé en JavaScript ne peut pas promettre — la feuille est
+   liée dans le `<head>` et peint le corps avant que le module s'exécute.
 
-  /* Graphite froid, teinté bleu-violet : le châssis, pas le fond de Twitch. */
-  --ground: #090b12;
-  --chassis: #0f121c;
-  --surface: #141824;
-  --surface-raised: #1b2030;
-  --surface-hover: #212739;
+   `data-theme` ne fait que restreindre `color-scheme` : tous les jetons suivent
+   d'eux-mêmes, et avec eux les ascenseurs et le sélecteur natif de date, qui
+   resteraient sombres autrement.
+
+   Nommage : aucun jeton ne porte un mot de luminosité absolue. « bright » et
+   « deep » désignent des sens opposés d'un thème à l'autre — l'insistance est
+   plus claire en sombre, plus foncée en clair. D'où `-strong` (ce qui insiste),
+   `-press` (ce qui est enfoncé) et `-fill` (l'aplat qui porte l'encre). */
+
+:root {
+  color-scheme: light dark;
+
+  /* Clair : papier chaud, filets graphite. Sombre : graphite froid teinté
+     bleu-violet — le châssis, pas le fond de Twitch.
+     Dans les deux cas la profondeur va du fond de page vers la surface de
+     travail : `--ground` est le plus reculé, `--surface` porte le relevé. */
+  --ground: light-dark(#f3f1ed, #090b12);
+  --chassis: light-dark(#f9f8f5, #0f121c);
+  --surface: light-dark(#ffffff, #141824);
+  --surface-raised: light-dark(#ffffff, #1b2030);
+  --surface-hover: light-dark(#ebe8e2, #212739);
+  /* Un bouton enfoncé s'enfonce : en clair il ne peut pas le faire en montant
+     vers le blanc, il lui faut son propre cran sous le survol. */
+  --surface-sunken: light-dark(#ded9d1, #141824);
 
   /* Deux niveaux de filet : le trait de séparation et la couture structurelle. */
-  --rule: #262c3d;
-  --rule-strong: #39415c;
+  --rule: light-dark(#ddd8d0, #262c3d);
+  --rule-strong: light-dark(#b6ada0, #39415c);
 
-  --text: #e7e9f1;
-  --text-dim: #a2a9bd;
+  --text: light-dark(#1b1d24, #e7e9f1);
+  --text-dim: light-dark(#5b6070, #a2a9bd);
   /* Le tiers le plus éteint doit encore tenir 4.5:1 sur la ligne survolée,
-     pas seulement sur le fond de repos : c'est là qu'on lit une date. */
-  --text-faint: #8d97b0;
+     pas seulement sur le fond de repos : c'est là qu'on lit une date.
+     C'est cette contrainte-là qui fixe la valeur claire, pas l'inverse. */
+  --text-faint: light-dark(#62677a, #8d97b0);
 
   /* Trois encres, trois sens. Rien d'autre ne prend de couleur.
-     violet = la trace normale · ambre = recoupée · rouge = perdue */
-  --violet: #a481ff;
-  --violet-bright: #c3aaff;
-  --violet-deep: #6a45c8;
-  --violet-wash: rgb(164 129 255 / 14%);
-  --amber: #f0a63c;
-  --amber-deep: #6a4611;
-  --red: #ff5d5d;
-  --red-bright: #ff9494;
-  --red-deep: #6d1f28;
-  --red-wash: rgb(255 93 93 / 7%);
+     violet = la trace normale · ambre = recoupée · rouge = perdue
+
+     Les valeurs sombres n'ont pas d'équivalent clair par simple inversion :
+     aucune des trois ne tient 4.5:1 sur du papier (violet 2.9:1, ambre 2.1:1,
+     rouge 3.0:1). Le monde clair a donc ses propres encres, choisies pour tenir
+     ce seuil sur la ligne survolée — pas pour ressembler aux autres. */
+  --violet: light-dark(#6b3fd4, #a481ff);
+  --violet-strong: light-dark(#4e2ba0, #c3aaff);
+  --violet-press: light-dark(#3d2080, #6a45c8);
+  --violet-fill: light-dark(#ded0fa, #6a45c8);
+  /* La trace à demi faite, dans `<Mark />` : le cran entre le filet neutre et
+     l'encre pleine. L'aplat de dalle ne peut pas le tenir — pâle sur papier, il
+     s'effacerait de la plaque. */
+  --violet-half: light-dark(#8f6ae8, #6a45c8);
+  --violet-wash: light-dark(rgb(107 63 212 / 10%), rgb(164 129 255 / 14%));
+  --amber: light-dark(#925506, #f0a63c);
+  --amber-fill: light-dark(#f5e0c0, #6a4611);
+  --red: light-dark(#cf2b2b, #ff5d5d);
+  --red-strong: light-dark(#a81b1b, #ff9494);
+  --red-fill: light-dark(#e0a0a0, #6d1f28);
+  --red-wash: light-dark(rgb(207 43 43 / 6%), rgb(255 93 93 / 7%));
 
   /* Le seul texte qui ne soit pas une nuance de `--text` : le libellé posé sur
      l'aplat violet plein, qui doit s'y détacher. */
-  --on-violet: #17102c;
+  --on-violet: light-dark(#f7f4ff, #17102c);
+  /* Pas de `light-dark()`, et c'est le propos : l'aplat enfoncé est sombre dans
+     les deux mondes, donc son libellé est clair dans les deux. */
+  --on-violet-press: #e7e9f1;
 
   /* Ce qui n'est ni aplat ni filet : halos de lampe, zébra de la table, ombre
      du panneau flottant. Chacun tient à un rapport au fond, pas à une teinte —
      c'est ce qui les rend incapables de traverser un changement de thème sans
-     être nommés. */
-  --glow-violet: rgb(164 129 255 / 55%);
-  --glow-red: rgb(255 93 93 / 55%);
-  --zebra: rgb(255 255 255 / 2.2%);
-  --shadow-panel: rgb(0 0 0 / 65%);
+     être nommés.
+
+     Le halo garde sa géométrie en clair : une encre saturée qui diffuse dans du
+     papier est de l'encre qui bave, pas une tache. C'est le halo pâle sur fond
+     pâle qui aurait fait de la bouillie. */
+  --glow-violet: light-dark(rgb(107 63 212 / 45%), rgb(164 129 255 / 55%));
+  --glow-red: light-dark(rgb(207 43 43 / 45%), rgb(255 93 93 / 55%));
+  --zebra: light-dark(rgb(0 0 0 / 3%), rgb(255 255 255 / 2.2%));
+  --shadow-panel: light-dark(rgb(58 48 36 / 18%), rgb(0 0 0 / 65%));
 
   --sans:
     system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
@@ -62,6 +101,17 @@
   --r: 2px;
 
   --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+/* Le choix explicite, posé sur `<html>` par `applyTheme`. Il ne réécrit aucun
+   jeton : il retire l'autre branche de `color-scheme`, et tous les `light-dark()`
+   basculent ensemble. */
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
 }
 
 * {
@@ -83,16 +133,16 @@ a {
   color: var(--violet);
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--violet-deep);
+  text-decoration-color: var(--violet-fill);
 }
 
 a:hover {
-  color: var(--violet-bright);
+  color: var(--violet-strong);
   text-decoration-color: currentcolor;
 }
 
 :focus-visible {
-  outline: 2px solid var(--violet-bright);
+  outline: 2px solid var(--violet-strong);
   outline-offset: 2px;
 }
 

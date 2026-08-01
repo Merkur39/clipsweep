@@ -33,9 +33,9 @@
 }
 
 .status.bad {
-  border-color: var(--red-deep);
+  border-color: var(--red-fill);
   background: var(--red-wash);
-  color: var(--red-bright);
+  color: var(--red-strong);
 }
 
 .status.bad::before {
@@ -57,7 +57,7 @@
   margin: 0 0 var(--s-3);
   font-size: 12px;
   line-height: 1.45;
-  color: var(--red-bright);
+  color: var(--red-strong);
 }
 
 .field-error .icon {
@@ -88,7 +88,7 @@
 .disconnect:hover:not(:disabled) {
   background: var(--surface-raised);
   border-color: var(--red);
-  color: var(--red-bright);
+  color: var(--red-strong);
 }
 
 .disconnect .icon {

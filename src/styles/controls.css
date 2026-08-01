@@ -84,8 +84,10 @@ button:hover:not(:disabled) {
   border-color: var(--violet);
 }
 
+/* Enfoncé, donc plus sombre que le survol. En clair, `--surface` est le blanc
+   du relevé : s'en servir ici ferait s'éclaircir un bouton qu'on presse. */
 button:active:not(:disabled) {
-  background: var(--surface);
+  background: var(--surface-sunken);
 }
 
 button.primary {
@@ -96,14 +98,16 @@ button.primary {
 }
 
 button.primary:hover:not(:disabled) {
-  background: var(--violet-bright);
-  border-color: var(--violet-bright);
+  background: var(--violet-strong);
+  border-color: var(--violet-strong);
 }
 
+/* `--violet-fill` est l'aplat qui porte l'encre — pâle sur papier. Un bouton
+   pressé s'enfonce : il lui faut le violet le plus sombre des deux mondes. */
 button.primary:active:not(:disabled) {
-  background: var(--violet-deep);
-  border-color: var(--violet-deep);
-  color: var(--text);
+  background: var(--violet-press);
+  border-color: var(--violet-press);
+  color: var(--on-violet-press);
 }
 
 /* Le liseré violet sur fond violet est invisible : on le décolle. */
@@ -128,7 +132,7 @@ button.link {
 
 button.link:hover:not(:disabled) {
   background: none;
-  color: var(--violet-bright);
+  color: var(--violet-strong);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -195,7 +199,7 @@ input[type='checkbox']:checked::after {
   top: 1px;
   width: 4px;
   height: 8px;
-  border: solid var(--violet-bright);
+  border: solid var(--violet-strong);
   border-width: 0 1.6px 1.6px 0;
   transform: rotate(43deg);
 }
@@ -205,7 +209,7 @@ input[type='checkbox']:indeterminate::after {
   position: absolute;
   inset: 6px 3px auto;
   height: 0;
-  border-top: 1.6px solid var(--violet-bright);
+  border-top: 1.6px solid var(--violet-strong);
 }
 
 input[type='checkbox']:disabled {

@@ -87,19 +87,19 @@
 /* Chaque état porte une texture en plus de sa teinte : la frise reste lisible
    en niveaux de gris et en deutéranopie. */
 .slab.done {
-  background: var(--violet-deep);
+  background: var(--violet-fill);
   border-top: 1.5px solid var(--violet);
 }
 
 .slab.split {
-  background: var(--amber-deep);
+  background: var(--amber-fill);
   background-image: repeating-linear-gradient(-45deg, transparent 0 3px, var(--amber) 3px 4.5px);
   border-top: 1.5px solid var(--amber);
 }
 
 /* La seule vraie lacune : plein rouge, et le tracé s'échappe par le haut. */
 .slab.lost {
-  background: var(--red-deep);
+  background: var(--red-fill);
   border-top: 2px solid var(--red);
 }
 
@@ -125,7 +125,7 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background: var(--violet-bright);
+  background: var(--violet-strong);
   box-shadow: 0 0 8px 1px var(--glow-violet);
   animation: pen 1.4s ease-in-out infinite;
   pointer-events: none;
@@ -204,18 +204,18 @@
 }
 
 .legend .done {
-  background: var(--violet-deep);
+  background: var(--violet-fill);
   border-top: 1.5px solid var(--violet);
 }
 
 .legend .split {
-  background: var(--amber-deep);
+  background: var(--amber-fill);
   background-image: repeating-linear-gradient(-45deg, transparent 0 3px, var(--amber) 3px 4.5px);
   border-top: 1.5px solid var(--amber);
 }
 
 .legend .lost {
-  background: var(--red-deep);
+  background: var(--red-fill);
   border-top: 2px solid var(--red);
 }
 
