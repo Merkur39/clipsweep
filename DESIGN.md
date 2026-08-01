@@ -1,7 +1,30 @@
 # Design
 
-Le monde visuel de GetClipTwitch, tel qu'il est construit dans `src/styles.css`. Le produit, lui,
-est décrit dans [PRODUCT.md](PRODUCT.md).
+Le monde visuel de GetClipTwitch, tel qu'il est construit dans `src/styles/`. Le produit, lui, est
+décrit dans [PRODUCT.md](PRODUCT.md).
+
+## Où vivent les règles
+
+Une classe vit dans le fichier du composant qui la possède ; le vocabulaire partagé par plusieurs
+composants vit dans `base.css` (jetons, éléments nus) ou `controls.css` (champs, boutons, cases).
+`index.css` ne contient que les `@import`, dont **l'ordre est significatif** : les fichiers de
+composants viennent après `controls.css` parce qu'ils surchargent le bouton et le champ nus
+(`.multiselect-button`, `.col-sort`, `.field-clear`).
+
+| Fichier               | Portée                                                   |
+| --------------------- | -------------------------------------------------------- |
+| `base.css`            | jetons, reset, `a`, focus, `prefers-reduced-motion`      |
+| `chassis.css`         | `App.tsx` — plaque, layout, rail, étiquettes de façade   |
+| `controls.css`        | partagé — champs, boutons, cases à cocher, icônes        |
+| `search-panel.css`    | `SearchPanel.tsx` — la lampe d'état                      |
+| `search-progress.css` | `SearchProgress.tsx` — alerte, repli, compteurs, journal |
+| `chart.css`           | `Frieze.tsx` — la bande graduée et sa légende            |
+| `filters.css`         | `FiltersBar` · `NumberField` · `MultiSelect`             |
+| `table.css`           | `ClipTable.tsx`                                          |
+| `export-panel.css`    | `ExportPanel.tsx`                                        |
+
+Chaque `@media` reste dans le fichier des règles qu'il surcharge — jamais rassemblé en fin de
+course, ce qui séparerait une règle de son adaptation.
 
 ## Parti pris — « Enregistreur »
 
