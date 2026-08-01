@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 import type { LogEntry } from '../domain/log'
+import { formatCount } from '../domain/numbers'
 import { describeSearchStatus } from '../domain/results'
 import type { WindowReport } from '../twitch/clips'
 import type { Progress } from '../twitch/types'
@@ -84,11 +85,15 @@ export function SearchProgress({
         <dl className="tally">
           <div>
             <dt>Périodes</dt>
-            <dd>{progress ? `${progress.windowsDone}/${progress.windowsTotal}` : '0'}</dd>
+            <dd>
+              {progress
+                ? `${formatCount(progress.windowsDone)}/${formatCount(progress.windowsTotal)}`
+                : '0'}
+            </dd>
           </div>
           <div>
             <dt>Requêtes</dt>
-            <dd>{progress?.requests ?? 0}</dd>
+            <dd>{formatCount(progress?.requests ?? 0)}</dd>
           </div>
         </dl>
 

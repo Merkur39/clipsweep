@@ -1,4 +1,5 @@
 import type { Progress } from '../twitch/types'
+import { formatCount } from './numbers'
 
 export interface EmptyResultsInput {
   /** A search has run at least once in this session. */
@@ -11,7 +12,7 @@ export interface EmptyResultsInput {
 }
 
 const plural = (count: number, singular: string, pluralForm = `${singular}s`) =>
-  `${count} ${count > 1 ? pluralForm : singular}`
+  `${formatCount(count)} ${count > 1 ? pluralForm : singular}`
 
 /** Accord d'un participe seul, sans son nom. */
 const agree = (count: number, word: string) => `${word}${count > 1 ? 's' : ''}`
@@ -35,7 +36,7 @@ export function describeSearchStatus({
   if (!progress) return null
 
   if (running) {
-    return `Fouille en cours — ${progress.windowsDone}/${progress.windowsTotal} périodes, ${plural(progress.clipsFound, 'clip')} trouvé${agree(progress.clipsFound, '')}.`
+    return `Fouille en cours — ${formatCount(progress.windowsDone)}/${formatCount(progress.windowsTotal)} périodes, ${plural(progress.clipsFound, 'clip')} trouvé${agree(progress.clipsFound, '')}.`
   }
 
   const total = clipsFound || progress.clipsFound
@@ -56,8 +57,8 @@ export function describeResultCount({ found, shown, selected }: ResultCountInput
 
   return [
     `${plural(found, 'clip')} ${agree(found, 'récupéré')}`,
-    `${shown} ${agree(shown, 'affiché')}`,
-    `${selected} ${agree(selected, 'sélectionné')}`,
+    `${formatCount(shown)} ${agree(shown, 'affiché')}`,
+    `${formatCount(selected)} ${agree(selected, 'sélectionné')}`,
   ].join(' · ')
 }
 

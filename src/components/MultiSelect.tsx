@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 
 import type { Facet } from '../domain/filters'
+import { formatCount } from '../domain/numbers'
 import { ChevronIcon } from './Icon'
 import { describeSelection } from './selectionLabel'
 
@@ -87,7 +88,7 @@ export function MultiSelect({
                 onChange={() => toggle(option.value)}
               />
               <span className="multiselect-option-name">{labelOf(option.value)}</span>
-              <span className="multiselect-option-count">{option.count}</span>
+              <span className="multiselect-option-count">{formatCount(option.count)}</span>
             </label>
           ))}
         </div>

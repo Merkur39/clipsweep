@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { formatCount } from '../domain/numbers'
 import type { WindowReport } from '../twitch/clips'
 
 export interface Span {
@@ -167,7 +168,7 @@ export function Frieze({
               {day(hovered.window.startedAt)} → {day(hovered.window.endedAt)}
             </span>
             <span className="muted">·</span>
-            <span>{hovered.clipCount} clips</span>
+            <span>{formatCount(hovered.clipCount)} clips</span>
             <span className="muted">·</span>
             <span className="muted">{KIND_LABEL[kindOf(hovered)]}</span>
           </>
