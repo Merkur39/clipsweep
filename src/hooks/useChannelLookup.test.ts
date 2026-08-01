@@ -15,6 +15,16 @@ vi.mock('../twitch/api', () => ({
   },
 }))
 
+// jsdom n'expose pas de vrai Storage dans ce montage : on simule le module de
+// cache plutôt que le global. Sa logique a ses propres tests.
+const cacheRead = vi.fn<(login: string) => string | null>()
+vi.mock('../domain/channelCache', () => ({
+  channelCache: {
+    read: (login: string) => cacheRead(login),
+    remember: vi.fn(),
+  },
+}))
+
 const session: Session = { clientId: 'c', accessToken: 't', expiresInSeconds: 3600 }
 const user = (login: string, createdAt: string) =>
   ({
@@ -25,7 +35,10 @@ const user = (login: string, createdAt: string) =>
     created_at: createdAt,
   }) as TwitchUser
 
-beforeEach(() => vi.useFakeTimers())
+beforeEach(() => {
+  vi.useFakeTimers()
+  cacheRead.mockReturnValue(null)
+})
 afterEach(() => {
   vi.useRealTimers()
   cleanup()
@@ -107,6 +120,29 @@ describe('useChannelLookup', () => {
     rerender({ nom: 'autrechaine' })
 
     expect(result.current).toBeNull()
+  })
+
+  // Une chaîne déjà fouillée a sa date en cache : la redemander à Helix à
+  // chaque rechargement serait une requête pour rien.
+  it('rend une date connue sans interroger l’API', async () => {
+    cacheRead.mockReturnValue('2017-07-10')
+
+    const { result } = renderHook(() => useChannelLookup(session, 'kaliyami'))
+
+    expect(result.current).toBe('2017-07-10')
+    await settle()
+    expect(fetchUser).not.toHaveBeenCalled()
+  })
+
+  it('interroge l’API pour une chaîne absente du cache', async () => {
+    cacheRead.mockReturnValue(null)
+    fetchUser.mockResolvedValue(user('kaliyami', '2017-07-10T00:00:00Z'))
+
+    const { result } = renderHook(() => useChannelLookup(session, 'kaliyami'))
+    await settle()
+
+    expect(fetchUser).toHaveBeenCalledWith('kaliyami')
+    expect(result.current).toBe('2017-07-10')
   })
 
   it('reste silencieux sur une chaîne introuvable', async () => {

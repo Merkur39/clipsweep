@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 
+import { channelCache } from '../domain/channelCache'
 import { TwitchApi } from '../twitch/api'
 import type { Session } from '../twitch/auth'
 
@@ -18,8 +19,12 @@ export function useChannelLookup(session: Session | null, channel: string): stri
   const [resolved, setResolved] = useState<{ login: string; createdAt: string } | null>(null)
   const wanted = channel.trim().toLowerCase()
 
+  // A channel already searched has its date on hand: asking Helix again on every
+  // reload would be a request for something that cannot have changed.
+  const cached = wanted ? channelCache.read(wanted) : null
+
   useEffect(() => {
-    if (!session || !wanted) return
+    if (!session || !wanted || channelCache.read(wanted)) return
 
     const controller = new AbortController()
     // Without the delay every keystroke would query the API for a prefix that
@@ -38,5 +43,5 @@ export function useChannelLookup(session: Session | null, channel: string): stri
     }
   }, [session, wanted])
 
-  return resolved?.login === wanted ? resolved.createdAt : null
+  return cached ?? (resolved?.login === wanted ? resolved.createdAt : null)
 }

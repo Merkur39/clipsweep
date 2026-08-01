@@ -20,6 +20,12 @@ vi.mock('../twitch/api', async (importOriginal) => ({
   },
 }))
 
+// jsdom n'expose pas de vrai Storage ici ; la logique du cache a ses tests.
+const remember = vi.fn()
+vi.mock('../domain/channelCache', () => ({
+  channelCache: { read: () => null, remember: (...args: unknown[]) => remember(...args) },
+}))
+
 afterEach(cleanup)
 
 const session: Session = { clientId: 'c', accessToken: 't', expiresInSeconds: 3600 }
@@ -106,6 +112,29 @@ describe('useClipSearch', () => {
 
     await waitFor(() => expect(result.current.clips).toHaveLength(1))
     expect(texteJournal(result.current.logEntries)).toContain('Noms des jeux indisponibles')
+  })
+
+  // Le cache n'est alimenté que par une fouille réellement lancée, jamais par
+  // une simple résolution de saisie.
+  it('retient la chaîne fouillée avec sa date de création', async () => {
+    channelFound()
+    fetchPage.mockResolvedValue({ clips: [] })
+    fetchGameNames.mockResolvedValue(new Map())
+
+    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    await act(async () => result.current.start(request))
+
+    await waitFor(() => expect(remember).toHaveBeenCalledWith('kaliyami', '2017-07-10'))
+  })
+
+  it('ne retient rien quand la chaîne est introuvable', async () => {
+    fetchUser.mockRejectedValue(new Error('Chaîne introuvable'))
+
+    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    await act(async () => result.current.start(request))
+
+    await waitFor(() => expect(result.current.running).toBe(false))
+    expect(remember).not.toHaveBeenCalled()
   })
 
   it('signale un jeton refusé à l’appelant', async () => {

@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 
+import { channelCache } from '../domain/channelCache'
 import { makeLogAppender, type LogEntry, type LogKind } from '../domain/log'
 import { TokenRejectedError, TwitchApi } from '../twitch/api'
 import type { Session } from '../twitch/auth'
@@ -87,6 +88,9 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
       try {
         const api = new TwitchApi(session, controller.signal)
         const user = await api.fetchUser(channel)
+        // Retenue seulement ici : une chaîne réellement fouillée mérite sa place
+        // en cache, un préfixe croisé au fil de la frappe non.
+        channelCache.remember(user.login, user.created_at.slice(0, 10))
         log(
           `Chaîne : ${user.display_name} (id ${user.id}), créée le ${user.created_at.slice(0, 10)}.`,
           'good',
