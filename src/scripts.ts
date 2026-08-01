@@ -1,5 +1,31 @@
 export type ScriptFlavor = 'bat' | 'sh'
 
+export interface PlatformHints {
+  /** `navigator.userAgentData.platform`, when the browser exposes it. */
+  platform?: string
+  userAgent: string
+}
+
+/**
+ * Which script the visitor can actually run, or null when we cannot tell —
+ * including on mobile, where neither one launches. Null means "show both and
+ * let them choose" rather than "guess".
+ */
+export function detectScriptFlavor({ platform, userAgent }: PlatformHints): ScriptFlavor | null {
+  const hint = platform?.trim()
+  if (hint) {
+    if (/^windows/i.test(hint)) return 'bat'
+    if (/^(macos|linux)$/i.test(hint)) return 'sh'
+    return null
+  }
+
+  // Mobile first: an Android UA also says "Linux", an iPad one says "Mac OS X".
+  if (/Android|iPhone|iPad|iPod/i.test(userAgent)) return null
+  if (/Windows NT/i.test(userAgent)) return 'bat'
+  if (/Macintosh|Mac OS X|X11|Linux/i.test(userAgent)) return 'sh'
+  return null
+}
+
 const YTDLP_RELEASE = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download'
 
 /**

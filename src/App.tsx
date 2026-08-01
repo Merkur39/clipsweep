@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ClipTable } from './components/ClipTable'
 import { Frieze, type Span } from './components/Frieze'
 import { makeLogAppender, type LogEntry, type LogKind } from './log'
-import { buildDownloadScript } from './scripts'
+import { buildDownloadScript, detectScriptFlavor, type ScriptFlavor } from './scripts'
 import { TokenRejectedError, TwitchApi } from './twitch/api'
 import {
   authorizeUrl,
@@ -85,6 +85,14 @@ export default function App({ authError }: { authError: string | null }) {
   const [progress, setProgress] = useState<Progress | null>(null)
   const [logEntries, setLogEntries] = useState<LogEntry[]>([])
   const [channelCreatedAt, setChannelCreatedAt] = useState<string | null>(null)
+  // Read once: the visitor's machine does not change mid-session.
+  const [flavor] = useState(() =>
+    detectScriptFlavor({
+      platform: (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData
+        ?.platform,
+      userAgent: navigator.userAgent,
+    }),
+  )
   const abortRef = useRef<AbortController | null>(null)
   const logRef = useRef<HTMLDivElement>(null)
   const appendRef = useRef(makeLogAppender(LOG_LIMIT))
@@ -226,6 +234,21 @@ export default function App({ authError }: { authError: string | null }) {
   }
 
   const stamp = `${channel || 'clips'}_${day(new Date())}`
+
+  const downloadLabel = shown.length
+    ? `Télécharger ${shown.length === 1 ? 'le clip' : `les ${shown.length} clips`}`
+    : 'Télécharger les clips'
+
+  const downloadScript = (target: ScriptFlavor) =>
+    download(
+      `${stamp}.${target}`,
+      buildDownloadScript(
+        target,
+        channel,
+        shown.map((clip) => clip.url),
+      ),
+      'text/plain',
+    )
 
   return (
     <div className="page">
@@ -414,78 +437,98 @@ export default function App({ authError }: { authError: string | null }) {
           </div>
 
           <p className="eyebrow">Résultats</p>
-          <div className="bar">
-            <button
-              type="button"
-              disabled={!shown.length}
-              onClick={() => download(`${stamp}.csv`, toCsv(shown), 'text/csv')}
-            >
-              CSV
-            </button>
-            <button
-              type="button"
-              disabled={!shown.length}
-              onClick={() =>
-                download(`${stamp}.json`, JSON.stringify(shown, null, 2), 'application/json')
-              }
-            >
-              JSON
-            </button>
-            <button
-              type="button"
-              disabled={!shown.length}
-              onClick={() =>
-                download(
-                  `${stamp}_urls.txt`,
-                  shown.map((clip) => clip.url).join('\n'),
-                  'text/plain',
-                )
-              }
-            >
-              URLs
-            </button>
-            <button
-              type="button"
-              disabled={!shown.length}
-              title="Enregistrer dans un dossier, puis double-cliquer. Le script récupère yt-dlp au besoin, après confirmation."
-              onClick={() =>
-                download(
-                  `${stamp}.bat`,
-                  buildDownloadScript(
-                    'bat',
-                    channel,
-                    shown.map((clip) => clip.url),
-                  ),
-                  'text/plain',
-                )
-              }
-            >
-              Script Windows (.bat)
-            </button>
-            <button
-              type="button"
-              disabled={!shown.length}
-              title="Enregistrer, puis : chmod +x fichier.sh && ./fichier.sh. Le script récupère yt-dlp au besoin, après confirmation."
-              onClick={() =>
-                download(
-                  `${stamp}.sh`,
-                  buildDownloadScript(
-                    'sh',
-                    channel,
-                    shown.map((clip) => clip.url),
-                  ),
-                  'text/plain',
-                )
-              }
-            >
-              Script macOS · Linux (.sh)
-            </button>
-            <span className="count">
-              {shown.length
-                ? `${shown.length} clips affichés${maxViews !== null ? ` sur ${clips.length} récupérés` : ''}`
-                : ''}
-            </span>
-          </div>
+
+          <section className="group">
+            <h2>Télécharger les vidéos</h2>
+            <p className="group-lede">
+              Un script à lancer sur ta machine : il installe yt-dlp au besoin, puis récupère les
+              clips.
+            </p>
+            <div className="group-actions">
+              {(flavor ?? 'bat') === 'bat' && (
+                <button
+                  type="button"
+                  className={flavor ? 'primary' : ''}
+                  disabled={!shown.length}
+                  title="Enregistrer dans un dossier, puis double-cliquer."
+                  onClick={() => downloadScript('bat')}
+                >
+                  {flavor ? downloadLabel : 'Script Windows (.bat)'}
+                </button>
+              )}
+              {(flavor ?? 'sh') === 'sh' && (
+                <button
+                  type="button"
+                  className={flavor ? 'primary' : ''}
+                  disabled={!shown.length}
+                  title="Enregistrer, puis : chmod +x fichier.sh && ./fichier.sh"
+                  onClick={() => downloadScript('sh')}
+                >
+                  {flavor ? downloadLabel : 'Script macOS · Linux (.sh)'}
+                </button>
+              )}
+            </div>
+            {flavor && (
+              <p className="hint">
+                {flavor === 'bat'
+                  ? 'Script Windows (.bat) — enregistrer dans un dossier, puis double-cliquer. '
+                  : 'Script macOS · Linux (.sh) — enregistrer, puis chmod +x et lancer. '}
+                <button
+                  type="button"
+                  className="link"
+                  disabled={!shown.length}
+                  onClick={() => downloadScript(flavor === 'bat' ? 'sh' : 'bat')}
+                >
+                  {flavor === 'bat' ? 'Je suis sur macOS ou Linux' : 'Je suis sur Windows'}
+                </button>
+              </p>
+            )}
+          </section>
+
+          <section className="group">
+            <h2>Exporter la liste</h2>
+            <p className="group-lede">
+              Les métadonnées des clips, sans les vidéos — pour un tableur ou un autre outil.
+            </p>
+            <div className="group-actions">
+              <button
+                type="button"
+                disabled={!shown.length}
+                onClick={() => download(`${stamp}.csv`, toCsv(shown), 'text/csv')}
+              >
+                CSV
+              </button>
+              <button
+                type="button"
+                disabled={!shown.length}
+                onClick={() =>
+                  download(`${stamp}.json`, JSON.stringify(shown, null, 2), 'application/json')
+                }
+              >
+                JSON
+              </button>
+              <button
+                type="button"
+                disabled={!shown.length}
+                title="Une URL par ligne, pour yt-dlp -a"
+                onClick={() =>
+                  download(
+                    `${stamp}_urls.txt`,
+                    shown.map((clip) => clip.url).join('\n'),
+                    'text/plain',
+                  )
+                }
+              >
+                URLs
+              </button>
+              <span className="count">
+                {shown.length
+                  ? `${shown.length} clips${maxViews !== null ? ` sur ${clips.length} récupérés` : ''}`
+                  : ''}
+              </span>
+            </div>
+          </section>
+
           <ClipTable clips={shown} />
         </main>
       </div>

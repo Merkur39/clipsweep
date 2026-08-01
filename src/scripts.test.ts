@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildDownloadScript } from './scripts'
+import { buildDownloadScript, detectScriptFlavor } from './scripts'
 
 const URLS = [
   'https://www.twitch.tv/kaliyami/clip/SpotlessVenomousPterodactylMikeHogu-RzvnjSqiUhzTIIdE',
@@ -9,6 +9,38 @@ const URLS = [
 
 const bat = (urls = URLS, channel = 'kaliyami') => buildDownloadScript('bat', channel, urls)
 const sh = (urls = URLS, channel = 'kaliyami') => buildDownloadScript('sh', channel, urls)
+
+describe('detectScriptFlavor', () => {
+  const ua = (userAgent: string, platform?: string) => detectScriptFlavor({ userAgent, platform })
+
+  it('fait confiance à userAgentData quand il est disponible', () => {
+    expect(ua('', 'Windows')).toBe('bat')
+    expect(ua('', 'macOS')).toBe('sh')
+    expect(ua('', 'Linux')).toBe('sh')
+  })
+
+  it('préfère userAgentData à la chaîne userAgent', () => {
+    expect(ua('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'Linux')).toBe('sh')
+  })
+
+  it('retombe sur la chaîne userAgent', () => {
+    expect(ua('Mozilla/5.0 (Windows NT 10.0; Win64; x64) Firefox/141.0')).toBe('bat')
+    expect(ua('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1')).toBe('sh')
+    expect(ua('Mozilla/5.0 (X11; Linux x86_64) Chrome/140.0')).toBe('sh')
+  })
+
+  it('renonce sur mobile, où aucun des deux scripts ne se lance', () => {
+    expect(ua('Mozilla/5.0 (Linux; Android 15; Pixel 9) Chrome/140.0')).toBeNull()
+    expect(ua('Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X)')).toBeNull()
+    expect(ua('Mozilla/5.0 (iPad; CPU OS 18_5 like Mac OS X)')).toBeNull()
+    expect(ua('', 'Android')).toBeNull()
+  })
+
+  it('renonce plutôt que de deviner sur un agent inconnu', () => {
+    expect(ua('')).toBeNull()
+    expect(ua('quelque chose de bizarre')).toBeNull()
+  })
+})
 
 describe('buildDownloadScript, quelle que soit la variante', () => {
   it('embarque chaque URL de clip', () => {
