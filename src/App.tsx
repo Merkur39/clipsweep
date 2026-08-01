@@ -445,6 +445,26 @@ export default function App({ authError }: { authError: string | null }) {
 
           <p className="eyebrow">Résultats</p>
 
+          <ClipTable
+            clips={shown}
+            deselected={deselected}
+            onToggle={(id) => setDeselected((previous) => toggle(previous, id))}
+            onToggleAll={() => setDeselected((previous) => toggleAll(shown, previous))}
+            emptyMessage={describeEmptyResults({
+              searched: progress !== null,
+              clipsFound: clips.length,
+              maxViews,
+            })}
+            emptyAction={
+              clips.length > 0 && maxViews !== null
+                ? {
+                    label: `Voir les ${clips.length}`,
+                    onClick: () => setMaxViewsInput(''),
+                  }
+                : undefined
+            }
+          />
+
           <section className="group">
             <h2>Télécharger les vidéos</h2>
             <p className="group-lede">
@@ -480,6 +500,7 @@ export default function App({ authError }: { authError: string | null }) {
                 {flavor === 'bat'
                   ? 'Script Windows (.bat) — enregistrer dans un dossier, puis double-cliquer. '
                   : 'Script macOS · Linux (.sh) — enregistrer, puis chmod +x et lancer. '}
+                <br />
                 <button
                   type="button"
                   className="link"
@@ -535,26 +556,6 @@ export default function App({ authError }: { authError: string | null }) {
               </span>
             </div>
           </section>
-
-          <ClipTable
-            clips={shown}
-            deselected={deselected}
-            onToggle={(id) => setDeselected((previous) => toggle(previous, id))}
-            onToggleAll={() => setDeselected((previous) => toggleAll(shown, previous))}
-            emptyMessage={describeEmptyResults({
-              searched: progress !== null,
-              clipsFound: clips.length,
-              maxViews,
-            })}
-            emptyAction={
-              clips.length > 0 && maxViews !== null
-                ? {
-                    label: `Voir les ${clips.length}`,
-                    onClick: () => setMaxViewsInput(''),
-                  }
-                : undefined
-            }
-          />
         </main>
       </div>
     </div>

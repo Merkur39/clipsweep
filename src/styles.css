@@ -402,7 +402,7 @@ details li {
   border-radius: 6px;
   background: var(--panel);
   padding: 14px 16px;
-  margin-bottom: 12px;
+  margin-top: 12px;
 }
 
 .group h2 {
@@ -455,7 +455,7 @@ details li {
 .table-head,
 .table-row {
   display: grid;
-  grid-template-columns: 22px 72px 108px 1fr 160px;
+  grid-template-columns: 26px 72px 108px 1fr 160px;
   align-items: center;
   gap: 12px;
   padding: 0 14px;
@@ -513,7 +513,6 @@ details li {
   font-family: var(--mono);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  text-align: right;
 }
 
 .table-row .col-views.zero {
