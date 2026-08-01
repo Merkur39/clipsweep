@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 
-import type { Facet } from '../filters'
+import type { Facet } from '../domain/filters'
 import { describeSelection } from './selectionLabel'
 
 export interface MultiSelectProps {
@@ -21,7 +21,10 @@ export function MultiSelect({
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
-  const panelId = useId()
+  const baseId = useId()
+  const panelId = `${baseId}-panel`
+  const labelId = `${baseId}-label`
+  const valueId = `${baseId}-value`
 
   useEffect(() => {
     if (!open) return
@@ -48,7 +51,9 @@ export function MultiSelect({
 
   return (
     <div className="multiselect" ref={rootRef}>
-      <span className="field-label">{label}</span>
+      <span className="field-label" id={labelId}>
+        {label}
+      </span>
       <button
         type="button"
         className="multiselect-button"
@@ -56,8 +61,13 @@ export function MultiSelect({
         disabled={options.length === 0}
         aria-expanded={open}
         aria-controls={panelId}
+        // Sans ça le nom accessible se réduit à la valeur : « Ori », sans dire
+        // de quelle facette il s'agit.
+        aria-labelledby={`${labelId} ${valueId}`}
       >
-        <span className="multiselect-value">{describeSelection(selected, labelOf)}</span>
+        <span className="multiselect-value" id={valueId}>
+          {describeSelection(selected, labelOf)}
+        </span>
         <span aria-hidden="true">▾</span>
       </button>
 

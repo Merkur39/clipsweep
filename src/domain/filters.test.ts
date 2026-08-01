@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { applyFilters, facets, NO_FILTERS } from './filters'
-import type { Clip } from './twitch/types'
+import type { Clip } from '../twitch/types'
 
 const clip = (over: Partial<Clip> & { id: string }): Clip => ({
   url: `https://www.twitch.tv/kaliyami/clip/${over.id}`,

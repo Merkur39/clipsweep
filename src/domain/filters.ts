@@ -1,4 +1,4 @@
-import type { Clip } from './twitch/types'
+import type { Clip } from '../twitch/types'
 
 export interface ClipFilters {
   minViews: number | null

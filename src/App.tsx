@@ -1,14 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ClipTable } from './components/ClipTable'
-import { Frieze, type Span } from './components/Frieze'
-import { MultiSelect } from './components/MultiSelect'
-import { NumberField } from './components/NumberField'
-import { makeLogAppender, type LogEntry, type LogKind } from './log'
-import { describeEmptyResults } from './results'
-import { buildDownloadScript, detectScriptFlavor, type ScriptFlavor } from './scripts'
-import { selectedClips, toggle, toggleAll } from './selection'
-import { TokenRejectedError, TwitchApi } from './twitch/api'
+import { ExportPanel } from './components/ExportPanel'
+import { FiltersBar } from './components/FiltersBar'
+import { SearchPanel } from './components/SearchPanel'
+import { SearchProgress } from './components/SearchProgress'
+import { applyFilters, facets } from './domain/filters'
+import { describeEmptyResults } from './domain/results'
+import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
+import { selectedClips, toggle, toggleAll } from './domain/selection'
+import { useChannelLookup } from './hooks/useChannelLookup'
+import { useClipSearch } from './hooks/useClipSearch'
 import {
   authorizeUrl,
   BUILD_TIME_CLIENT_ID,
@@ -17,11 +19,7 @@ import {
   validateToken,
   type Session,
 } from './twitch/auth'
-import { applyFilters, facets } from './filters'
-import { collectClips, type WindowReport } from './twitch/clips'
-import type { Clip, Progress, TwitchUser } from './twitch/types'
-import { splitByYear } from './twitch/windows'
-const LOG_LIMIT = 500
+import type { Clip } from './twitch/types'
 
 const day = (date: Date) => date.toISOString().slice(0, 10)
 
@@ -87,21 +85,6 @@ export default function App({ authError }: { authError: string | null }) {
   const [maxViewsInput, setMaxViewsInput] = useState('')
   const [creators, setCreators] = useState<readonly string[]>([])
   const [gameIds, setGameIds] = useState<readonly string[]>([])
-  const [gameNames, setGameNames] = useState<ReadonlyMap<string, string>>(() => new Map())
-
-  const [running, setRunning] = useState(false)
-  const [clips, setClips] = useState<Clip[]>([])
-  const [reports, setReports] = useState<WindowReport[]>([])
-  const [incomplete, setIncomplete] = useState<WindowReport[]>([])
-  const [span, setSpan] = useState<Span | null>(null)
-  const [progress, setProgress] = useState<Progress | null>(null)
-  const [logEntries, setLogEntries] = useState<LogEntry[]>([])
-  // Le login résolu voyage avec sa date : comparé à la saisie courante, il rend
-  // toute réponse tardive inoffensive au lieu d'écraser une chaîne plus récente.
-  const [resolvedChannel, setResolvedChannel] = useState<{
-    login: string
-    createdAt: string
-  } | null>(null)
   // Exclusions, not selections: everything starts checked, including clips that
   // appear later when the threshold is raised.
   const [deselected, setDeselected] = useState<ReadonlySet<string>>(() => new Set())
@@ -113,17 +96,16 @@ export default function App({ authError }: { authError: string | null }) {
       userAgent: navigator.userAgent,
     }),
   )
-  const abortRef = useRef<AbortController | null>(null)
-  const logRef = useRef<HTMLDivElement>(null)
-  const appendRef = useRef(makeLogAppender(LOG_LIMIT))
-
-  const log = useCallback((text: string, kind?: LogKind) => {
-    setLogEntries(appendRef.current(text, kind))
+  const onTokenRejected = useCallback(() => {
+    // Drop the session, otherwise the disabled connect button traps the user.
+    tokenStore.clear()
+    setSession(null)
+    setAuthMessage('Jeton expiré. Reconnecte-toi.')
+    setAuthKind('bad')
   }, [])
 
-  useEffect(() => {
-    logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
-  }, [logEntries])
+  const search = useClipSearch(session, onTokenRejected)
+  const { clips, reports, incomplete, progress, span, logEntries, gameNames, running } = search
 
   // The fragment was already consumed in main.tsx; here we only confirm the
   // stored token is still live.
@@ -148,32 +130,7 @@ export default function App({ authError }: { authError: string | null }) {
 
   const connect = () => location.assign(authorizeUrl(BUILD_TIME_CLIENT_ID, redirectUri()))
 
-  const wantedLogin = channel.trim().toLowerCase()
-  // Une réponse ne vaut que pour la chaîne actuellement saisie.
-  const channelCreatedAt = resolvedChannel?.login === wantedLogin ? resolvedChannel.createdAt : null
-
-  // Résout la chaîne dès la saisie, pour pouvoir proposer sa date de création
-  // avant la première fouille. Temporisé : sans ça, chaque lettre tapée
-  // déclencherait une requête pour un préfixe qui n'existe pas.
-  useEffect(() => {
-    if (!session || !wantedLogin) return
-
-    const controller = new AbortController()
-    const timer = setTimeout(() => {
-      new TwitchApi(session, controller.signal)
-        .fetchUser(wantedLogin)
-        .then((user) =>
-          setResolvedChannel({ login: user.login, createdAt: user.created_at.slice(0, 10) }),
-        )
-        // Chaîne inexistante ou saisie abandonnée : le lien reste simplement absent.
-        .catch(() => {})
-    }, 500)
-
-    return () => {
-      clearTimeout(timer)
-      controller.abort()
-    }
-  }, [session, wantedLogin])
+  const channelCreatedAt = useChannelLookup(session, channel)
 
   const maxViews = numberOrNull(maxViewsInput)
   const minViews = numberOrNull(minViewsInput)
@@ -195,10 +152,9 @@ export default function App({ authError }: { authError: string | null }) {
   }
   const selected = useMemo(() => selectedClips(shown, deselected), [shown, deselected])
 
-  const run = async () => {
+  const run = () => {
     if (running) {
-      abortRef.current?.abort()
-      log('Arrêt demandé.', 'warn')
+      search.stop()
       return
     }
     if (!session) {
@@ -206,117 +162,14 @@ export default function App({ authError }: { authError: string | null }) {
       setAuthKind('bad')
       return
     }
-
-    const from = new Date(`${since}T00:00:00Z`)
-    const to = new Date(`${until}T23:59:59Z`)
-    if (!(from < to)) {
-      log('La date de début doit précéder la date de fin.', 'err')
-      return
-    }
-
-    const controller = new AbortController()
-    abortRef.current = controller
-    setRunning(true)
-    setClips([])
+    // Une nouvelle fouille repart d'une sélection et de filtres vierges : garder
+    // un seuil de la fouille précédente donnerait une table vide inexpliquée.
     setDeselected(new Set())
-    setGameNames(new Map())
-    setMinViewsInput('')
-    setMaxViewsInput('')
-    setCreators([])
-    setGameIds([])
-    setReports([])
-    setIncomplete([])
-    setProgress(null)
-    setLogEntries([])
-    setSpan({ from: from.getTime(), to: to.getTime() })
-
-    try {
-      const api = new TwitchApi(session, controller.signal)
-      const user: TwitchUser = await api.fetchUser(channel)
-      setResolvedChannel({ login: user.login, createdAt: user.created_at.slice(0, 10) })
-      log(
-        `Chaîne : ${user.display_name} (id ${user.id}), créée le ${user.created_at.slice(0, 10)}.`,
-        'good',
-      )
-      if (Date.parse(user.created_at) < from.getTime()) {
-        log(
-          `La chaîne est antérieure au ${since} : les clips plus anciens sont hors périmètre.`,
-          'warn',
-        )
-      }
-
-      // Amorçage annuel : la bissection resserre ensuite d'elle-même là où
-      // les clips sont denses.
-      const windows = splitByYear(from, to)
-      log(`${windows.length} fenêtre(s) annuelle(s) à explorer, resserrées si besoin.`)
-
-      const result = await collectClips({
-        windows,
-        fetchPage: api.clipPageFetcher(user.id),
-        signal: controller.signal,
-        onProgress: setProgress,
-        onWindow: (report) => {
-          setReports((previous) => [...previous, report])
-          const label = `${report.window.startedAt.slice(0, 10)} → ${report.window.endedAt.slice(0, 10)}`
-          const pad = '  '.repeat(report.depth)
-          if (report.split)
-            log(`${pad}${label} saturée (${report.clipCount}), recoupée en deux`, 'warn')
-          else if (report.saturated)
-            log(
-              `${pad}${label} : ${report.clipCount} clips — encore saturée au plancher, des clips manquent`,
-              'err',
-            )
-          else if (report.clipCount) log(`${pad}${label} : ${report.clipCount} clips`)
-        },
-      })
-
-      setClips(result.clips)
-      setIncomplete(result.incomplete)
-      log(`${result.clips.length} clips uniques en ${result.requests} requêtes.`, 'good')
-      if (controller.signal.aborted) log('Fouille interrompue : le résultat est partiel.', 'warn')
-
-      // Helix ne renvoie qu'un game_id : sans cette résolution, le filtre par
-      // jeu n'offrirait que des identifiants numériques. Accessoire, donc un
-      // échec ici ne doit pas invalider la fouille.
-      try {
-        const names = await api.fetchGameNames(result.clips.map((clip) => clip.game_id))
-        setGameNames(names)
-      } catch {
-        log('Noms des jeux indisponibles : le filtre listera les identifiants.', 'warn')
-      }
-    } catch (cause) {
-      const error = cause as Error
-      if (error.name === 'AbortError') return
-      log(`Échec : ${error.message}`, 'err')
-      if (error instanceof TokenRejectedError) {
-        // Drop the session, otherwise the disabled connect button traps the user.
-        tokenStore.clear()
-        setSession(null)
-        setAuthMessage('Jeton expiré. Reconnecte-toi.')
-        setAuthKind('bad')
-      }
-    } finally {
-      setRunning(false)
-      abortRef.current = null
-    }
+    resetFilters()
+    void search.start({ channel, since, until })
   }
 
   const stamp = `${channel || 'clips'}_${day(new Date())}`
-
-  const downloadLabel = selected.length
-    ? `Télécharger ${selected.length === 1 ? 'le clip' : `les ${selected.length} clips`}`
-    : 'Télécharger les clips'
-
-  const downloadScript = (target: ScriptFlavor) =>
-    download(
-      `${stamp}.${target}`,
-      buildDownloadScript(
-        target,
-        channel,
-        selected.map((clip) => clip.url),
-      ),
-      'text/plain',
-    )
 
   return (
     <div className="page">
@@ -328,143 +181,51 @@ export default function App({ authError }: { authError: string | null }) {
       </header>
 
       <div className="layout">
-        <aside className="rail">
-          <p className="eyebrow">Accès</p>
-          <div className={`status ${authKind}`}>{authMessage}</div>
-          <button
-            type="button"
-            className="primary wide"
-            onClick={connect}
-            disabled={session !== null || !BUILD_TIME_CLIENT_ID}
-          >
-            {session ? 'Connecté à Twitch' : 'Se connecter à Twitch'}
-          </button>
-
-          <p className="eyebrow">Cible</p>
-          <label>
-            <span>Chaîne</span>
-            <input
-              value={channel}
-              onChange={(event) => setChannel(event.target.value)}
-              spellCheck={false}
-            />
-          </label>
-          <div className="duo">
-            <label>
-              <span>Depuis</span>
-              <input type="date" value={since} onChange={(event) => setSince(event.target.value)} />
-            </label>
-            <label>
-              <span>Jusqu'au</span>
-              <input type="date" value={until} onChange={(event) => setUntil(event.target.value)} />
-            </label>
-          </div>
-          {channelCreatedAt && channelCreatedAt < since && (
-            <button type="button" className="link" onClick={() => setSince(channelCreatedAt)}>
-              Remonter à la création de la chaîne ({channelCreatedAt})
-            </button>
-          )}
-          <button type="button" className="wide" onClick={() => void run()}>
-            {running ? 'Arrêter' : 'Lancer la fouille'}
-          </button>
-        </aside>
+        <SearchPanel
+          authMessage={authMessage}
+          authKind={authKind}
+          connected={session !== null}
+          canConnect={Boolean(BUILD_TIME_CLIENT_ID)}
+          onConnect={connect}
+          channel={channel}
+          onChannelChange={setChannel}
+          since={since}
+          onSinceChange={setSince}
+          until={until}
+          onUntilChange={setUntil}
+          channelCreatedAt={channelCreatedAt}
+          running={running}
+          onRun={run}
+        />
 
         <main className="stage">
-          <p className="eyebrow">Découpage du temps</p>
-          <Frieze reports={reports} span={span} />
-          <div className="legend">
-            <span>
-              <b className="done" />
-              fenêtre complète
-            </span>
-            <span>
-              <b className="split" />
-              saturée, recoupée
-            </span>
-            <span>
-              <b className="lost" />
-              saturée au plancher — clips manquants
-            </span>
-          </div>
-
-          <dl className="tally">
-            <div>
-              <dt>Fenêtres</dt>
-              <dd>{progress ? `${progress.windowsDone}/${progress.windowsTotal}` : '0'}</dd>
-            </div>
-            <div>
-              <dt>Requêtes</dt>
-              <dd>{progress?.requests ?? 0}</dd>
-            </div>
-            <div>
-              <dt>Clips uniques</dt>
-              <dd>{clips.length || progress?.clipsFound || 0}</dd>
-            </div>
-            <div>
-              <dt>Sélectionnés</dt>
-              <dd>{selected.length}</dd>
-            </div>
-          </dl>
-
-          {incomplete.length > 0 && (
-            <p className="alert">
-              {incomplete.length} fenêtre(s) encore saturée(s) au plancher de 6 h : le résultat
-              n'est pas exhaustif sur ces périodes. Réduis la fenêtre de départ ou resserre
-              l'intervalle de dates.
-            </p>
-          )}
-
-          <p className="eyebrow">Journal</p>
-          <div className="log" ref={logRef}>
-            {logEntries.length === 0 ? (
-              <p>En attente.</p>
-            ) : (
-              logEntries.map((entry) => (
-                <p key={entry.id} className={entry.kind}>
-                  {entry.text}
-                </p>
-              ))
-            )}
-          </div>
+          <SearchProgress
+            reports={reports}
+            span={span}
+            progress={progress}
+            incomplete={incomplete}
+            clipsFound={clips.length}
+            selectedCount={selected.length}
+            logEntries={logEntries}
+          />
 
           <p className="eyebrow">Résultats</p>
 
-          <div className="filters">
-            <NumberField
-              label="Vues min"
-              placeholder="aucune"
-              value={minViewsInput}
-              onChange={setMinViewsInput}
-            />
-            <NumberField
-              label="Vues max"
-              placeholder="aucune"
-              value={maxViewsInput}
-              onChange={setMaxViewsInput}
-            />
-            <MultiSelect
-              label="Créateurs"
-              options={creatorFacets}
-              selected={creators}
-              onChange={setCreators}
-            />
-            <MultiSelect
-              label="Jeux"
-              options={gameFacets}
-              selected={gameIds}
-              onChange={setGameIds}
-              labelOf={gameLabel}
-            />
-            {/* Toujours rendu, sinon son apparition décale toute la rangée. */}
-            <button
-              type="button"
-              className="link filters-reset"
-              onClick={resetFilters}
-              disabled={!filtersActive}
-            >
-              Réinitialiser
-            </button>
-          </div>
+          <FiltersBar
+            minViews={minViewsInput}
+            onMinViewsChange={setMinViewsInput}
+            maxViews={maxViewsInput}
+            onMaxViewsChange={setMaxViewsInput}
+            creatorFacets={creatorFacets}
+            creators={creators}
+            onCreatorsChange={setCreators}
+            gameFacets={gameFacets}
+            gameIds={gameIds}
+            onGameIdsChange={setGameIds}
+            gameLabel={gameLabel}
+            active={filtersActive}
+            onReset={resetFilters}
+          />
 
           <ClipTable
             clips={shown}
@@ -478,105 +239,38 @@ export default function App({ authError }: { authError: string | null }) {
             })}
             emptyAction={
               clips.length > 0 && maxViews !== null
-                ? {
-                    label: `Voir les ${clips.length}`,
-                    onClick: () => setMaxViewsInput(''),
-                  }
+                ? { label: `Voir les ${clips.length}`, onClick: () => setMaxViewsInput('') }
                 : undefined
             }
           />
 
-          <section className="group">
-            <h2>Télécharger les vidéos</h2>
-            <p className="group-lede">
-              Un script à lancer sur ta machine : il installe yt-dlp au besoin, puis récupère les
-              clips.
-            </p>
-            <div className="group-actions">
-              {(flavor ?? 'bat') === 'bat' && (
-                <button
-                  type="button"
-                  className={flavor ? 'primary' : ''}
-                  disabled={!selected.length}
-                  title="Enregistrer dans un dossier, puis double-cliquer."
-                  onClick={() => downloadScript('bat')}
-                >
-                  {flavor ? downloadLabel : 'Script Windows (.bat)'}
-                </button>
-              )}
-              {(flavor ?? 'sh') === 'sh' && (
-                <button
-                  type="button"
-                  className={flavor ? 'primary' : ''}
-                  disabled={!selected.length}
-                  title="Enregistrer, puis : chmod +x fichier.sh && ./fichier.sh"
-                  onClick={() => downloadScript('sh')}
-                >
-                  {flavor ? downloadLabel : 'Script macOS · Linux (.sh)'}
-                </button>
-              )}
-            </div>
-            {flavor && (
-              <p className="hint">
-                {flavor === 'bat'
-                  ? 'Script Windows (.bat) — enregistrer dans un dossier, puis double-cliquer. '
-                  : 'Script macOS · Linux (.sh) — enregistrer, puis chmod +x et lancer. '}
-                <br />
-                <button
-                  type="button"
-                  className="link"
-                  disabled={!selected.length}
-                  onClick={() => downloadScript(flavor === 'bat' ? 'sh' : 'bat')}
-                >
-                  {flavor === 'bat' ? 'Je suis sur macOS ou Linux' : 'Je suis sur Windows'}
-                </button>
-              </p>
-            )}
-          </section>
-
-          <section className="group">
-            <h2>Exporter la liste</h2>
-            <p className="group-lede">
-              Les métadonnées des clips, sans les vidéos — pour un tableur ou un autre outil.
-            </p>
-            <div className="group-actions">
-              <button
-                type="button"
-                disabled={!selected.length}
-                onClick={() => download(`${stamp}.csv`, toCsv(selected), 'text/csv')}
-              >
-                CSV
-              </button>
-              <button
-                type="button"
-                disabled={!selected.length}
-                onClick={() =>
-                  download(`${stamp}.json`, JSON.stringify(selected, null, 2), 'application/json')
-                }
-              >
-                JSON
-              </button>
-              <button
-                type="button"
-                disabled={!selected.length}
-                title="Une URL par ligne, pour yt-dlp -a"
-                onClick={() =>
-                  download(
-                    `${stamp}_urls.txt`,
-                    selected.map((clip) => clip.url).join('\n'),
-                    'text/plain',
-                  )
-                }
-              >
-                URLs
-              </button>
-              <span className="count">
-                {clips.length
-                  ? `${selected.length} sélectionné${selected.length > 1 ? 's' : ''} sur ${clips.length} récupéré${clips.length > 1 ? 's' : ''}`
-                  : ''}
-              </span>
-            </div>
-          </section>
+          <ExportPanel
+            selected={selected}
+            clipsFound={clips.length}
+            flavor={flavor}
+            onDownloadScript={(target) =>
+              download(
+                `${stamp}.${target}`,
+                buildDownloadScript(
+                  target,
+                  channel,
+                  selected.map((clip) => clip.url),
+                ),
+                'text/plain',
+              )
+            }
+            onExportCsv={() => download(`${stamp}.csv`, toCsv(selected), 'text/csv')}
+            onExportJson={() =>
+              download(`${stamp}.json`, JSON.stringify(selected, null, 2), 'application/json')
+            }
+            onExportUrls={() =>
+              download(
+                `${stamp}_urls.txt`,
+                selected.map((clip) => clip.url).join('\n'),
+                'text/plain',
+              )
+            }
+          />
         </main>
       </div>
     </div>

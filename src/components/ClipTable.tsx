@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { selectionState } from '../selection'
+import { selectionState } from '../domain/selection'
 import type { Clip } from '../twitch/types'
 import { visibleRange } from './virtual'
 
