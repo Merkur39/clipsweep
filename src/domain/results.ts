@@ -3,6 +3,8 @@ import type { Progress } from '../twitch/types'
 export interface EmptyResultsInput {
   /** A search has run at least once in this session. */
   searched: boolean
+  /** A search is under way: nothing about the outcome is settled yet. */
+  running: boolean
   /** Clips collected before the view filter is applied. */
   clipsFound: number
   maxViews: number | null
@@ -65,10 +67,17 @@ export function describeResultCount({ found, shown, selected }: ResultCountInput
  */
 export function describeEmptyResults({
   searched,
+  running,
   clipsFound,
   maxViews,
 }: EmptyResultsInput): string {
   if (!searched) return 'Aucune fouille lancée.'
+
+  // Une fouille dure de quelques secondes à plusieurs minutes. Conclure à
+  // l'absence de clips avant que la première période ait rendu est faux — et le
+  // conseil qui suit (« élargis l'intervalle ») ferait recommencer pour rien.
+  if (running && clipsFound === 0) return 'Fouille en cours — les premiers clips arrivent.'
+
   if (clipsFound === 0) return 'Aucun clip sur cette période. Élargis l’intervalle de dates.'
 
   if (maxViews !== null) {

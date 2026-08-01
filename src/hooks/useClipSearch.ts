@@ -111,6 +111,8 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
           fetchPage: api.clipPageFetcher(user.id),
           signal: controller.signal,
           onProgress: setProgress,
+          // La table se remplit pendant la fouille au lieu d'attendre la fin.
+          onClips: setClips,
           onWindow: (report) => {
             setReports((previous) => [...previous, report])
             const label = `${report.window.startedAt.slice(0, 10)} → ${report.window.endedAt.slice(0, 10)}`
