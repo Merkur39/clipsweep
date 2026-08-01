@@ -145,6 +145,13 @@ Surface de travail principale, donc la plus réglée :
 - **L'emphase suit ce qu'il reste à faire.** Le bouton primaire est « Se connecter » tant qu'on ne
   l'est pas, « Lancer la fouille » ensuite, et les exports ne deviennent primaires qu'avec une
   sélection non vide. Un bouton désactivé n'est jamais le plus lourd de la page.
+- **Un état déjà énoncé ne reprend pas la forme d'un bouton.** La ligne d'état dit « Connecté — 62
+  j restants » ; un « Connecté à Twitch » désactivé en dessous ne serait pas un contrôle, juste
+  une redite inerte. Le bouton porte donc l'action qui reste — « Se déconnecter ».
+- **Un bouton se subordonne par la couleur, pas par la taille.** Le rail aligne des boutons pleine
+  largeur ; « Se déconnecter » garde ce gabarit et s'efface par son fond transparent, son filet
+  `--rule` et son texte `--text-dim`, virant au rouge au survol. Un gabarit à part y casserait le
+  rythme de la colonne et ferait sauter la mise en page d'un état à l'autre.
 - **L'état se signale par une lampe, pas par un liseré.** `.status` porte une pastille de 7px
   (`::before`) avec un halo : éteinte au repos, violette une fois connecté, rouge en défaut. Le
   liseré coloré collé sur la tranche d'un encadré est le tell générique que ce monde refuse ;

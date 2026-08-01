@@ -1,3 +1,5 @@
+import { LogoutIcon } from './Icon'
+
 export interface SearchPanelProps {
   authMessage: string
   authKind: 'ok' | 'bad' | ''
@@ -5,6 +7,7 @@ export interface SearchPanelProps {
   connected: boolean
   canConnect: boolean
   onConnect: () => void
+  onDisconnect: () => void
 
   channel: string
   onChannelChange: (next: string) => void
@@ -26,6 +29,7 @@ export function SearchPanel({
   connected,
   canConnect,
   onConnect,
+  onDisconnect,
   channel,
   onChannelChange,
   since,
@@ -41,16 +45,20 @@ export function SearchPanel({
       <div className="rail-inner">
         <p className="section-label">Accès</p>
         <div className={`status ${authKind}`}>{authMessage}</div>
-        {/* L'emphase suit ce qu'il reste à faire : une fois connecté, le bouton
-          le plus lourd de la page ne peut pas être celui qui est désactivé. */}
-        <button
-          type="button"
-          className={connected ? 'wide' : 'primary wide'}
-          onClick={onConnect}
-          disabled={connected || !canConnect}
-        >
-          {connected ? 'Connecté à Twitch' : 'Se connecter à Twitch'}
-        </button>
+        {/* L'emphase suit ce qu'il reste à faire. Une fois connecté, l'état est
+          déjà dit — avec la durée restante — par la ligne au-dessus : garder un
+          « Connecté à Twitch » désactivé ne serait pas un contrôle, juste une
+          redite inerte. Il ne reste qu'une action, et c'est de partir. */}
+        {connected ? (
+          <button type="button" className="disconnect wide" onClick={onDisconnect}>
+            <LogoutIcon />
+            Se déconnecter
+          </button>
+        ) : (
+          <button type="button" className="primary wide" onClick={onConnect} disabled={!canConnect}>
+            Se connecter à Twitch
+          </button>
+        )}
 
         <p className="section-label">Cible</p>
         <label>
