@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { formatCount } from '../domain/numbers'
 import type { WindowReport } from '../twitch/clips'
+import { axisTicks } from './axis'
 
 export interface Span {
   from: number
@@ -27,6 +28,8 @@ const BASELINE = 4
  */
 const DECADE = 52
 const CEILING = PLOT_HEIGHT - 6
+/** En part de la période : en deçà, une dalle deviendrait invisible. */
+const MIN_SLAB_WIDTH = 0.25
 
 const slabHeight = (clipCount: number) =>
   Math.min(CEILING, BASELINE + Math.log10(clipCount + 1) * DECADE)
@@ -77,19 +80,7 @@ export function Frieze({
   }
 
   const pct = (time: number) => ((time - span.from) / (span.to - span.from)) * 100
-  const years: number[] = []
-  for (
-    let year = new Date(span.from).getUTCFullYear();
-    year <= new Date(span.to).getUTCFullYear();
-    year += 1
-  ) {
-    years.push(year)
-  }
-  const stride = Math.ceil(years.length / 8) || 1
-  const ticks = years.filter(
-    (year, index) =>
-      index % stride === 0 && Date.UTC(year, 0, 1) >= span.from && Date.UTC(year, 0, 1) <= span.to,
-  )
+  const ticks = axisTicks(span.from, span.to)
 
   const last = reports.at(-1)
   const penLeft = last ? pct(Date.parse(last.window.endedAt)) : 0
@@ -122,28 +113,38 @@ export function Frieze({
               style={{ bottom: slabHeight(decade.value) }}
             />
           ))}
-          {ticks.map((year) => (
-            <div
-              key={year}
-              className="frieze-year"
-              style={{ left: `${pct(Date.UTC(year, 0, 1))}%` }}
-            />
+          {ticks.map((tick) => (
+            <div key={tick.time} className="frieze-year" style={{ left: `${pct(tick.time)}%` }} />
           ))}
 
           {reports.map((report) => {
-            const left = pct(Date.parse(report.window.startedAt))
-            const width = Math.max(pct(Date.parse(report.window.endedAt)) - left, 0.25)
+            const start = pct(Date.parse(report.window.startedAt))
+            const end = pct(Date.parse(report.window.endedAt))
             const kind = kindOf(report)
+
+            /*
+             * Bord droit posé par `right`, et non par `width`.
+             *
+             * Le navigateur résout chaque pourcentage séparément et arrondit au
+             * 1/64 de pixel : `left + width` peut retomber un cran avant le
+             * `left` du voisin, et ce cheveu d'écart laisse voir le fond entre
+             * deux périodes contiguës. Mesuré sur une fouille de neuf ans :
+             * trois joints sur huit s'ouvraient ainsi. Exprimé par `right`, le
+             * bord partagé vient du même pourcentage des deux côtés.
+             *
+             * Une période trop courte pour être vue garde un plancher de
+             * largeur : là, le joint importe moins que l'existence de la dalle.
+             */
+            const edges =
+              end - start >= MIN_SLAB_WIDTH
+                ? { left: `${start}%`, right: `${100 - end}%` }
+                : { left: `${start}%`, width: `${MIN_SLAB_WIDTH}%` }
 
             return (
               <div
                 key={`${report.window.startedAt}-${report.depth}`}
                 className={hovered === report ? `slab ${kind} active` : `slab ${kind}`}
-                style={{
-                  left: `${left}%`,
-                  width: `${width}%`,
-                  height: slabHeight(report.clipCount),
-                }}
+                style={{ ...edges, height: slabHeight(report.clipCount) }}
                 onPointerEnter={() => setHovered(report)}
               />
             )
@@ -153,9 +154,9 @@ export function Frieze({
         </div>
 
         <div className="frieze-axis">
-          {ticks.map((year) => (
-            <span className="tick" key={year} style={{ left: `${pct(Date.UTC(year, 0, 1))}%` }}>
-              {year}
+          {ticks.map((tick) => (
+            <span className="tick" key={tick.time} style={{ left: `${pct(tick.time)}%` }}>
+              {tick.label}
             </span>
           ))}
         </div>
@@ -173,9 +174,19 @@ export function Frieze({
             <span className="muted">{KIND_LABEL[kindOf(hovered)]}</span>
           </>
         ) : (
-          <span className="muted">
-            Survole une période pour ses dates et son décompte. Hauteur logarithmique.
-          </span>
+          // La période est énoncée ici, et non aux bouts de l'axe où son
+          // étiquette chevaucherait le 1er janvier voisin. C'est aussi ce qui
+          // explique les colonnes de bord plus étroites : la fouille commence
+          // et finit rarement un 1er janvier.
+          <>
+            <span>
+              {day(new Date(span.from).toISOString())} → {day(new Date(span.to).toISOString())}
+            </span>
+            <span className="muted">·</span>
+            <span className="muted">
+              {reports.length} période(s) · survole pour le détail · hauteur logarithmique
+            </span>
+          </>
         )}
       </figcaption>
     </figure>
