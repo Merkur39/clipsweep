@@ -284,6 +284,7 @@ export default function App({ authError }: { authError: string | null }) {
             onToggleAll={() => setDeselected((previous) => toggleAll(shown, previous))}
             emptyMessage={describeEmptyResults({
               searched: progress !== null,
+              running,
               clipsFound: clips.length,
               maxViews,
             })}

@@ -37,6 +37,11 @@ export interface CollectClipsOptions {
   minWindowMs?: number
   onProgress?: (progress: Progress) => void
   onWindow?: (report: WindowReport) => void
+  /**
+   * Les clips connus après chaque période, déjà dédoublonnés — la table les
+   * affiche au fil de l'eau plutôt que de rester vide pendant toute la fouille.
+   */
+  onClips?: (clips: Clip[]) => void
   signal?: AbortSignal
 }
 
@@ -52,6 +57,7 @@ export async function collectClips({
   minWindowMs = DEFAULT_MIN_WINDOW_MS,
   onProgress,
   onWindow,
+  onClips,
   signal,
 }: CollectClipsOptions): Promise<CollectResult> {
   const queue: { window: DateWindow; depth: number }[] = windows.map((window) => ({
@@ -102,6 +108,9 @@ export async function collectClips({
     onWindow?.(report)
 
     windowsDone += 1
+    // Une période, une livraison : la page serait plus fin, mais ferait rendre
+    // la table à chaque requête pour quelques lignes de plus.
+    onClips?.([...byId.values()])
     onProgress?.({ windowsDone, windowsTotal, clipsFound: byId.size, requests })
   }
 

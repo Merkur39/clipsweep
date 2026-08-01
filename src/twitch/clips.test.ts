@@ -28,6 +28,63 @@ const secondHalf: DateWindow = {
 }
 const oneHour: DateWindow = { startedAt: '2024-01-01T00:00:00Z', endedAt: '2024-01-01T01:00:00Z' }
 
+describe('collectClips, diffusion au fil de l’eau', () => {
+  // Une fouille dure de quelques secondes à plusieurs minutes : garder les clips
+  // pour la fin laisse la table vide — donc menteuse — pendant tout ce temps.
+  it('livre les clips après chaque période, sans attendre la fin', async () => {
+    const pages: Record<string, ClipPage> = {
+      [key(firstHalf)]: { clips: [clip('a'), clip('b')], cursor: undefined },
+      [key(secondHalf)]: { clips: [clip('c')], cursor: undefined },
+    }
+    const onClips = vi.fn()
+
+    await collectClips({
+      windows: [firstHalf, secondHalf],
+      fetchPage: async (window) => pages[key(window)],
+      onClips,
+    })
+
+    expect(onClips.mock.calls.map(([clips]) => clips.map((c: Clip) => c.id))).toEqual([
+      ['a', 'b'],
+      ['a', 'b', 'c'],
+    ])
+  })
+
+  // Le même clip revient d'une moitié à l'autre après un recoupage : le flux
+  // doit sortir dédoublonné, sinon la table double des lignes puis les retire.
+  it('diffuse déjà dédoublonné', async () => {
+    const pages: Record<string, ClipPage> = {
+      [key(firstHalf)]: { clips: [clip('a')], cursor: undefined },
+      [key(secondHalf)]: { clips: [clip('a'), clip('b')], cursor: undefined },
+    }
+    const onClips = vi.fn()
+
+    await collectClips({
+      windows: [firstHalf, secondHalf],
+      fetchPage: async (window) => pages[key(window)],
+      onClips,
+    })
+
+    expect(onClips.mock.lastCall?.[0].map((c: Clip) => c.id)).toEqual(['a', 'b'])
+  })
+
+  it('livre le même contenu que le résultat final', async () => {
+    const pages: Record<string, ClipPage> = {
+      [key(firstHalf)]: { clips: [clip('a')], cursor: undefined },
+      [key(secondHalf)]: { clips: [clip('b')], cursor: undefined },
+    }
+    const onClips = vi.fn()
+
+    const result = await collectClips({
+      windows: [firstHalf, secondHalf],
+      fetchPage: async (window) => pages[key(window)],
+      onClips,
+    })
+
+    expect(onClips.mock.lastCall?.[0]).toEqual(result.clips)
+  })
+})
+
 describe('collectClips', () => {
   it('follows the cursor until the window is exhausted', async () => {
     const pages: ClipPage[] = [

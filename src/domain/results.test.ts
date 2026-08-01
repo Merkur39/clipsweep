@@ -70,19 +70,52 @@ describe('describeResultCount', () => {
 
 describe('describeEmptyResults', () => {
   it('invite à lancer une fouille tant que rien n’a tourné', () => {
-    expect(describeEmptyResults({ searched: false, clipsFound: 0, maxViews: null })).toBe(
-      'Aucune fouille lancée.',
-    )
+    expect(
+      describeEmptyResults({ searched: false, running: false, clipsFound: 0, maxViews: null }),
+    ).toBe('Aucune fouille lancée.')
   })
 
   it('distingue une période sans aucun clip', () => {
-    expect(describeEmptyResults({ searched: true, clipsFound: 0, maxViews: 2 })).toBe(
-      'Aucun clip sur cette période. Élargis l’intervalle de dates.',
-    )
+    expect(
+      describeEmptyResults({ searched: true, running: false, clipsFound: 0, maxViews: 2 }),
+    ).toBe('Aucun clip sur cette période. Élargis l’intervalle de dates.')
+  })
+
+  // La fouille dure de quelques secondes à plusieurs minutes. Conclure « aucun
+  // clip » pendant ce temps est faux : la première période n'a pas encore rendu.
+  it('ne conclut pas à l’absence de clips tant que la fouille tourne', () => {
+    const message = describeEmptyResults({
+      searched: true,
+      running: true,
+      clipsFound: 0,
+      maxViews: null,
+    })
+
+    expect(message).not.toContain('Aucun clip sur cette période')
+    expect(message).not.toContain('Élargis')
+    expect(message).toContain('cours')
+  })
+
+  // Une fois des clips récupérés, le filtre redevient l'explication valable,
+  // fouille en cours ou non.
+  it('explique quand même le filtre pendant la fouille', () => {
+    const message = describeEmptyResults({
+      searched: true,
+      running: true,
+      clipsFound: 6,
+      maxViews: 2,
+    })
+
+    expect(message).toContain('Vues max')
   })
 
   it('dit combien de clips le filtre masque, et comment les voir', () => {
-    const message = describeEmptyResults({ searched: true, clipsFound: 6, maxViews: 2 })
+    const message = describeEmptyResults({
+      searched: true,
+      running: false,
+      clipsFound: 6,
+      maxViews: 2,
+    })
 
     expect(message).toContain('6 clips')
     expect(message).toContain('2 vues')
@@ -90,14 +123,21 @@ describe('describeEmptyResults', () => {
   })
 
   it('accorde le singulier', () => {
-    expect(describeEmptyResults({ searched: true, clipsFound: 1, maxViews: 0 })).toContain(
-      '1 clip ',
-    )
-    expect(describeEmptyResults({ searched: true, clipsFound: 1, maxViews: 1 })).toContain('1 vue')
+    expect(
+      describeEmptyResults({ searched: true, running: false, clipsFound: 1, maxViews: 0 }),
+    ).toContain('1 clip ')
+    expect(
+      describeEmptyResults({ searched: true, running: false, clipsFound: 1, maxViews: 1 }),
+    ).toContain('1 vue')
   })
 
   it('ne parle pas de seuil quand le filtre est vide', () => {
-    const message = describeEmptyResults({ searched: true, clipsFound: 6, maxViews: null })
+    const message = describeEmptyResults({
+      searched: true,
+      running: false,
+      clipsFound: 6,
+      maxViews: null,
+    })
 
     expect(message).not.toContain('Vues max')
   })
