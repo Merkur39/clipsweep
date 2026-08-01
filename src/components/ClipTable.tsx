@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 
 import { selectionState } from '../domain/selection'
 import type { ClipSort, SortKey } from '../domain/sort'
@@ -77,6 +77,25 @@ export function ClipTable({
 
   const onScroll = useCallback(() => setScrollTop(scrollerRef.current?.scrollTop ?? 0), [])
 
+  /**
+   * Toute la ligne coche, sauf sur ses deux cibles propres : le titre est un
+   * lien vers le clip, et la case déclenche déjà son `onChange` — la laisser
+   * remonter jusqu'ici annulerait aussitôt le basculement.
+   *
+   * Pas de `tabIndex` ni de `role="button"` : la case porte déjà l'accès
+   * clavier, en dupliquer un par ligne mettrait des milliers d'arrêts de
+   * tabulation dans la table.
+   */
+  const rowClick = useCallback(
+    (event: MouseEvent<HTMLDivElement>, id: string) => {
+      if ((event.target as HTMLElement).closest('a, input')) return
+      // Une sélection de texte se termine par un clic : elle ne coche rien.
+      if (!window.getSelection()?.isCollapsed) return
+      onToggle(id)
+    },
+    [onToggle],
+  )
+
   const { firstIndex, endIndex } = visibleRange({
     scrollTop,
     viewportHeight,
@@ -141,7 +160,13 @@ export function ClipTable({
         <div style={{ height: clips.length * ROW_HEIGHT, position: 'relative' }}>
           <div style={{ position: 'absolute', top: firstIndex * ROW_HEIGHT, left: 0, right: 0 }}>
             {slice.map((clip) => (
-              <div className="table-row" role="row" key={clip.id} style={{ height: ROW_HEIGHT }}>
+              <div
+                className="table-row"
+                role="row"
+                key={clip.id}
+                style={{ height: ROW_HEIGHT }}
+                onClick={(event) => rowClick(event, clip.id)}
+              >
                 <span className="col-pick">
                   <input
                     type="checkbox"

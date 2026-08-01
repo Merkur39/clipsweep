@@ -1107,9 +1107,12 @@ input[type='checkbox']:disabled {
   font-size: 13px;
 }
 
+/* Toute la ligne coche : voir `rowClick` dans ClipTable.tsx pour les deux
+   cibles qui en sont exclues. */
 .table-row {
   border-bottom: 1px solid var(--rule);
   font-size: 13px;
+  cursor: pointer;
 }
 
 .table-row:nth-child(even) {
