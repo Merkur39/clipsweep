@@ -27,25 +27,17 @@ const clips = [
 const ids = (result: Clip[]) => result.map((c) => c.id)
 
 describe('applyFilters', () => {
-  it('renvoie tout, du moins vu au plus vu, sans filtre', () => {
-    expect(ids(applyFilters(clips, NO_FILTERS))).toEqual(['d', 'b', 'c', 'a'])
-  })
-
-  it('départage les ex æquo par date, du plus ancien au plus récent', () => {
-    const meme = [
-      clip({ id: 'recent', view_count: 2, created_at: '2026-03-01T00:00:00Z' }),
-      clip({ id: 'ancien', view_count: 2, created_at: '2026-01-01T00:00:00Z' }),
-    ]
-
-    expect(ids(applyFilters(meme, NO_FILTERS))).toEqual(['ancien', 'recent'])
+  // L'ordre relève de sortClips : applyFilters préserve celui qu'il reçoit.
+  it('renvoie tout, dans l’ordre reçu, sans filtre', () => {
+    expect(ids(applyFilters(clips, NO_FILTERS))).toEqual(['a', 'b', 'c', 'd'])
   })
 
   it('applique un plancher de vues, borne incluse', () => {
-    expect(ids(applyFilters(clips, { ...NO_FILTERS, minViews: 7 }))).toEqual(['c', 'a'])
+    expect(ids(applyFilters(clips, { ...NO_FILTERS, minViews: 7 }))).toEqual(['a', 'c'])
   })
 
   it('applique un plafond de vues, borne incluse', () => {
-    expect(ids(applyFilters(clips, { ...NO_FILTERS, maxViews: 4 }))).toEqual(['d', 'b'])
+    expect(ids(applyFilters(clips, { ...NO_FILTERS, maxViews: 4 }))).toEqual(['b', 'd'])
   })
 
   it('combine plancher et plafond en intervalle', () => {
@@ -60,7 +52,7 @@ describe('applyFilters', () => {
   })
 
   it('filtre par créateur', () => {
-    expect(ids(applyFilters(clips, { ...NO_FILTERS, creators: ['SpiZ'] }))).toEqual(['c', 'a'])
+    expect(ids(applyFilters(clips, { ...NO_FILTERS, creators: ['SpiZ'] }))).toEqual(['a', 'c'])
   })
 
   it('filtre par jeu', () => {
@@ -71,9 +63,9 @@ describe('applyFilters', () => {
   // se restreignent : « SpiZ ou Ori », mais « et sur le jeu 2 ».
   it('réunit les valeurs d’une même facette', () => {
     expect(ids(applyFilters(clips, { ...NO_FILTERS, creators: ['SpiZ', 'Ori'] }))).toEqual([
+      'a',
       'b',
       'c',
-      'a',
     ])
   })
 
@@ -85,10 +77,10 @@ describe('applyFilters', () => {
 
   it('traite une liste vide comme absence de filtre', () => {
     expect(ids(applyFilters(clips, { ...NO_FILTERS, creators: [], gameIds: [] }))).toEqual([
-      'd',
+      'a',
       'b',
       'c',
-      'a',
+      'd',
     ])
   })
 

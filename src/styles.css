@@ -159,7 +159,6 @@ button.link {
   font-weight: 400;
   padding: 0 0 12px;
   text-align: left;
-  width: 100%;
 }
 
 .status {
@@ -717,6 +716,36 @@ details li {
 .table-row {
   border-bottom: 1px solid #26262c;
   font-size: 13px;
+}
+
+.col-sort {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.col-sort:hover {
+  color: var(--text);
+}
+
+/* Largeur réservée : la flèche apparaît sans décaler le libellé. */
+.col-sort-arrow {
+  display: inline-block;
+  width: 9px;
+  font-size: 8px;
+}
+
+.table-head .col-views .col-sort {
+  justify-content: flex-end;
 }
 
 .col-views {

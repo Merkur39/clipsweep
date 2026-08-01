@@ -9,6 +9,7 @@ import { applyFilters, facets } from './domain/filters'
 import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
 import { selectedClips, toggle, toggleAll } from './domain/selection'
+import { DEFAULT_SORT, nextSort, sortClips, type ClipSort } from './domain/sort'
 import { useChannelLookup } from './hooks/useChannelLookup'
 import { useClipSearch } from './hooks/useClipSearch'
 import {
@@ -85,6 +86,7 @@ export default function App({ authError }: { authError: string | null }) {
   const [maxViewsInput, setMaxViewsInput] = useState('')
   const [creators, setCreators] = useState<readonly string[]>([])
   const [gameIds, setGameIds] = useState<readonly string[]>([])
+  const [sort, setSort] = useState<ClipSort>(DEFAULT_SORT)
   // Exclusions, not selections: everything starts checked, including clips that
   // appear later when the threshold is raised.
   const [deselected, setDeselected] = useState<ReadonlySet<string>>(() => new Set())
@@ -135,8 +137,8 @@ export default function App({ authError }: { authError: string | null }) {
   const maxViews = numberOrNull(maxViewsInput)
   const minViews = numberOrNull(minViewsInput)
   const shown = useMemo(
-    () => applyFilters(clips, { minViews, maxViews, creators, gameIds }),
-    [clips, minViews, maxViews, creators, gameIds],
+    () => sortClips(applyFilters(clips, { minViews, maxViews, creators, gameIds }), sort),
+    [clips, minViews, maxViews, creators, gameIds, sort],
   )
   const creatorFacets = useMemo(() => facets(clips, (clip) => clip.creator_name), [clips])
   const gameFacets = useMemo(() => facets(clips, (clip) => clip.game_id), [clips])
@@ -251,6 +253,8 @@ export default function App({ authError }: { authError: string | null }) {
                 ? { label: `Voir les ${clips.length}`, onClick: () => setMaxViewsInput('') }
                 : undefined
             }
+            sort={sort}
+            onSortChange={(key) => setSort((current) => nextSort(current, key))}
           />
 
           <ExportPanel

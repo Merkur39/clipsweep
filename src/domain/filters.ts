@@ -15,11 +15,7 @@ export const NO_FILTERS: ClipFilters = {
   gameIds: [],
 }
 
-/** Least viewed first — the whole point of the tool — then oldest first. */
-function byViewsThenDate(a: Clip, b: Clip): number {
-  return a.view_count - b.view_count || a.created_at.localeCompare(b.created_at)
-}
-
+/** Filtre seulement : l'ordre relève de `sortClips`, que l'utilisateur pilote. */
 export function applyFilters(clips: Clip[], filters: ClipFilters): Clip[] {
   // Sets rather than includes(): the creator facet can hold hundreds of values
   // and this runs against the whole catalogue on every keystroke.
@@ -33,7 +29,7 @@ export function applyFilters(clips: Clip[], filters: ClipFilters): Clip[] {
     if (gameIds.size > 0 && !gameIds.has(clip.game_id)) return false
     return true
   })
-  return kept.sort(byViewsThenDate)
+  return kept
 }
 
 export interface Facet {

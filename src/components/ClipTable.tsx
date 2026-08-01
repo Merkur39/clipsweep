@@ -1,15 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { selectionState } from '../domain/selection'
+import type { ClipSort, SortKey } from '../domain/sort'
 import type { Clip } from '../twitch/types'
 import { visibleRange } from './virtual'
 
 const ROW_HEIGHT = 34
 const OVERSCAN = 8
 
+const COLUMNS: { key: SortKey; label: string; className: string }[] = [
+  { key: 'views', label: 'Vues', className: 'col-views' },
+  { key: 'date', label: 'Date', className: 'col-date' },
+  { key: 'title', label: 'Titre', className: 'col-title' },
+  { key: 'creator', label: 'Créateur', className: 'col-author' },
+]
+
 /**
  * Windowed rendering: the whole point of the tool is to surface tens of
  * thousands of clips, which no browser will lay out as real DOM rows.
+ *
+ * Sorting composes with it for free: the window slices an already ordered
+ * array, so ordering happens upstream and this component never knows.
  */
 export interface ClipTableProps {
   clips: Clip[]
@@ -18,6 +29,8 @@ export interface ClipTableProps {
   deselected: ReadonlySet<string>
   onToggle: (id: string) => void
   onToggleAll: () => void
+  sort: ClipSort
+  onSortChange: (key: SortKey) => void
 }
 
 export function ClipTable({
@@ -27,6 +40,8 @@ export function ClipTable({
   deselected,
   onToggle,
   onToggleAll,
+  sort,
+  onSortChange,
 }: ClipTableProps) {
   const state = selectionState(clips, deselected)
   const scrollerRef = useRef<HTMLDivElement>(null)
@@ -41,6 +56,23 @@ export function ClipTable({
     observer.observe(scroller)
     return () => observer.disconnect()
   }, [])
+
+  // Un nouvel ordre appelle son début : rester au même pixel laisserait
+  // l'utilisateur devant des clips entièrement différents, sans repère.
+  //
+  // L'état est ajusté pendant le rendu, pas dans l'effet : la fenêtre visible
+  // doit correspondre au défilement remis à zéro dès ce rendu, sinon on
+  // calculerait les lignes autour de l'ancienne position et l'écran serait vide.
+  const [renderedSort, setRenderedSort] = useState(sort)
+  if (renderedSort !== sort) {
+    setRenderedSort(sort)
+    setScrollTop(0)
+  }
+
+  // Le DOM, lui, se synchronise bien dans un effet.
+  useEffect(() => {
+    if (scrollerRef.current) scrollerRef.current.scrollTop = 0
+  }, [sort])
 
   const onScroll = useCallback(() => setScrollTop(scrollerRef.current?.scrollTop ?? 0), [])
 
@@ -69,10 +101,26 @@ export function ClipTable({
             aria-label={state === 'all' ? 'Tout décocher' : 'Tout cocher'}
           />
         </span>
-        <span className="col-views">Vues</span>
-        <span className="col-date">Date</span>
-        <span className="col-title">Titre</span>
-        <span className="col-author">Créateur</span>
+        {COLUMNS.map((column) => (
+          <span
+            key={column.key}
+            className={column.className}
+            aria-sort={
+              sort.key !== column.key
+                ? 'none'
+                : sort.direction === 'asc'
+                  ? 'ascending'
+                  : 'descending'
+            }
+          >
+            <button type="button" className="col-sort" onClick={() => onSortChange(column.key)}>
+              {column.label}
+              <span aria-hidden="true" className="col-sort-arrow">
+                {sort.key === column.key ? (sort.direction === 'asc' ? '▲' : '▼') : ''}
+              </span>
+            </button>
+          </span>
+        ))}
       </div>
 
       <div className="table-body" ref={scrollerRef} onScroll={onScroll} role="rowgroup">
