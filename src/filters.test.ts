@@ -60,15 +60,40 @@ describe('applyFilters', () => {
   })
 
   it('filtre par créateur', () => {
-    expect(ids(applyFilters(clips, { ...NO_FILTERS, creator: 'SpiZ' }))).toEqual(['c', 'a'])
+    expect(ids(applyFilters(clips, { ...NO_FILTERS, creators: ['SpiZ'] }))).toEqual(['c', 'a'])
   })
 
   it('filtre par jeu', () => {
-    expect(ids(applyFilters(clips, { ...NO_FILTERS, gameId: '2' }))).toEqual(['b', 'c'])
+    expect(ids(applyFilters(clips, { ...NO_FILTERS, gameIds: ['2'] }))).toEqual(['b', 'c'])
+  })
+
+  // Au sein d'une même facette les valeurs s'additionnent, entre facettes elles
+  // se restreignent : « SpiZ ou Ori », mais « et sur le jeu 2 ».
+  it('réunit les valeurs d’une même facette', () => {
+    expect(ids(applyFilters(clips, { ...NO_FILTERS, creators: ['SpiZ', 'Ori'] }))).toEqual([
+      'b',
+      'c',
+      'a',
+    ])
+  })
+
+  it('croise deux facettes différentes', () => {
+    const result = applyFilters(clips, { ...NO_FILTERS, creators: ['SpiZ', 'Ori'], gameIds: ['2'] })
+
+    expect(ids(result)).toEqual(['b', 'c'])
+  })
+
+  it('traite une liste vide comme absence de filtre', () => {
+    expect(ids(applyFilters(clips, { ...NO_FILTERS, creators: [], gameIds: [] }))).toEqual([
+      'd',
+      'b',
+      'c',
+      'a',
+    ])
   })
 
   it('cumule des filtres de nature différente', () => {
-    const result = applyFilters(clips, { ...NO_FILTERS, creator: 'SpiZ', maxViews: 8 })
+    const result = applyFilters(clips, { ...NO_FILTERS, creators: ['SpiZ'], maxViews: 8 })
 
     expect(ids(result)).toEqual(['c'])
   })

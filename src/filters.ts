@@ -3,15 +3,16 @@ import type { Clip } from './twitch/types'
 export interface ClipFilters {
   minViews: number | null
   maxViews: number | null
-  creator: string | null
-  gameId: string | null
+  /** Empty means no restriction; several values are OR-ed together. */
+  creators: readonly string[]
+  gameIds: readonly string[]
 }
 
 export const NO_FILTERS: ClipFilters = {
   minViews: null,
   maxViews: null,
-  creator: null,
-  gameId: null,
+  creators: [],
+  gameIds: [],
 }
 
 /** Least viewed first — the whole point of the tool — then oldest first. */
@@ -20,11 +21,16 @@ function byViewsThenDate(a: Clip, b: Clip): number {
 }
 
 export function applyFilters(clips: Clip[], filters: ClipFilters): Clip[] {
+  // Sets rather than includes(): the creator facet can hold hundreds of values
+  // and this runs against the whole catalogue on every keystroke.
+  const creators = new Set(filters.creators)
+  const gameIds = new Set(filters.gameIds)
+
   const kept = clips.filter((clip) => {
     if (filters.minViews !== null && clip.view_count < filters.minViews) return false
     if (filters.maxViews !== null && clip.view_count > filters.maxViews) return false
-    if (filters.creator !== null && clip.creator_name !== filters.creator) return false
-    if (filters.gameId !== null && clip.game_id !== filters.gameId) return false
+    if (creators.size > 0 && !creators.has(clip.creator_name)) return false
+    if (gameIds.size > 0 && !gameIds.has(clip.game_id)) return false
     return true
   })
   return kept.sort(byViewsThenDate)

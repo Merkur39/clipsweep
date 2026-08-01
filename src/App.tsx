@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { ClipTable } from './components/ClipTable'
 import { Frieze, type Span } from './components/Frieze'
+import { MultiSelect } from './components/MultiSelect'
+import { NumberField } from './components/NumberField'
 import { makeLogAppender, type LogEntry, type LogKind } from './log'
 import { describeEmptyResults } from './results'
 import { buildDownloadScript, detectScriptFlavor, type ScriptFlavor } from './scripts'
@@ -15,7 +17,7 @@ import {
   validateToken,
   type Session,
 } from './twitch/auth'
-import { applyFilters, facets, type ClipFilters } from './filters'
+import { applyFilters, facets } from './filters'
 import { collectClips, type WindowReport } from './twitch/clips'
 import type { Clip, Progress, TwitchUser } from './twitch/types'
 import { splitByYear } from './twitch/windows'
@@ -83,8 +85,8 @@ export default function App({ authError }: { authError: string | null }) {
   // un seuil oublié d'une session à l'autre donne une table vide inexpliquée.
   const [minViewsInput, setMinViewsInput] = useState('')
   const [maxViewsInput, setMaxViewsInput] = useState('')
-  const [creator, setCreator] = useState('')
-  const [gameId, setGameId] = useState('')
+  const [creators, setCreators] = useState<readonly string[]>([])
+  const [gameIds, setGameIds] = useState<readonly string[]>([])
   const [gameNames, setGameNames] = useState<ReadonlyMap<string, string>>(() => new Map())
 
   const [running, setRunning] = useState(false)
@@ -142,26 +144,22 @@ export default function App({ authError }: { authError: string | null }) {
   const connect = () => location.assign(authorizeUrl(BUILD_TIME_CLIENT_ID, redirectUri()))
 
   const maxViews = numberOrNull(maxViewsInput)
-  const filters: ClipFilters = {
-    minViews: numberOrNull(minViewsInput),
-    maxViews,
-    creator: creator || null,
-    gameId: gameId || null,
-  }
+  const minViews = numberOrNull(minViewsInput)
   const shown = useMemo(
-    () => applyFilters(clips, filters),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- `filters` est recréé à chaque rendu
-    [clips, filters.minViews, filters.maxViews, filters.creator, filters.gameId],
+    () => applyFilters(clips, { minViews, maxViews, creators, gameIds }),
+    [clips, minViews, maxViews, creators, gameIds],
   )
   const creatorFacets = useMemo(() => facets(clips, (clip) => clip.creator_name), [clips])
   const gameFacets = useMemo(() => facets(clips, (clip) => clip.game_id), [clips])
+  const gameLabel = (id: string) => gameNames.get(id) ?? id
 
-  const filtersActive = Boolean(minViewsInput || maxViewsInput || creator || gameId)
+  const filtersActive =
+    Boolean(minViewsInput || maxViewsInput) || creators.length > 0 || gameIds.length > 0
   const resetFilters = () => {
     setMinViewsInput('')
     setMaxViewsInput('')
-    setCreator('')
-    setGameId('')
+    setCreators([])
+    setGameIds([])
   }
   const selected = useMemo(() => selectedClips(shown, deselected), [shown, deselected])
 
@@ -192,8 +190,8 @@ export default function App({ authError }: { authError: string | null }) {
     setGameNames(new Map())
     setMinViewsInput('')
     setMaxViewsInput('')
-    setCreator('')
-    setGameId('')
+    setCreators([])
+    setGameIds([])
     setReports([])
     setIncomplete([])
     setProgress(null)
@@ -400,53 +398,40 @@ export default function App({ authError }: { authError: string | null }) {
           <p className="eyebrow">Résultats</p>
 
           <div className="filters">
-            <label>
-              <span>Vues min</span>
-              <input
-                type="number"
-                min={0}
-                placeholder="aucune"
-                value={minViewsInput}
-                onChange={(event) => setMinViewsInput(event.target.value)}
-              />
-            </label>
-            <label>
-              <span>Vues max</span>
-              <input
-                type="number"
-                min={0}
-                placeholder="aucune"
-                value={maxViewsInput}
-                onChange={(event) => setMaxViewsInput(event.target.value)}
-              />
-            </label>
-            <label>
-              <span>Créateur</span>
-              <select value={creator} onChange={(event) => setCreator(event.target.value)}>
-                <option value="">Tous</option>
-                {creatorFacets.map((facet) => (
-                  <option key={facet.value} value={facet.value}>
-                    {facet.value} ({facet.count})
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Jeu</span>
-              <select value={gameId} onChange={(event) => setGameId(event.target.value)}>
-                <option value="">Tous</option>
-                {gameFacets.map((facet) => (
-                  <option key={facet.value} value={facet.value}>
-                    {gameNames.get(facet.value) ?? facet.value} ({facet.count})
-                  </option>
-                ))}
-              </select>
-            </label>
-            {filtersActive && (
-              <button type="button" className="link" onClick={resetFilters}>
-                Réinitialiser
-              </button>
-            )}
+            <NumberField
+              label="Vues min"
+              placeholder="aucune"
+              value={minViewsInput}
+              onChange={setMinViewsInput}
+            />
+            <NumberField
+              label="Vues max"
+              placeholder="aucune"
+              value={maxViewsInput}
+              onChange={setMaxViewsInput}
+            />
+            <MultiSelect
+              label="Créateurs"
+              options={creatorFacets}
+              selected={creators}
+              onChange={setCreators}
+            />
+            <MultiSelect
+              label="Jeux"
+              options={gameFacets}
+              selected={gameIds}
+              onChange={setGameIds}
+              labelOf={gameLabel}
+            />
+            {/* Toujours rendu, sinon son apparition décale toute la rangée. */}
+            <button
+              type="button"
+              className="link filters-reset"
+              onClick={resetFilters}
+              disabled={!filtersActive}
+            >
+              Réinitialiser
+            </button>
           </div>
 
           <ClipTable

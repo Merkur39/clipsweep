@@ -409,18 +409,79 @@ details li {
   margin-bottom: 12px;
 }
 
-.filters label {
+.field,
+.multiselect {
   margin: 0;
-  flex: 1 1 130px;
+  flex: 1 1 150px;
   min-width: 0;
 }
 
-.filters .link {
-  width: auto;
-  padding: 0 0 9px;
+.field-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 5px;
 }
 
-select {
+/* Le bouton d'effacement est superposé, pas inséré : son apparition ne doit
+   déplacer ni le champ ni ses voisins. */
+.field-control {
+  position: relative;
+  display: block;
+}
+
+.field-control input {
+  padding-right: 30px;
+}
+
+/* Les flèches natives volent la place du bouton. */
+.field-control input::-webkit-outer-spin-button,
+.field-control input::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.field-control input[type='number'] {
+  appearance: textfield;
+}
+
+.field-clear {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1;
+}
+
+.field-clear:hover {
+  background: var(--raise);
+  color: var(--text);
+}
+
+/* ---- sélection multiple ---- */
+
+.multiselect {
+  position: relative;
+}
+
+.multiselect-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 100%;
   padding: 8px 10px;
   background: var(--bg);
@@ -429,11 +490,84 @@ select {
   color: var(--text);
   font-family: var(--mono);
   font-size: 13px;
+  font-weight: 400;
+  text-align: left;
 }
 
-select:focus-visible {
-  outline: 2px solid var(--violet);
-  outline-offset: 2px;
+.multiselect-value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.multiselect-panel {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  min-width: 220px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--raise);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 10px 26px rgb(0 0 0 / 45%);
+}
+
+.multiselect-panel .link {
+  width: 100%;
+  padding: 4px 8px 8px;
+}
+
+.multiselect-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.multiselect-option:hover {
+  background: var(--panel);
+}
+
+.multiselect-option input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  padding: 0;
+  flex: none;
+  accent-color: var(--violet);
+  cursor: pointer;
+}
+
+.multiselect-option-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.multiselect-option-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.filters-reset {
+  width: auto;
+  padding: 0 0 9px;
+  flex: none;
+}
+
+.filters-reset:disabled {
+  opacity: 0.35;
 }
 
 /* ---- résultats ---- */
