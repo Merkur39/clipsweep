@@ -1,6 +1,6 @@
 import type { Session } from './auth'
 import type { ClipPageFetcher } from './clips'
-import type { Clip, TwitchUser } from './types'
+import type { Clip, Game, TwitchUser } from './types'
 
 const HELIX = 'https://api.twitch.tv/helix'
 const PAGE_SIZE = 100
@@ -30,8 +30,13 @@ export class TwitchApi {
     private readonly signal?: AbortSignal,
   ) {}
 
-  private async get<T>(path: string, params: Record<string, string>): Promise<HelixResponse<T>> {
-    const url = `${HELIX}/${path}?${new URLSearchParams(params)}`
+  private async get<T>(
+    path: string,
+    // Repeated keys — `id` on /games — need URLSearchParams, not a record.
+    params: URLSearchParams | Record<string, string>,
+  ): Promise<HelixResponse<T>> {
+    const query = params instanceof URLSearchParams ? params : new URLSearchParams(params)
+    const url = `${HELIX}/${path}?${query}`
 
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt += 1) {
       const response = await fetch(url, {
@@ -70,6 +75,21 @@ export class TwitchApi {
     const user = data[0]
     if (!user) throw new Error(`Chaîne « ${login} » introuvable.`)
     return user
+  }
+
+  /** Resolves game ids to names, 100 at a time — the endpoint's ceiling. */
+  async fetchGameNames(gameIds: string[]): Promise<Map<string, string>> {
+    const names = new Map<string, string>()
+    const unique = [...new Set(gameIds.filter(Boolean))]
+
+    for (let offset = 0; offset < unique.length; offset += 100) {
+      const params = new URLSearchParams()
+      for (const id of unique.slice(offset, offset + 100)) params.append('id', id)
+
+      const { data } = await this.get<Game>('games', params)
+      for (const game of data) names.set(game.id, game.name)
+    }
+    return names
   }
 
   clipPageFetcher(broadcasterId: string): ClipPageFetcher {

@@ -29,24 +29,28 @@ describe('parseAuthFragment', () => {
 })
 
 describe('resolveClientId', () => {
-  it('uses the build-time application id when nothing is overridden', () => {
-    expect(resolveClientId(null, 'baked')).toBe('baked')
+  // Le champ de saisie n'est rendu qu'en auto-hébergement : un identifiant
+  // buildé doit donc l'emporter, sinon un override oublié en localStorage
+  // casserait la connexion sans aucun moyen de l'effacer.
+  it('donne la priorité à l’identifiant buildé', () => {
+    expect(resolveClientId('stocke', 'builde')).toBe('builde')
   })
 
-  it('lets a stored override win over the build-time id', () => {
-    expect(resolveClientId('mine', 'baked')).toBe('mine')
+  it('retombe sur l’identifiant stocké quand rien n’est build', () => {
+    expect(resolveClientId('stocke', '')).toBe('stocke')
   })
 
-  it('ignores a blank override', () => {
-    expect(resolveClientId('   ', 'baked')).toBe('baked')
+  it('ignore une valeur vide de part et d’autre', () => {
+    expect(resolveClientId('   ', 'builde')).toBe('builde')
+    expect(resolveClientId('stocke', '   ')).toBe('stocke')
   })
 
-  it('trims whatever it returns', () => {
-    expect(resolveClientId(' mine ', '')).toBe('mine')
-    expect(resolveClientId(null, ' baked ')).toBe('baked')
+  it('élague ce qu’il renvoie', () => {
+    expect(resolveClientId(' stocke ', '')).toBe('stocke')
+    expect(resolveClientId(null, ' builde ')).toBe('builde')
   })
 
-  it('returns an empty string when neither is set', () => {
+  it('renvoie une chaîne vide quand ni l’un ni l’autre n’est défini', () => {
     expect(resolveClientId(null, '')).toBe('')
   })
 })

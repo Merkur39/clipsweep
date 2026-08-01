@@ -112,11 +112,3 @@ export async function collectClips({
     requests,
   }
 }
-
-/** Keeps clips up to `maxViews` (all of them when null), least viewed first. */
-export function filterByMaxViews(clips: Clip[], maxViews: number | null): Clip[] {
-  const kept = maxViews === null ? [...clips] : clips.filter((clip) => clip.view_count <= maxViews)
-  return kept.sort(
-    (a, b) => a.view_count - b.view_count || a.created_at.localeCompare(b.created_at),
-  )
-}

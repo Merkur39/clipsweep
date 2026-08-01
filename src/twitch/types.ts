@@ -9,6 +9,13 @@ export interface Clip {
   created_at: string
   thumbnail_url: string
   duration: number
+  /** Helix returns the game id only; names come from /helix/games. */
+  game_id: string
+}
+
+export interface Game {
+  id: string
+  name: string
 }
 
 export interface ClipPage {

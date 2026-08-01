@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { collectClips, filterByMaxViews } from './clips'
+import { collectClips } from './clips'
 import type { Clip, ClipPage } from './types'
 import type { DateWindow } from './windows'
 
@@ -15,6 +15,7 @@ const clip = (id: string, viewCount = 1, createdAt = '2024-01-01T00:00:00Z'): Cl
   duration: 30,
   creator_name: 'someone',
   broadcaster_name: 'kaliyami',
+  game_id: '1',
 })
 
 const key = (w: DateWindow) => `${w.startedAt}|${w.endedAt}`
@@ -128,33 +129,5 @@ describe('collectClips', () => {
 
     expect(clips.map((c) => c.id)).toEqual(['a'])
     expect(fetchPage).toHaveBeenCalledTimes(1)
-  })
-})
-
-describe('filterByMaxViews', () => {
-  it('keeps clips up to the threshold, least viewed first', () => {
-    const clips = [clip('a', 9), clip('b', 6), clip('c', 7), clip('d', 1)]
-
-    expect(filterByMaxViews(clips, 7).map((c) => c.id)).toEqual(['d', 'b', 'c'])
-  })
-
-  it('keeps everything when no threshold is set', () => {
-    const clips = [clip('a', 9), clip('b', 6)]
-
-    expect(filterByMaxViews(clips, null).map((c) => c.id)).toEqual(['b', 'a'])
-  })
-
-  it('breaks view-count ties by date, oldest first', () => {
-    const clips = [clip('a', 2, '2024-03-01T00:00:00Z'), clip('b', 2, '2024-01-01T00:00:00Z')]
-
-    expect(filterByMaxViews(clips, null).map((c) => c.id)).toEqual(['b', 'a'])
-  })
-
-  it('leaves the input array untouched', () => {
-    const clips = [clip('a', 9), clip('b', 6)]
-
-    filterByMaxViews(clips, null)
-
-    expect(clips.map((c) => c.id)).toEqual(['a', 'b'])
   })
 })

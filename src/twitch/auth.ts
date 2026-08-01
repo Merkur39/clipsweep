@@ -64,12 +64,14 @@ export const clientIdStore = {
  * The client id identifies the application, not the person — it is public by
  * design (it travels in the authorize URL and in every Helix header). One
  * registered app therefore serves every visitor, who each sign in with their own
- * Twitch account. Tokens carry no scope, so what they unlock is public data
- * only; the override exists for self-hosting on an origin the baked-in app has
- * not registered as a redirect URI.
+ * Twitch account.
+ *
+ * The build-time value wins: the input field only exists when there is none, so
+ * a stale localStorage entry would otherwise hijack the login with no way left
+ * to clear it. The stored value is the self-hosting fallback.
  */
-export function resolveClientId(override: string | null, buildTime: string): string {
-  return override?.trim() || buildTime.trim()
+export function resolveClientId(stored: string | null, buildTime: string): string {
+  return buildTime.trim() || stored?.trim() || ''
 }
 
 /** Registered at build time via `VITE_TWITCH_CLIENT_ID`; empty falls back to the field. */

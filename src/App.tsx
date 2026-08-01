@@ -17,7 +17,8 @@ import {
   validateToken,
   type Session,
 } from './twitch/auth'
-import { collectClips, filterByMaxViews, type WindowReport } from './twitch/clips'
+import { applyFilters, facets, type ClipFilters } from './filters'
+import { collectClips, type WindowReport } from './twitch/clips'
 import type { Clip, Progress, TwitchUser } from './twitch/types'
 import { splitRange } from './twitch/windows'
 
@@ -25,6 +26,11 @@ const DAY_MS = 86_400_000
 const LOG_LIMIT = 500
 
 const day = (date: Date) => date.toISOString().slice(0, 10)
+
+const numberOrNull = (raw: string) => {
+  const value = Number(raw.trim())
+  return raw.trim() === '' || !Number.isFinite(value) ? null : value
+}
 
 function usePersistedState(key: string, initial: string) {
   const [value, setValue] = useState(() => localStorage.getItem(`getclip.${key}`) ?? initial)
@@ -62,9 +68,6 @@ export default function App({ authError }: { authError: string | null }) {
   const [clientId, setClientId] = useState(() =>
     resolveClientId(clientIdStore.read(), BUILD_TIME_CLIENT_ID),
   )
-  // Frozen at mount: recomputing it would snap the panel shut mid-typing, and
-  // would fight the user's own toggling.
-  const [setupOpen] = useState(() => !resolveClientId(clientIdStore.read(), BUILD_TIME_CLIENT_ID))
   const [session, setSession] = useState<Session | null>(null)
   const [authMessage, setAuthMessage] = useState(
     authError
@@ -77,7 +80,14 @@ export default function App({ authError }: { authError: string | null }) {
   const [since, setSince] = usePersistedState('since', '2019-01-01')
   const [until, setUntil] = usePersistedState('until', day(new Date()))
   const [chunkDays, setChunkDays] = usePersistedState('chunk', '30')
-  const [maxViewsInput, setMaxViewsInput] = usePersistedState('maxViews', '')
+  // Filtres d'affichage : ils portent sur les clips déjà récupérés, jamais sur
+  // la fouille elle-même. Non persistés, contrairement aux champs de recherche —
+  // un seuil oublié d'une session à l'autre donne une table vide inexpliquée.
+  const [minViewsInput, setMinViewsInput] = useState('')
+  const [maxViewsInput, setMaxViewsInput] = useState('')
+  const [creator, setCreator] = useState('')
+  const [gameId, setGameId] = useState('')
+  const [gameNames, setGameNames] = useState<ReadonlyMap<string, string>>(() => new Map())
 
   const [running, setRunning] = useState(false)
   const [clips, setClips] = useState<Clip[]>([])
@@ -144,11 +154,28 @@ export default function App({ authError }: { authError: string | null }) {
     location.href = authorizeUrl(trimmed, redirectUri())
   }
 
-  const maxViews = maxViewsInput.trim() === '' ? null : Number(maxViewsInput)
+  const maxViews = numberOrNull(maxViewsInput)
+  const filters: ClipFilters = {
+    minViews: numberOrNull(minViewsInput),
+    maxViews,
+    creator: creator || null,
+    gameId: gameId || null,
+  }
   const shown = useMemo(
-    () => filterByMaxViews(clips, maxViews !== null && Number.isFinite(maxViews) ? maxViews : null),
-    [clips, maxViews],
+    () => applyFilters(clips, filters),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `filters` est recréé à chaque rendu
+    [clips, filters.minViews, filters.maxViews, filters.creator, filters.gameId],
   )
+  const creatorFacets = useMemo(() => facets(clips, (clip) => clip.creator_name), [clips])
+  const gameFacets = useMemo(() => facets(clips, (clip) => clip.game_id), [clips])
+
+  const filtersActive = Boolean(minViewsInput || maxViewsInput || creator || gameId)
+  const resetFilters = () => {
+    setMinViewsInput('')
+    setMaxViewsInput('')
+    setCreator('')
+    setGameId('')
+  }
   const selected = useMemo(() => selectedClips(shown, deselected), [shown, deselected])
 
   const run = async () => {
@@ -175,6 +202,11 @@ export default function App({ authError }: { authError: string | null }) {
     setRunning(true)
     setClips([])
     setDeselected(new Set())
+    setGameNames(new Map())
+    setMinViewsInput('')
+    setMaxViewsInput('')
+    setCreator('')
+    setGameId('')
     setReports([])
     setIncomplete([])
     setProgress(null)
@@ -223,6 +255,16 @@ export default function App({ authError }: { authError: string | null }) {
       setIncomplete(result.incomplete)
       log(`${result.clips.length} clips uniques en ${result.requests} requêtes.`, 'good')
       if (controller.signal.aborted) log('Fouille interrompue : le résultat est partiel.', 'warn')
+
+      // Helix ne renvoie qu'un game_id : sans cette résolution, le filtre par
+      // jeu n'offrirait que des identifiants numériques. Accessoire, donc un
+      // échec ici ne doit pas invalider la fouille.
+      try {
+        const names = await api.fetchGameNames(result.clips.map((clip) => clip.game_id))
+        setGameNames(names)
+      } catch {
+        log('Noms des jeux indisponibles : le filtre listera les identifiants.', 'warn')
+      }
     } catch (cause) {
       const error = cause as Error
       if (error.name === 'AbortError') return
@@ -279,60 +321,46 @@ export default function App({ authError }: { authError: string | null }) {
             {session ? 'Connecté à Twitch' : 'Se connecter à Twitch'}
           </button>
 
-          <details open={setupOpen}>
-            <summary>
-              {BUILD_TIME_CLIENT_ID
-                ? 'Utiliser ta propre application'
-                : 'Configurer une application'}
-            </summary>
-            <p>
-              Le Client ID identifie l'application, pas ton compte : il n'est pas secret.
-              {BUILD_TIME_CLIENT_ID
-                ? " Il n'est utile que pour héberger l'outil sur une autre adresse."
-                : ' Tu te connectes ensuite avec ton propre compte Twitch.'}
-            </p>
-            <ol>
-              <li>
-                Crée une application sur{' '}
-                <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noreferrer">
-                  dev.twitch.tv/console/apps
-                </a>
-                , catégorie « Application Integration ».
-              </li>
-              <li>Colle exactement cette adresse dans « OAuth Redirect URLs » :</li>
-            </ol>
-            <div className="copyline">
-              <input readOnly value={redirectUri()} />
-              <button
-                type="button"
-                onClick={() => void navigator.clipboard.writeText(redirectUri())}
-              >
-                Copier
-              </button>
-            </div>
-            <label>
-              <span>Client ID</span>
-              <input
-                value={clientId}
-                onChange={(event) => setClientId(event.target.value)}
-                placeholder="ex. hof5gwx0su6owfnys0nyac87zr6t"
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </label>
-            {BUILD_TIME_CLIENT_ID && clientId !== BUILD_TIME_CLIENT_ID && (
-              <button
-                type="button"
-                className="link"
-                onClick={() => {
-                  clientIdStore.clear()
-                  setClientId(BUILD_TIME_CLIENT_ID)
-                }}
-              >
-                Revenir à l'application par défaut
-              </button>
-            )}
-          </details>
+          {/* Auto-hébergement seulement : sur le site déployé, l'application est
+              buildée et le visiteur n'a rien à configurer. */}
+          {!BUILD_TIME_CLIENT_ID && (
+            <details open>
+              <summary>Configurer une application</summary>
+              <p>
+                Le Client ID identifie l'application, pas ton compte : il n'est pas secret. Tu te
+                connectes ensuite avec ton propre compte Twitch.
+              </p>
+              <ol>
+                <li>
+                  Crée une application sur{' '}
+                  <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noreferrer">
+                    dev.twitch.tv/console/apps
+                  </a>
+                  , catégorie « Application Integration ».
+                </li>
+                <li>Colle exactement cette adresse dans « OAuth Redirect URLs » :</li>
+              </ol>
+              <div className="copyline">
+                <input readOnly value={redirectUri()} />
+                <button
+                  type="button"
+                  onClick={() => void navigator.clipboard.writeText(redirectUri())}
+                >
+                  Copier
+                </button>
+              </div>
+              <label>
+                <span>Client ID</span>
+                <input
+                  value={clientId}
+                  onChange={(event) => setClientId(event.target.value)}
+                  placeholder="ex. hof5gwx0su6owfnys0nyac87zr6t"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </label>
+            </details>
+          )}
 
           <p className="eyebrow">Cible</p>
           <label>
@@ -358,28 +386,16 @@ export default function App({ authError }: { authError: string | null }) {
               Remonter à la création de la chaîne ({channelCreatedAt})
             </button>
           )}
-          <div className="duo">
-            <label>
-              <span>Fenêtre (jours)</span>
-              <input
-                type="number"
-                min={1}
-                max={365}
-                value={chunkDays}
-                onChange={(event) => setChunkDays(event.target.value)}
-              />
-            </label>
-            <label>
-              <span>Vues max (option.)</span>
-              <input
-                type="number"
-                min={0}
-                placeholder="aucune"
-                value={maxViewsInput}
-                onChange={(event) => setMaxViewsInput(event.target.value)}
-              />
-            </label>
-          </div>
+          <label>
+            <span>Fenêtre (jours)</span>
+            <input
+              type="number"
+              min={1}
+              max={365}
+              value={chunkDays}
+              onChange={(event) => setChunkDays(event.target.value)}
+            />
+          </label>
           <button type="button" className="wide" onClick={() => void run()}>
             {running ? 'Arrêter' : 'Lancer la fouille'}
           </button>
@@ -444,6 +460,56 @@ export default function App({ authError }: { authError: string | null }) {
           </div>
 
           <p className="eyebrow">Résultats</p>
+
+          <div className="filters">
+            <label>
+              <span>Vues min</span>
+              <input
+                type="number"
+                min={0}
+                placeholder="aucune"
+                value={minViewsInput}
+                onChange={(event) => setMinViewsInput(event.target.value)}
+              />
+            </label>
+            <label>
+              <span>Vues max</span>
+              <input
+                type="number"
+                min={0}
+                placeholder="aucune"
+                value={maxViewsInput}
+                onChange={(event) => setMaxViewsInput(event.target.value)}
+              />
+            </label>
+            <label>
+              <span>Créateur</span>
+              <select value={creator} onChange={(event) => setCreator(event.target.value)}>
+                <option value="">Tous</option>
+                {creatorFacets.map((facet) => (
+                  <option key={facet.value} value={facet.value}>
+                    {facet.value} ({facet.count})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Jeu</span>
+              <select value={gameId} onChange={(event) => setGameId(event.target.value)}>
+                <option value="">Tous</option>
+                {gameFacets.map((facet) => (
+                  <option key={facet.value} value={facet.value}>
+                    {gameNames.get(facet.value) ?? facet.value} ({facet.count})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {filtersActive && (
+              <button type="button" className="link" onClick={resetFilters}>
+                Réinitialiser
+              </button>
+            )}
+          </div>
 
           <ClipTable
             clips={shown}

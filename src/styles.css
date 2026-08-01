@@ -395,6 +395,47 @@ details li {
   color: var(--red);
 }
 
+/* ---- filtres d'affichage ---- */
+
+.filters {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  margin-bottom: 12px;
+}
+
+.filters label {
+  margin: 0;
+  flex: 1 1 130px;
+  min-width: 0;
+}
+
+.filters .link {
+  width: auto;
+  padding: 0 0 9px;
+}
+
+select {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+select:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+}
+
 /* ---- résultats ---- */
 
 .group {
