@@ -8,6 +8,7 @@ import { Mark } from './components/Icon'
 import { SearchProgress } from './components/SearchProgress'
 import { describeAccess, describeTokenLife, TOKEN_EXPIRED } from './domain/access'
 import { applyFilters, facets } from './domain/filters'
+import { clampSince, clampUntil } from './domain/period'
 import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
 import { selectedClips, toggle, toggleAll } from './domain/selection'
@@ -159,6 +160,14 @@ export default function App({ authError }: { authError: string | null }) {
   }
 
   const channelCreatedAt = useChannelLookup(session, channel)
+  // Dérivée, jamais réécrite dans l'état : `since` garde la saisie, qui
+  // redeviendra valable telle quelle si la chaîne visée change pour une plus
+  // ancienne. C'est cette valeur-ci qui s'affiche et qui part en fouille.
+  const effectiveSince = clampSince(since, channelCreatedAt)
+  // Recalculé à chaque rendu : une session laissée ouverte passé minuit UTC
+  // débloque le jour suivant d'elle-même.
+  const today = day(new Date())
+  const effectiveUntil = clampUntil(until, today)
 
   const maxViews = numberOrNull(maxViewsInput)
   const minViews = numberOrNull(minViewsInput)
@@ -201,7 +210,7 @@ export default function App({ authError }: { authError: string | null }) {
     // un seuil de la fouille précédente donnerait une table vide inexpliquée.
     setDeselected(new Set())
     resetFilters()
-    void search.start({ channel, since, until })
+    void search.start({ channel, since: effectiveSince, until: effectiveUntil })
   }
 
   const stamp = `${channel || 'clips'}_${day(new Date())}`
@@ -230,10 +239,11 @@ export default function App({ authError }: { authError: string | null }) {
           onDisconnect={disconnect}
           channel={channel}
           onChannelChange={setChannel}
-          since={since}
+          since={effectiveSince}
           onSinceChange={setSince}
-          until={until}
+          until={effectiveUntil}
           onUntilChange={setUntil}
+          today={today}
           channelCreatedAt={channelCreatedAt}
           running={running}
           onRun={run}
