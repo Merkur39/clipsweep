@@ -136,6 +136,28 @@ export default function App({ authError }: { authError: string | null }) {
 
   const connect = () => location.assign(authorizeUrl(BUILD_TIME_CLIENT_ID, redirectUri()))
 
+  /**
+   * Oublie le jeton, rien de plus : les clips déjà récupérés restent à l'écran
+   * et restent exportables, puisque rien de tout ça ne redemande le réseau.
+   *
+   * L'oubli est local. Le jeton reste valide côté Twitch jusqu'à son échéance —
+   * le révoquer demanderait un appel à `/oauth2/revoke`, hors de ce que fait
+   * l'outil aujourd'hui. Il vit en `sessionStorage`, donc il meurt avec l'onglet.
+   */
+  const disconnect = () => {
+    tokenStore.clear()
+    setSession(null)
+    setPresumedConnected(false)
+    const state = describeAccess({
+      authError: null,
+      clientId: BUILD_TIME_CLIENT_ID,
+      hasStoredToken: false,
+      redirectUri: redirectUri(),
+    })
+    setAuthMessage(state.message)
+    setAuthKind(state.kind)
+  }
+
   const channelCreatedAt = useChannelLookup(session, channel)
 
   const maxViews = numberOrNull(maxViewsInput)
@@ -205,6 +227,7 @@ export default function App({ authError }: { authError: string | null }) {
           connected={session !== null || presumedConnected}
           canConnect={Boolean(BUILD_TIME_CLIENT_ID)}
           onConnect={connect}
+          onDisconnect={disconnect}
           channel={channel}
           onChannelChange={setChannel}
           since={since}

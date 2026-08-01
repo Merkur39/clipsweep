@@ -51,6 +51,16 @@ export function CloseIcon() {
   )
 }
 
+/** Une flèche qui sort du panneau : on quitte, on ne supprime rien. */
+export function LogoutIcon() {
+  return (
+    <svg {...base} width={13} height={13}>
+      <path d="M9 2.5H3.5v11H9" />
+      <path d="M7.5 8H14M11.5 5.5 14 8l-2.5 2.5" />
+    </svg>
+  )
+}
+
 export function AlertIcon() {
   return (
     <svg {...base} width={14} height={14}>

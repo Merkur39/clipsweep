@@ -42,3 +42,26 @@
   background: var(--red);
   box-shadow: 0 0 7px 1px rgb(255 93 93 / 55%);
 }
+
+/* Action rare, donc discrète — mais discrète par la couleur, pas par la taille :
+   le rail aligne des boutons pleine largeur, un gabarit à part y casserait le
+   rythme de la colonne et ferait sauter la mise en page d'un état à l'autre. */
+.disconnect {
+  color: var(--text-dim);
+  border-color: var(--rule);
+  background: transparent;
+}
+
+.disconnect:hover:not(:disabled) {
+  background: var(--surface-raised);
+  border-color: var(--red);
+  color: var(--red-bright);
+}
+
+.disconnect .icon {
+  color: var(--text-faint);
+}
+
+.disconnect:hover .icon {
+  color: var(--red);
+}
