@@ -11,17 +11,17 @@ composants vit dans `base.css` (jetons, éléments nus) ou `controls.css` (champ
 composants viennent après `controls.css` parce qu'ils surchargent le bouton et le champ nus
 (`.multiselect-button`, `.col-sort`, `.field-clear`).
 
-| Fichier               | Portée                                                   |
-| --------------------- | -------------------------------------------------------- |
-| `base.css`            | jetons, reset, `a`, focus, `prefers-reduced-motion`      |
-| `chassis.css`         | `App.tsx` — plaque, layout, rail, étiquettes de façade   |
-| `controls.css`        | partagé — champs, boutons, cases à cocher, icônes        |
-| `search-panel.css`    | `SearchPanel.tsx` — la lampe d'état                      |
-| `search-progress.css` | `SearchProgress.tsx` — alerte, repli, compteurs, journal |
-| `chart.css`           | `Frieze.tsx` — la bande graduée et sa légende            |
-| `filters.css`         | `FiltersBar` · `NumberField` · `MultiSelect`             |
-| `table.css`           | `ClipTable.tsx`                                          |
-| `export-panel.css`    | `ExportPanel.tsx`                                        |
+| Fichier               | Portée                                                              |
+| --------------------- | ------------------------------------------------------------------- |
+| `base.css`            | jetons des deux thèmes, reset, `a`, focus, `prefers-reduced-motion` |
+| `chassis.css`         | `App.tsx` — plaque, rangée des thèmes, layout, rail, étiquettes     |
+| `controls.css`        | partagé — champs, boutons, cases à cocher, icônes                   |
+| `search-panel.css`    | `SearchPanel.tsx` — la lampe d'état                                 |
+| `search-progress.css` | `SearchProgress.tsx` — alerte, repli, compteurs, journal            |
+| `chart.css`           | `Frieze.tsx` — la bande graduée et sa légende                       |
+| `filters.css`         | `FiltersBar` · `NumberField` · `MultiSelect`                        |
+| `table.css`           | `ClipTable.tsx`                                                     |
+| `export-panel.css`    | `ExportPanel.tsx`                                                   |
 
 Chaque `@media` reste dans le fichier des règles qu'il surcharge — jamais rassemblé en fin de
 course, ce qui séparerait une règle de son adaptation.
@@ -41,32 +41,86 @@ d'état — pas dans l'ornement.
 
 ## Couleur
 
-Graphite froid teinté bleu-violet. Ce ne sont **pas** les tokens de Twitch (`#0e0e10`, `#18181b`,
-`#a970ff`) : la compatibilité de thème passe par la famille violette, pas par la copie.
+Deux mondes. **Sombre** : graphite froid teinté bleu-violet — ce ne sont **pas** les tokens de
+Twitch (`#0e0e10`, `#18181b`, `#a970ff`), la compatibilité passe par la famille violette, pas par
+la copie. **Clair** : papier chaud et filets graphite, ce que la frise raconte déjà.
 
-| Rôle               | Token              | Valeur    | Emploi                                   |
-| ------------------ | ------------------ | --------- | ---------------------------------------- |
-| Fond de page       | `--ground`         | `#090b12` | corps, champs, journal                   |
-| Chrome             | `--chassis`        | `#0f121c` | rail, en-tête de table, filtres, exports |
-| Surface de travail | `--surface`        | `#141824` | corps de table, aire de tracé            |
-| Relief             | `--surface-raised` | `#1b2030` | boutons, panneau de sélection            |
-| Survol             | `--surface-hover`  | `#212739` | ligne de table survolée                  |
-| Filet              | `--rule`           | `#262c3d` | séparation courante                      |
-| Couture            | `--rule-strong`    | `#39415c` | structure du châssis                     |
+| Rôle               | Token              | Clair     | Sombre    | Emploi                                   |
+| ------------------ | ------------------ | --------- | --------- | ---------------------------------------- |
+| Fond de page       | `--ground`         | `#f3f1ed` | `#090b12` | corps, champs, journal                   |
+| Chrome             | `--chassis`        | `#f9f8f5` | `#0f121c` | rail, en-tête de table, filtres, exports |
+| Surface de travail | `--surface`        | `#ffffff` | `#141824` | corps de table, aire de tracé            |
+| Relief             | `--surface-raised` | `#ffffff` | `#1b2030` | boutons, panneau de sélection            |
+| Survol             | `--surface-hover`  | `#ebe8e2` | `#212739` | ligne de table survolée                  |
+| Enfoncé            | `--surface-sunken` | `#ded9d1` | `#141824` | bouton pressé                            |
+| Filet              | `--rule`           | `#ddd8d0` | `#262c3d` | séparation courante                      |
+| Couture            | `--rule-strong`    | `#b6ada0` | `#39415c` | structure du châssis                     |
 
-Texte : `--text` `#e7e9f1` · `--text-dim` `#a2a9bd` · `--text-faint` `#8d97b0`. Le tiers le plus
-éteint tient 4.5:1 **sur la ligne survolée**, pas seulement sur le fond de repos.
+La profondeur garde son sens dans les deux : `--ground` est le plus reculé, `--surface` porte le
+relevé. Mais en clair elle butte sur le blanc, d'où `--surface-sunken` : sans lui, un bouton pressé
+s'éclaircirait au lieu de s'enfoncer.
+
+Texte — clair `#1b1d24` · `#5b6070` · `#62677a`, sombre `#e7e9f1` · `#a2a9bd` · `#8d97b0`. Le tiers
+le plus éteint tient 4.5:1 **sur la ligne survolée**, pas seulement sur le fond de repos. C'est
+cette contrainte-là qui fixe les valeurs claires, pas l'inverse : mesuré 4.59 en clair, et c'est ce
+qui interdit un `--text-faint` plus pâle.
 
 **Trois encres, trois sens — rien d'autre ne prend de couleur :**
 
-- `--violet` `#a481ff` — la trace normale. Action primaire, focus, période complète, succès.
-- `--amber` `#f0a63c` — la période saturée puis **recoupée**, et le clip à zéro vue. L'algorithme
-  travaille : c'est notable, pas alarmant.
-- `--red` `#ff5d5d` — la **lacune réelle** : période encore saturée au plancher de six heures.
-  Réservé à ce qui invalide l'exhaustivité.
+- `--violet` — la trace normale. Action primaire, focus, période complète, succès.
+- `--amber` — la période saturée puis **recoupée**, et le clip à zéro vue. L'algorithme travaille :
+  c'est notable, pas alarmant.
+- `--red` — la **lacune réelle** : période encore saturée au plancher de six heures. Réservé à ce
+  qui invalide l'exhaustivité.
 
 Le rouge et l'ambre étaient auparavant à un pas de teinte l'un de l'autre, ce qui rendait l'état
 sain et l'état grave indiscernables. La séparation est maintenant sémantique.
+
+Les trois **ne s'inversent pas** : aucune valeur sombre ne tient 4.5:1 sur du papier (violet 2.9:1,
+ambre 2.1:1, rouge 3.0:1). Le monde clair a donc ses propres encres — `#6b3fd4`, `#925506`,
+`#cf2b2b` — choisies pour tenir le seuil sur la ligne survolée, pas pour ressembler aux autres.
+
+### Nommer sans dire la luminosité
+
+Aucun jeton ne porte de mot de luminosité absolue : « bright » et « deep » désignent des sens
+opposés d'un thème à l'autre, puisque l'insistance est plus **claire** en sombre et plus **foncée**
+en clair. Les suffixes disent donc le rôle :
+
+| Suffixe   | Sens                      | Exemple                                |
+| --------- | ------------------------- | -------------------------------------- |
+| `-strong` | ce qui insiste            | survol de lien, focus, stylet, journal |
+| `-press`  | ce qui est enfoncé        | bouton primaire pressé                 |
+| `-fill`   | l'aplat qui porte l'encre | fond de dalle, soulignement de lien    |
+| `-wash`   | le voile                  | case cochée, fond d'alerte             |
+| `-half`   | la trace à demi faite     | `<Mark />` uniquement                  |
+
+`--violet-half` existe parce que l'aplat de dalle, pâle sur papier, effaçait le cran intermédiaire
+de la plaque. Et `--on-violet-press` n'a **pas** de variante : l'aplat enfoncé est sombre dans les
+deux mondes, donc son libellé est clair dans les deux.
+
+### Comment les deux mondes cohabitent
+
+Un `light-dark()` par jeton, jamais deux palettes. C'est le CSS qui résout la préférence système,
+donc **le premier paint est déjà juste** — un `data-theme` posé en JavaScript ne peut pas le
+promettre, la feuille étant liée dans le `<head>` et peignant le corps avant que le module
+s'exécute.
+
+`data-theme` ne réécrit aucun jeton : il restreint `color-scheme` à une branche, et tout suit —
+y compris les ascenseurs et le sélecteur natif de date, qui resteraient sombres autrement. Suivre
+le système **efface** l'attribut ; une valeur `system` laisserait `color-scheme` restreint au
+dernier choix.
+
+Un choix explicite est donc appliqué dans `main.tsx` avant le rendu, comme le jeton OAuth : sans
+préférence enregistrée le CSS tranche seul, mais un choix qui contredit la machine doit être posé
+avant que la page se peigne, sinon il s'y voit arriver.
+
+Le halo de lampe garde sa géométrie en clair plutôt que de devenir un anneau : une encre saturée
+qui diffuse dans du papier est de l'encre qui bave. C'est le halo pâle sur fond pâle qui aurait
+fait de la bouillie.
+
+**Reste hors de portée** : `<meta name="theme-color">` suit la préférence système par média et ne
+peut pas suivre un choix qui la contredit — la teinte de la barre d'adresse mobile restera celle du
+système.
 
 ## Typographie
 
@@ -170,6 +224,12 @@ Surface de travail principale, donc la plus réglée :
   (`::before`) avec un halo : éteinte au repos, violette une fois connecté, rouge en défaut. Le
   liseré coloré collé sur la tranche d'un encadré est le tell générique que ce monde refuse ;
   les seuls `border-left`/`border-right` restants sont des filets structurels de 1px.
+- **Un choix à trois états ne se met pas dans un interrupteur qui tourne.** La rangée des thèmes
+  aligne trois boutons : un cycle obligerait à cliquer pour découvrir ce qu'il fera, et ne dirait
+  jamais lequel des trois est le courant. L'état est porté par `aria-pressed`, pas par la seule
+  teinte du bouton — comme la lampe, il doit s'entendre autant qu'il se voit. Les libellés sont
+  masqués visuellement (`.visually-hidden`), pas retirés : une préférence d'affichage ne pèse pas
+  autant que la tâche, mais elle reste nommée pour qui ne voit pas l'icône.
 - **Pas d'opacité pour désactiver** : elle fait passer le libellé sous le seuil de contraste. On
   éteint explicitement (`--text-faint` sur fond transparent, filet `--rule`).
 - **Aucun glyphe Unicode en guise d'icône.** Tout le vocabulaire est dessiné dans
