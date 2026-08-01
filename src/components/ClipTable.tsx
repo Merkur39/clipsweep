@@ -10,7 +10,7 @@ const OVERSCAN = 8
  * Windowed rendering: the whole point of the tool is to surface tens of
  * thousands of clips, which no browser will lay out as real DOM rows.
  */
-export function ClipTable({ clips }: { clips: Clip[] }) {
+export function ClipTable({ clips, emptyMessage }: { clips: Clip[]; emptyMessage: string }) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportHeight, setViewportHeight] = useState(560)
@@ -45,6 +45,7 @@ export function ClipTable({ clips }: { clips: Clip[] }) {
       </div>
 
       <div className="table-body" ref={scrollerRef} onScroll={onScroll} role="rowgroup">
+        {clips.length === 0 && <p className="table-empty">{emptyMessage}</p>}
         <div style={{ height: clips.length * ROW_HEIGHT, position: 'relative' }}>
           <div style={{ position: 'absolute', top: firstIndex * ROW_HEIGHT, left: 0, right: 0 }}>
             {slice.map((clip) => (

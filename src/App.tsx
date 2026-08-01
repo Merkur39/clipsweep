@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ClipTable } from './components/ClipTable'
 import { Frieze, type Span } from './components/Frieze'
 import { makeLogAppender, type LogEntry, type LogKind } from './log'
+import { describeEmptyResults } from './results'
 import { buildDownloadScript, detectScriptFlavor, type ScriptFlavor } from './scripts'
 import { TokenRejectedError, TwitchApi } from './twitch/api'
 import {
@@ -522,14 +523,21 @@ export default function App({ authError }: { authError: string | null }) {
                 URLs
               </button>
               <span className="count">
-                {shown.length
-                  ? `${shown.length} clips${maxViews !== null ? ` sur ${clips.length} récupérés` : ''}`
+                {clips.length
+                  ? `${shown.length} sur ${clips.length} clip${clips.length > 1 ? 's' : ''} récupéré${clips.length > 1 ? 's' : ''}`
                   : ''}
               </span>
             </div>
           </section>
 
-          <ClipTable clips={shown} />
+          <ClipTable
+            clips={shown}
+            emptyMessage={describeEmptyResults({
+              searched: progress !== null,
+              clipsFound: clips.length,
+              maxViews,
+            })}
+          />
         </main>
       </div>
     </div>
