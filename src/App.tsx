@@ -8,7 +8,7 @@ import { Mark } from './components/Icon'
 import { SearchProgress } from './components/SearchProgress'
 import { describeAccess, describeTokenLife, TOKEN_EXPIRED } from './domain/access'
 import { applyFilters, facets } from './domain/filters'
-import { clampSince, clampUntil } from './domain/period'
+import { clampSince, clampUntil, describePeriodError } from './domain/period'
 import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
 import { selectedClips, toggle, toggleAll } from './domain/selection'
@@ -168,6 +168,9 @@ export default function App({ authError }: { authError: string | null }) {
   // débloque le jour suivant d'elle-même.
   const today = day(new Date())
   const effectiveUntil = clampUntil(until, today)
+  // Les bornes contraignent chaque date séparément, jamais leur ordre : c'est
+  // le seul désordre qui reste possible.
+  const periodError = describePeriodError(effectiveSince, effectiveUntil)
 
   const maxViews = numberOrNull(maxViewsInput)
   const minViews = numberOrNull(minViewsInput)
@@ -244,6 +247,7 @@ export default function App({ authError }: { authError: string | null }) {
           until={effectiveUntil}
           onUntilChange={setUntil}
           today={today}
+          periodError={periodError}
           channelCreatedAt={channelCreatedAt}
           running={running}
           onRun={run}

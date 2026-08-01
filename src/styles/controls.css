@@ -88,15 +88,6 @@ button:active:not(:disabled) {
   background: var(--surface);
 }
 
-/* L'opacité fait passer le libellé sous le seuil de contraste : on éteint
-   explicitement, on ne dilue pas. */
-button:disabled {
-  background: transparent;
-  border-color: var(--rule);
-  color: var(--text-faint);
-  cursor: not-allowed;
-}
-
 button.primary {
   background: var(--violet);
   border-color: var(--violet);
@@ -145,6 +136,20 @@ button.link:hover:not(:disabled) {
 button.link:disabled {
   border: none;
   background: none;
+}
+
+/* Écrit en dernier, et il doit le rester : `button:disabled` a exactement la
+   même spécificité que `button.primary` (0,1,1), donc seul l'ordre les
+   départage. Placé avant, la variante primaire gardait son violet plein une
+   fois désactivée — un bouton mort qui a l'air du plus actionnable de la page.
+
+   L'opacité fait passer le libellé sous le seuil de contraste : on éteint
+   explicitement, on ne dilue pas. */
+button:disabled {
+  background: transparent;
+  border-color: var(--rule);
+  color: var(--text-faint);
+  cursor: not-allowed;
 }
 
 .icon {
