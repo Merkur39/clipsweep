@@ -20,9 +20,7 @@ import {
 import { applyFilters, facets, type ClipFilters } from './filters'
 import { collectClips, type WindowReport } from './twitch/clips'
 import type { Clip, Progress, TwitchUser } from './twitch/types'
-import { splitRange } from './twitch/windows'
-
-const DAY_MS = 86_400_000
+import { splitByYear } from './twitch/windows'
 const LOG_LIMIT = 500
 
 const day = (date: Date) => date.toISOString().slice(0, 10)
@@ -79,7 +77,6 @@ export default function App({ authError }: { authError: string | null }) {
   const [channel, setChannel] = usePersistedState('channel', 'kaliyami')
   const [since, setSince] = usePersistedState('since', '2019-01-01')
   const [until, setUntil] = usePersistedState('until', day(new Date()))
-  const [chunkDays, setChunkDays] = usePersistedState('chunk', '30')
   // Filtres d'affichage : ils portent sur les clips déjà récupérés, jamais sur
   // la fouille elle-même. Non persistés, contrairement aux champs de recherche —
   // un seuil oublié d'une session à l'autre donne une table vide inexpliquée.
@@ -228,8 +225,10 @@ export default function App({ authError }: { authError: string | null }) {
         )
       }
 
-      const windows = splitRange(from, to, Math.max(1, Number(chunkDays) || 30) * DAY_MS)
-      log(`${windows.length} fenêtres de ${chunkDays} jours à explorer.`)
+      // Amorçage annuel : la bissection resserre ensuite d'elle-même là où
+      // les clips sont denses.
+      const windows = splitByYear(from, to)
+      log(`${windows.length} fenêtre(s) annuelle(s) à explorer, resserrées si besoin.`)
 
       const result = await collectClips({
         windows,
@@ -386,16 +385,6 @@ export default function App({ authError }: { authError: string | null }) {
               Remonter à la création de la chaîne ({channelCreatedAt})
             </button>
           )}
-          <label>
-            <span>Fenêtre (jours)</span>
-            <input
-              type="number"
-              min={1}
-              max={365}
-              value={chunkDays}
-              onChange={(event) => setChunkDays(event.target.value)}
-            />
-          </label>
           <button type="button" className="wide" onClick={() => void run()}>
             {running ? 'Arrêter' : 'Lancer la fouille'}
           </button>

@@ -19,17 +19,29 @@ export function windowDurationMs(window: DateWindow): number {
   return Date.parse(window.endedAt) - Date.parse(window.startedAt)
 }
 
-export function splitRange(start: Date, end: Date, chunkMs: number): DateWindow[] {
-  const startMs = start.getTime()
+/**
+ * Seeds a search with one window per calendar year.
+ *
+ * A saturated window costs ten requests before it can be halved, and those are
+ * pure toll: the halves refetch the same clips. Starting from a single window
+ * over the whole range makes every internal node of the bisection tree pay it —
+ * roughly three times the requests of a well-sized start. Year boundaries lop
+ * off the top levels, which are the expensive ones, without asking the user for
+ * a number or probing the API for a density it cannot report.
+ */
+export function splitByYear(start: Date, end: Date): DateWindow[] {
   const endMs = end.getTime()
-  if (!(endMs > startMs) || chunkMs <= 0) return []
+  if (!(endMs > start.getTime())) return []
 
   const windows: DateWindow[] = []
-  for (let cursor = startMs; cursor < endMs; cursor += chunkMs) {
+  for (let cursor = start.getTime(); cursor < endMs;) {
+    const nextYear = Date.UTC(new Date(cursor).getUTCFullYear() + 1, 0, 1)
+    const boundary = Math.min(nextYear, endMs)
     windows.push({
       startedAt: toRfc3339(new Date(cursor)),
-      endedAt: toRfc3339(new Date(Math.min(cursor + chunkMs, endMs))),
+      endedAt: toRfc3339(new Date(boundary)),
     })
+    cursor = boundary
   }
   return windows
 }

@@ -112,9 +112,19 @@ La logique de collecte est couverte par des tests ; l'UI ne l'est pas.
 
 ## Réglages
 
-- **Fenêtre (jours)** — taille de départ. 30 j convient à la plupart des chaînes ; descendre si la frise
-  vire au rouge.
-- **Vues max** — vide = tout. `0` isole les clips jamais regardés.
+La fouille ne demande que la chaîne et l'intervalle de dates. Le découpage n'est plus un réglage :
+`splitByYear` amorce sur une fenêtre par année civile, et la bissection resserre là où les clips sont
+denses.
+
+Ce choix a un coût mesurable. Une fenêtre saturée dépense dix requêtes avant d'être coupée, et elles
+sont perdues — les moitiés refetchent les mêmes clips. Partir d'une fenêtre unique sur toute la plage
+ferait payer ce péage à chaque nœud interne de l'arbre, soit environ **trois fois** les requêtes d'un
+amorçage bien dimensionné. Les frontières d'année suppriment les niveaux hauts, les plus chers, sans
+rien demander à l'utilisateur ni sonder une densité que l'API ne sait pas rapporter.
+
+Les filtres au-dessus de la table — vues min et max, créateur, jeu — ne portent que sur l'affichage et
+la sélection, jamais sur la fouille. Ils ne sont pas persistés : un seuil oublié d'une session à
+l'autre donnerait une table vide sans raison apparente.
 
 Coût : ~1 requête par tranche de 100 clips, plus une par bissection. Quota Helix : 800 points/min, le
 client respecte `Ratelimit-Reset` sur 429 et s'espace de 60 ms entre deux requêtes.
