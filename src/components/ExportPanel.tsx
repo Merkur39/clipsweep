@@ -37,7 +37,7 @@ export function ExportPanel({
           {(flavor ?? 'bat') === 'bat' && (
             <button
               type="button"
-              className={flavor ? 'primary' : ''}
+              className={flavor && !empty ? 'primary' : ''}
               disabled={empty}
               title="Enregistrer dans un dossier, puis double-cliquer."
               onClick={() => onDownloadScript('bat')}
@@ -48,7 +48,7 @@ export function ExportPanel({
           {(flavor ?? 'sh') === 'sh' && (
             <button
               type="button"
-              className={flavor ? 'primary' : ''}
+              className={flavor && !empty ? 'primary' : ''}
               disabled={empty}
               title="Enregistrer, puis : chmod +x fichier.sh && ./fichier.sh"
               onClick={() => onDownloadScript('sh')}

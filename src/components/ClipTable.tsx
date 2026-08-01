@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { selectionState } from '../domain/selection'
 import type { ClipSort, SortKey } from '../domain/sort'
 import type { Clip } from '../twitch/types'
+import { CaretIcon } from './Icon'
 import { visibleRange } from './virtual'
 
 const ROW_HEIGHT = 34
@@ -116,7 +117,7 @@ export function ClipTable({
             <button type="button" className="col-sort" onClick={() => onSortChange(column.key)}>
               {column.label}
               <span aria-hidden="true" className="col-sort-arrow">
-                {sort.key === column.key ? (sort.direction === 'asc' ? '▲' : '▼') : ''}
+                {sort.key === column.key && <CaretIcon turn={sort.direction === 'asc' ? 0 : 180} />}
               </span>
             </button>
           </span>

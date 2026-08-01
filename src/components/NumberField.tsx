@@ -1,3 +1,5 @@
+import { CloseIcon } from './Icon'
+
 export interface NumberFieldProps {
   label: string
   value: string
@@ -31,7 +33,7 @@ export function NumberField({ label, value, onChange, placeholder }: NumberField
             aria-label={`Effacer ${label}`}
             title={`Effacer ${label}`}
           >
-            ×
+            <CloseIcon />
           </button>
         )}
       </span>
