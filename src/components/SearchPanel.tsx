@@ -37,55 +37,63 @@ export function SearchPanel({
 }: SearchPanelProps) {
   return (
     <aside className="rail">
-      <p className="eyebrow">Accès</p>
-      <div className={`status ${authKind}`}>{authMessage}</div>
-      <button
-        type="button"
-        className="primary wide"
-        onClick={onConnect}
-        disabled={connected || !canConnect}
-      >
-        {connected ? 'Connecté à Twitch' : 'Se connecter à Twitch'}
-      </button>
-
-      <p className="eyebrow">Cible</p>
-      <label>
-        <span>Chaîne</span>
-        <input
-          value={channel}
-          onChange={(event) => onChannelChange(event.target.value)}
-          spellCheck={false}
-        />
-      </label>
-      <div className="duo">
-        <label>
-          <span>Depuis</span>
-          <input
-            type="date"
-            value={since}
-            onChange={(event) => onSinceChange(event.target.value)}
-          />
-        </label>
-        <label>
-          <span>Jusqu'au</span>
-          <input
-            type="date"
-            value={until}
-            onChange={(event) => onUntilChange(event.target.value)}
-          />
-        </label>
-      </div>
-
-      {/* Proposé seulement s'il élargit vraiment la période demandée. */}
-      {channelCreatedAt && channelCreatedAt < since && (
-        <button type="button" className="link" onClick={() => onSinceChange(channelCreatedAt)}>
-          Remonter à la création de la chaîne ({channelCreatedAt})
+      <div className="rail-inner">
+        <p className="section-label">Accès</p>
+        <div className={`status ${authKind}`}>{authMessage}</div>
+        {/* L'emphase suit ce qu'il reste à faire : une fois connecté, le bouton
+          le plus lourd de la page ne peut pas être celui qui est désactivé. */}
+        <button
+          type="button"
+          className={connected ? 'wide' : 'primary wide'}
+          onClick={onConnect}
+          disabled={connected || !canConnect}
+        >
+          {connected ? 'Connecté à Twitch' : 'Se connecter à Twitch'}
         </button>
-      )}
 
-      <button type="button" className="wide" onClick={onRun}>
-        {running ? 'Arrêter' : 'Lancer la fouille'}
-      </button>
+        <p className="section-label">Cible</p>
+        <label>
+          <span>Chaîne</span>
+          <input
+            value={channel}
+            onChange={(event) => onChannelChange(event.target.value)}
+            spellCheck={false}
+          />
+        </label>
+        <div className="duo">
+          <label>
+            <span>Depuis</span>
+            <input
+              type="date"
+              value={since}
+              onChange={(event) => onSinceChange(event.target.value)}
+            />
+          </label>
+          <label>
+            <span>Jusqu'au</span>
+            <input
+              type="date"
+              value={until}
+              onChange={(event) => onUntilChange(event.target.value)}
+            />
+          </label>
+        </div>
+
+        {/* Proposé seulement s'il élargit vraiment la période demandée. */}
+        {channelCreatedAt && channelCreatedAt < since && (
+          <button type="button" className="link" onClick={() => onSinceChange(channelCreatedAt)}>
+            Remonter à la création de la chaîne ({channelCreatedAt})
+          </button>
+        )}
+
+        <button
+          type="button"
+          className={connected && !running ? 'primary wide' : 'wide'}
+          onClick={onRun}
+        >
+          {running ? 'Arrêter la fouille' : 'Lancer la fouille'}
+        </button>
+      </div>
     </aside>
   )
 }

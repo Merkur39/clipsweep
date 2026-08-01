@@ -4,6 +4,7 @@ import { ClipTable } from './components/ClipTable'
 import { ExportPanel } from './components/ExportPanel'
 import { FiltersBar } from './components/FiltersBar'
 import { SearchPanel } from './components/SearchPanel'
+import { Mark } from './components/Icon'
 import { SearchProgress } from './components/SearchProgress'
 import { applyFilters, facets } from './domain/filters'
 import { describeEmptyResults, describeResultCount } from './domain/results'
@@ -175,8 +176,13 @@ export default function App({ authError }: { authError: string | null }) {
 
   return (
     <div className="page">
-      <header>
-        <h1>GetClipTwitch</h1>
+      {/* Plaque d'identification, pas bandeau d'accueil : l'outil se consulte
+          tous les jours, son nom n'a pas besoin de 46 px. */}
+      <header className="masthead">
+        <h1 className="masthead-name">
+          <Mark />
+          GetClipTwitch
+        </h1>
         <p className="lede">
           L'inventaire complet des clips d'une chaîne, du plus vu au jamais vu.
         </p>
@@ -211,7 +217,7 @@ export default function App({ authError }: { authError: string | null }) {
             running={running}
           />
 
-          <p className="eyebrow">Résultats</p>
+          <p className="section-label">Résultats</p>
           {clips.length > 0 && (
             <p className="result-count">
               {describeResultCount({

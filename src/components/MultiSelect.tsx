@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 
 import type { Facet } from '../domain/filters'
+import { ChevronIcon } from './Icon'
 import { describeSelection } from './selectionLabel'
 
 export interface MultiSelectProps {
@@ -68,7 +69,7 @@ export function MultiSelect({
         <span className="multiselect-value" id={valueId}>
           {describeSelection(selected, labelOf)}
         </span>
-        <span aria-hidden="true">▾</span>
+        <ChevronIcon />
       </button>
 
       {open && (

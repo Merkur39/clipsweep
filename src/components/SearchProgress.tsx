@@ -5,6 +5,7 @@ import { describeSearchStatus } from '../domain/results'
 import type { WindowReport } from '../twitch/clips'
 import type { Progress } from '../twitch/types'
 import { Frieze, type Span } from './Frieze'
+import { AlertIcon, CaretIcon } from './Icon'
 
 export interface SearchProgressProps {
   reports: WindowReport[]
@@ -46,18 +47,25 @@ export function SearchProgress({
 
       {incomplete.length > 0 && (
         <p className="alert">
-          {incomplete.length} période(s) n'ont pas pu être explorées entièrement : il manque des
-          clips sur celles-ci. Resserre l'intervalle de dates.
+          <AlertIcon />
+          <span>
+            {incomplete.length} période(s) n'ont pas pu être explorées entièrement : il manque des
+            clips sur celles-ci. Resserre l'intervalle de dates.
+          </span>
         </p>
       )}
 
       {/* Non contrôlé volontairement : React ne doit jamais refermer ce que
           l'utilisateur vient d'ouvrir. */}
       <details className="technical">
-        <summary>Détail de la fouille</summary>
+        <summary>
+          <CaretIcon />
+          Détail de la fouille
+          <span className="summary-aside">frise, compteurs, journal</span>
+        </summary>
 
-        <p className="eyebrow">Découpage du temps</p>
-        <Frieze reports={reports} span={span} />
+        <p className="section-label">Découpage du temps</p>
+        <Frieze reports={reports} span={span} running={running} />
         <div className="legend">
           <span>
             <b className="done" />
@@ -84,7 +92,7 @@ export function SearchProgress({
           </div>
         </dl>
 
-        <p className="eyebrow">Journal</p>
+        <p className="section-label">Journal</p>
         <div className="log" ref={logRef}>
           {logEntries.length === 0 ? (
             <p>En attente.</p>
