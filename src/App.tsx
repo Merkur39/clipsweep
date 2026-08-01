@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ClipTable } from './components/ClipTable'
 import { Frieze, type Span } from './components/Frieze'
 import { makeLogAppender, type LogEntry, type LogKind } from './log'
+import { buildDownloadScript } from './scripts'
 import { TokenRejectedError, TwitchApi } from './twitch/api'
 import {
   authorizeUrl,
@@ -386,6 +387,34 @@ export default function App({ authError }: { authError: string | null }) {
               onClick={() => download(`${stamp}_urls.txt`, shown.map((clip) => clip.url).join('\n'), 'text/plain')}
             >
               URLs
+            </button>
+            <button
+              type="button"
+              disabled={!shown.length}
+              title="Script Windows : à placer dans un dossier et double-cliquer"
+              onClick={() =>
+                download(
+                  `${stamp}.bat`,
+                  buildDownloadScript('bat', channel, shown.map((clip) => clip.url)),
+                  'text/plain',
+                )
+              }
+            >
+              Script .bat
+            </button>
+            <button
+              type="button"
+              disabled={!shown.length}
+              title="Script macOS / Linux : chmod +x puis lancer"
+              onClick={() =>
+                download(
+                  `${stamp}.sh`,
+                  buildDownloadScript('sh', channel, shown.map((clip) => clip.url)),
+                  'text/plain',
+                )
+              }
+            >
+              Script .sh
             </button>
             <span className="count">
               {shown.length

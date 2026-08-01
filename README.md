@@ -72,6 +72,30 @@ fonctionne aussi bien à la racine d'un domaine que sous `/get-clip-twitch/`.
 Chaque visiteur reste maître de son accès : il déclare sa propre application Twitch avec cette URL de
 redirection, saisit son Client ID et se connecte avec son compte.
 
+## Télécharger les vidéos
+
+L'API Helix ne fournit **aucune URL de média**. La seule URL réelle est une CloudFront signée
+(`?token=…&sig=…`), mintée par un endpoint GQL interne réservé au client web de Twitch. L'astuce
+répandue consistant à suffixer le `thumbnail_url` par `.mp4` ne fonctionne plus : le CDN ignore le
+suffixe et renvoie **la vignette** avec un `200 OK` — un échec silencieux qui produit des fichiers
+`.mp4` de 56 Ko.
+
+Le téléchargement est donc délégué à [yt-dlp](https://github.com/yt-dlp/yt-dlp), qui tourne sur la
+machine de l'utilisateur. Deux exports génèrent un script prêt à lancer :
+
+| Export | Usage |
+| --- | --- |
+| `.bat` | Windows : placer dans un dossier, double-cliquer |
+| `.sh` | macOS / Linux : `chmod +x` puis lancer |
+
+Le script écrit la liste d'URLs, appelle yt-dlp avec des noms de fichiers lisibles, et tient un
+`archive.txt` : **relancer reprend là où ça s'est arrêté**. Si yt-dlp est absent, il propose de le
+récupérer — après confirmation, jamais en silence.
+
+Ces scripts sont du code exécuté sur la machine de l'utilisateur : les URLs y sont injectées après
+validation par liste blanche ([scripts.ts](src/scripts.ts)), tout ce qui n'est pas une URL de clip
+Twitch est écarté plutôt qu'échappé.
+
 ## Architecture
 
 | Fichier | Rôle |
@@ -82,6 +106,7 @@ redirection, saisit son Client ID et se connecte avec son compte.
 | `src/twitch/api.ts` | client Helix : throttle, retry 429/5xx |
 | `src/components/Frieze.tsx` | frise du découpage temporel |
 | `src/components/ClipTable.tsx` | table virtualisée — affiche tout, sans plafond DOM |
+| `src/scripts.ts` | génération des scripts yt-dlp `.bat` / `.sh` |
 
 La logique de collecte est couverte par des tests ; l'UI ne l'est pas.
 
