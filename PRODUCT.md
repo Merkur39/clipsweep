@@ -110,8 +110,13 @@ Licence GPL-3.0.
 
 1. **Ne jamais prétendre à l'exhaustivité sans l'avoir vérifiée.** Une lacune connue se signale ; un
    silence vaudrait mensonge.
-2. **Rien ne quitte le navigateur.** L'absence de backend n'est pas une commodité d'implémentation
-   mais un engagement, qui borne l'espace des solutions acceptables.
+2. **Aucune donnée d'utilisateur ne quitte le navigateur.** L'absence de backend n'est pas une
+   commodité d'implémentation mais un engagement, qui borne l'espace des solutions acceptables.
+   Jeton, clips récupérés, filtres, exports : rien de tout cela ne sort. La seule exception, à
+   énoncer plutôt qu'à taire, est la mesure d'audience Vercel activée le 2026-08-02 — une page vue,
+   sans cookie ni identifiant persistant, et rien de ce que le visiteur saisit ou récupère. Le
+   principe s'écrivait « Rien ne quitte le navigateur » jusque-là ; le formuler ainsi serait devenu
+   faux.
 3. **Rester dans l'API supportée**, et déplacer sur la machine de l'utilisateur ce qui n'y tient pas,
    plutôt que de contourner sous le Client ID du propriétaire.
 4. **Servir à parts égales l'exploration et la récolte.** Ni le tableau ni les exports ne sont un

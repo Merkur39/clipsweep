@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ClipTable } from './components/ClipTable'
+import { Colophon } from './components/Colophon'
 import { ExportPanel } from './components/ExportPanel'
 import { FiltersBar } from './components/FiltersBar'
 import { SearchPanel } from './components/SearchPanel'
@@ -404,6 +405,10 @@ export default function App({ authError }: { authError: string | null }) {
           />
         </main>
       </div>
+
+      {/* Hors de `.layout` : il court sous le rail comme sous la scène, la
+          plaque d'identification lui répondant en haut de page. */}
+      <Colophon />
     </div>
   )
 }

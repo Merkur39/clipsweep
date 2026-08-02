@@ -14,7 +14,7 @@ composants viennent après `controls.css` parce qu'ils surchargent le bouton et 
 | Fichier               | Portée                                                              |
 | --------------------- | ------------------------------------------------------------------- |
 | `base.css`            | jetons des deux thèmes, reset, `a`, focus, `prefers-reduced-motion` |
-| `chassis.css`         | `App.tsx` — plaque, rangée des thèmes, layout, rail, étiquettes     |
+| `chassis.css`         | `App.tsx` — plaque, thèmes, layout, rail, étiquettes, pied de page  |
 | `controls.css`        | partagé — champs, boutons, cases à cocher, icônes                   |
 | `search-panel.css`    | `SearchPanel.tsx` — la lampe d'état                                 |
 | `search-progress.css` | `SearchProgress.tsx` — alerte, repli, compteurs, journal            |
