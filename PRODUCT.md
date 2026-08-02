@@ -89,8 +89,7 @@ risque est connu et accepté faute d'arbitrage contraire.
 
 ## Brand Commitments
 
-Nom : **ClipSweep**. Accroche actuelle : « L'inventaire complet des clips d'une chaîne, du plus
-vu au jamais vu. »
+Nom : **ClipSweep**. Accroche actuelle : « Tous les clips d'une chaîne. Oui, même celui-là. »
 
 Voix : française, directe, sans jargon dans l'interface — le vocabulaire technique reste dans le
 code, le README et le repli « Détail de la fouille ». Le code, les symboles et les commentaires sont
