@@ -149,6 +149,50 @@
   margin-top: 0;
 }
 
+/* ---- pied de page ---- */
+
+/* Le pendant de la plaque : même filet de couture, en haut plutôt qu'en bas.
+   Les deux ferment la page sur la même ligne, l'une annonce, l'autre rend
+   compte. */
+.colophon {
+  margin-top: var(--s-6);
+  padding: var(--s-4) 0 var(--s-5);
+  border-top: 1px solid var(--rule-strong);
+}
+
+.colophon-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3) var(--s-5);
+  margin: 0 0 var(--s-3);
+}
+
+/* Sérigraphiés comme les étiquettes de section : ce sont des repères, pas des
+   invitations. Le soulignement au survol suffit à dire qu'ils sont vivants. */
+.colophon-links a {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: none;
+}
+
+.colophon-links a:hover {
+  color: var(--violet-strong);
+  text-decoration: underline;
+}
+
+/* Mesure bornée : une mention légale se lit d'un trait, pas en balayant 1600px
+   d'une tempe à l'autre. */
+.colophon-note {
+  max-width: 78ch;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-faint);
+}
+
 @media (max-width: 960px) {
   .page {
     padding: 0 var(--s-4) var(--s-6);
