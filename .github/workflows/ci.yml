@@ -1,0 +1,34 @@
+name: Vérifications
+
+# La mise en ligne est passée chez Vercel, qui construit et déploie sur push.
+# Ce workflow ne déploie plus rien : il ne garde que les vérifications, qui
+# n'avaient aucune raison de partir avec le déploiement.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run lint
+      - run: npm test
+      # `npm run build` enchaîne `tsc -b` puis `vite build` : le lancer ici
+      # vérifie que le projet compile. Le bundle produit n'est pas celui qui
+      # part en ligne — c'est Vercel qui construit celui-là, avec la variable
+      # `VITE_TWITCH_CLIENT_ID` de son propre projet.
+      - run: npm run build

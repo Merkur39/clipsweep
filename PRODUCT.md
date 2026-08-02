@@ -94,7 +94,7 @@ Licence GPL-3.0.
 ## Evidence on Hand
 
 - Dépôt public `github.com/Merkur39/get-clip-twitch`, déployé sur
-  `https://merkur39.github.io/get-clip-twitch/`.
+  `https://get-clip-twitch.vercel.app/`.
 - Chaîne de test réelle : `kaliyami`, créée le 2017-07-10.
 - Aucun témoignage, chiffre d'usage, mesure de performance ou référence client n'existe à ce jour.
   Le travail futur ne doit en fabriquer aucun.

@@ -67,7 +67,7 @@ export const BUILD_TIME_CLIENT_ID: string = import.meta.env.VITE_TWITCH_CLIENT_I
 /**
  * Twitch matches the redirect URI byte for byte, so it has to be stable however
  * the page was reached: with or without the trailing slash, and whether or not
- * `index.html` is spelled out. Served from a project subpath (GitHub Pages),
+ * `index.html` is spelled out. Served from a subpath rather than a domain root,
  * that difference is what turns a working login into `redirect_mismatch`.
  */
 export function normalizeRedirectUri(origin: string, pathname: string): string {

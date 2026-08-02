@@ -27,7 +27,7 @@ Le filtre « vues max » est **optionnel** et purement local : par défaut tout 
 1. Créer une application sur [dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps), catégorie
    « Application Integration ».
 2. Déclarer chaque origine servant l'app dans « OAuth Redirect URLs », à l'identique et **slash final
-   compris** : `http://localhost:5173/` en dev, l'URL Pages en production.
+   compris** : `http://localhost:5173/` en dev, l'URL de production.
 3. `cp .env.example .env.local`, y coller `VITE_TWITCH_CLIENT_ID`.
 4. `npm install && npm run dev`.
 
@@ -55,23 +55,24 @@ build est déployable en statique.
 
 ## Déploiement
 
-Poussé sur `main`, [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) enchaîne lint, tests,
-build et mise en ligne sur GitHub Pages.
+La mise en ligne se fait sur **Vercel**, qui construit et déploie à chaque push sur `main` :
+[`get-clip-twitch.vercel.app`](https://get-clip-twitch.vercel.app/).
 
-Trois réglages à faire une fois :
+Côté GitHub, [`.github/workflows/ci.yml`](.github/workflows/ci.yml) ne déploie rien : il enchaîne
+`format:check`, lint, tests et build à titre de vérification.
 
-1. **Settings → Pages → Source : GitHub Actions** sur le dépôt (sans ça le workflow échoue à l'étape
-   `configure-pages`).
-2. **Settings → Secrets and variables → Actions → Variables** : ajouter `VITE_TWITCH_CLIENT_ID`. Une
-   _variable_, pas un secret — un Client ID n'est pas confidentiel, et un secret finirait de toute façon
-   en clair dans le bundle servi.
-3. Ajouter l'URL Pages aux « OAuth Redirect URLs » de l'application Twitch, **slash final compris** :
-   `https://merkur39.github.io/get-clip-twitch/`. Twitch compare la chaîne à l'octet près ; l'app
+Deux réglages à faire une fois :
+
+1. **Settings → Environment Variables** du projet Vercel : ajouter `VITE_TWITCH_CLIENT_ID`. Un Client ID
+   n'est pas confidentiel — il finit de toute façon en clair dans le bundle servi. Sans elle, le build
+   part au vert et le site s'affiche, mais refuse toute connexion.
+2. Ajouter l'URL de production aux « OAuth Redirect URLs » de l'application Twitch, **slash final
+   compris** : `https://get-clip-twitch.vercel.app/`. Twitch compare la chaîne à l'octet près ; l'app
    normalise l'URI (slash final ajouté, `index.html` retiré) pour qu'elle soit stable quel que soit le
    chemin d'arrivée.
 
 `base: './'` dans [vite.config.ts](vite.config.ts) rend les chemins d'assets relatifs : le build
-fonctionne aussi bien à la racine d'un domaine que sous `/get-clip-twitch/`.
+fonctionne aussi bien à la racine d'un domaine que sous un sous-chemin.
 
 Chaque visiteur reste maître de son accès : il déclare sa propre application Twitch avec cette URL de
 redirection, saisit son Client ID et se connecte avec son compte.
