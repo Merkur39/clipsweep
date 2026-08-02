@@ -1,6 +1,12 @@
-import { describe, expect, it } from 'vitest'
+// @vitest-environment jsdom
+import { afterEach, describe, expect, it } from 'vitest'
 
-import { lookupChannel, rememberChannel } from './channelCache'
+import { channelCache, lookupChannel, rememberChannel } from './channelCache'
+
+afterEach(() => {
+  localStorage.clear()
+  sessionStorage.clear()
+})
 
 const cacheDe = (...entrees: [string, string][]) =>
   JSON.stringify(entrees.map(([login, createdAt]) => ({ login, createdAt })))
@@ -27,7 +33,8 @@ describe('lookupChannel', () => {
     )
   })
 
-  // Le cache vit en localStorage : il peut avoir été trituré à la main.
+  // Le cache vit dans le stockage du navigateur : il peut avoir été trituré à
+  // la main.
   it('survit à un contenu corrompu plutôt que de lever', () => {
     for (const corrompu of ['pas du json', '{}', '[1,2,3]', '[{"login":"a"}]', '']) {
       expect(lookupChannel(corrompu, 'a')).toBeNull()
@@ -80,5 +87,27 @@ describe('rememberChannel', () => {
     const raw = rememberChannel('pas du json', 'testchannel', '2017-07-10')
 
     expect(lookupChannel(raw, 'testchannel')).toBe('2017-07-10')
+  })
+})
+
+describe('channelCache', () => {
+  it('relit ce qu’il vient d’enregistrer', () => {
+    channelCache.remember('testchannel', '2017-07-10')
+
+    expect(channelCache.read('testchannel')).toBe('2017-07-10')
+  })
+
+  it('ne connaît pas une chaîne jamais enregistrée', () => {
+    expect(channelCache.read('testchannel')).toBeNull()
+  })
+
+  // Le cache accompagne les champs de fouille, qui vivent le temps de l'onglet :
+  // le laisser en localStorage y laisserait la trace des chaînes visitées bien
+  // après que la session qui les a cherchées se soit terminée.
+  it('vit en sessionStorage, sans rien laisser en localStorage', () => {
+    channelCache.remember('testchannel', '2017-07-10')
+
+    expect(sessionStorage.getItem('getclip.channels')).toContain('testchannel')
+    expect(localStorage.getItem('getclip.channels')).toBeNull()
   })
 })
