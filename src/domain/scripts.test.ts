@@ -97,8 +97,11 @@ describe('buildDownloadScript, injection de commandes', () => {
   it('écarte toute entrée qui n’est pas une URL de clip Twitch', () => {
     for (const hostile of HOSTILES) {
       for (const script of [bat([hostile]), sh([hostile])]) {
+        // La charge, pas la commande : le script efface légitimement le dossier
+        // temporaire de yt-dlp par un `rm -rf`, et c'est bien la cible `~` qui
+        // signerait l'injection.
         expect(script).not.toContain('del /f')
-        expect(script).not.toContain('rm -rf')
+        expect(script).not.toContain('rm -rf ~')
         expect(script).not.toContain('shutdown')
         expect(script).not.toContain('whoami')
         expect(script).not.toContain('$(id)')
@@ -114,6 +117,19 @@ describe('buildDownloadScript, injection de commandes', () => {
 
     expect(script).toContain(URLS[0])
     expect(script).not.toContain('del /f')
+  })
+
+  // Le filet qui ne dépend d'aucune liste de motifs : aucune entrée écartée ne
+  // doit se retrouver dans le script, sous quelque forme que ce soit.
+  it('ne laisse passer aucune entrée hostile, même partiellement', () => {
+    for (const hostile of HOSTILES) {
+      for (const script of [bat([hostile]), sh([hostile])]) {
+        expect(script).not.toContain(hostile)
+        // La partie après l'URL plausible : c'est elle qui porte la charge.
+        const payload = hostile.replace(/^https?:\/\/[^\s;&`$]*/, '').trim()
+        if (payload) expect(script).not.toContain(payload)
+      }
+    }
   })
 
   it('n’injecte jamais un nom de chaîne hostile', () => {
