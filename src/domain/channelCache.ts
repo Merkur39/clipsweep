@@ -4,15 +4,15 @@ export interface CachedChannel {
   createdAt: string
 }
 
-/** Enough to cover any realistic history without letting localStorage drift. */
+/** Enough to cover any realistic history without letting the store drift. */
 export const CHANNEL_CACHE_LIMIT = 50
 
 const normalize = (login: string) => login.trim().toLowerCase()
 
 /**
- * The cache lives in localStorage, so its content is user-editable and may be
- * anything at all. Parsing therefore never throws: a corrupt cache is simply an
- * empty one, and the next write rebuilds it.
+ * The cache lives in browser storage, so its content is user-editable and may
+ * be anything at all. Parsing therefore never throws: a corrupt cache is simply
+ * an empty one, and the next write rebuilds it.
  */
 function parse(raw: string | null): CachedChannel[] {
   if (!raw) return []
@@ -54,11 +54,17 @@ export function rememberChannel(
 
 const STORAGE_KEY = 'getclip.channels'
 
+/**
+ * Le cache accompagne les champs de fouille : il vit donc en `sessionStorage`,
+ * comme eux. Une date de création ne périme jamais, mais garder la liste des
+ * chaînes visitées après la fermeture de l'onglet laisserait une trace des
+ * recherches passées bien au-delà de la session qui les a faites.
+ */
 export const channelCache = {
-  read: (login: string) => lookupChannel(localStorage.getItem(STORAGE_KEY), login),
+  read: (login: string) => lookupChannel(sessionStorage.getItem(STORAGE_KEY), login),
   remember: (login: string, createdAt: string) =>
-    localStorage.setItem(
+    sessionStorage.setItem(
       STORAGE_KEY,
-      rememberChannel(localStorage.getItem(STORAGE_KEY), login, createdAt),
+      rememberChannel(sessionStorage.getItem(STORAGE_KEY), login, createdAt),
     ),
 }

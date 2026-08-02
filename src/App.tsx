@@ -11,13 +11,14 @@ import { ThemeToggle } from './components/ThemeToggle'
 import { applyTheme, parseTheme } from './domain/theme'
 import { describeAccess, describeTokenLife, TOKEN_EXPIRED } from './domain/access'
 import { applyFilters, dateExtent, facets } from './domain/filters'
-import { clampSince, clampUntil, describePeriodError } from './domain/period'
+import { clampSince, clampUntil, describePeriodError, monthBefore } from './domain/period'
 import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
 import { selectedClips, toggle, toggleAll } from './domain/selection'
 import { DEFAULT_SORT, nextSort, sortClips, type ClipSort } from './domain/sort'
 import { useChannelLookup } from './hooks/useChannelLookup'
 import { useClipSearch } from './hooks/useClipSearch'
+import { usePersistedState } from './hooks/usePersistedState'
 import { useUnloadGuard } from './hooks/useUnloadGuard'
 import {
   authorizeUrl,
@@ -34,15 +35,6 @@ const day = (date: Date) => date.toISOString().slice(0, 10)
 const numberOrNull = (raw: string) => {
   const value = Number(raw.trim())
   return raw.trim() === '' || !Number.isFinite(value) ? null : value
-}
-
-/** Exporté pour que `main.tsx` lise le thème sous la même clé, avant le rendu. */
-export const persistedKey = (key: string) => `getclip.${key}`
-
-function usePersistedState(key: string, initial: string) {
-  const [value, setValue] = useState(() => localStorage.getItem(persistedKey(key)) ?? initial)
-  useEffect(() => localStorage.setItem(persistedKey(key), value), [key, value])
-  return [value, setValue] as const
 }
 
 function download(name: string, text: string, mime: string) {
@@ -94,12 +86,19 @@ export default function App({ authError }: { authError: string | null }) {
   const theme = parseTheme(storedTheme)
   useEffect(() => applyTheme(document.documentElement, theme), [theme])
 
-  const [channel, setChannel] = usePersistedState('channel', '')
-  const [since, setSince] = usePersistedState('since', '2019-01-01')
-  const [until, setUntil] = usePersistedState('until', day(new Date()))
+  // La cible et la période vivent le temps de l'onglet, contrairement au thème :
+  // ce sont les paramètres d'une fouille, pas des préférences. Les retrouver
+  // d'une session à l'autre ferait repartir, au premier clic, une recherche que
+  // personne n'a demandée ici.
+  const [channel, setChannel] = usePersistedState('channel', '', sessionStorage)
+  // Un mois, et non les origines de Twitch : la fouille par défaut doit rester
+  // bon marché, un clic immédiat sur « Lancer » ne devant pas engager sept
+  // fenêtres annuelles avant que la période ait été choisie.
+  const [since, setSince] = usePersistedState('since', monthBefore(day(new Date())), sessionStorage)
+  const [until, setUntil] = usePersistedState('until', day(new Date()), sessionStorage)
   // Filtres d'affichage : ils portent sur les clips déjà récupérés, jamais sur
-  // la fouille elle-même. Non persistés, contrairement aux champs de recherche —
-  // un seuil oublié d'une session à l'autre donne une table vide inexpliquée.
+  // la fouille elle-même. Non conservés, contrairement aux champs de recherche —
+  // un seuil oublié d'un écran à l'autre donne une table vide inexpliquée.
   const [minViewsInput, setMinViewsInput] = useState('')
   const [maxViewsInput, setMaxViewsInput] = useState('')
   // La plage d'affichage, distincte de la période fouillée : la resserrer ne
