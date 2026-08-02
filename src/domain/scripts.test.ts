@@ -79,6 +79,45 @@ describe('buildDownloadScript, quelle que soit la variante', () => {
   })
 })
 
+// Un yt-dlp laissé sur le disque ne sera jamais mis à jour par le visiteur, et
+// finira par ne plus savoir télécharger. Celui que le script va chercher est
+// donc jetable : hors du dossier de l'utilisateur, et effacé en partant.
+describe('buildDownloadScript, yt-dlp jetable', () => {
+  it('va chercher yt-dlp dans le dossier temporaire, pas à côté du script', () => {
+    expect(bat()).toMatch(/curl .*-o "%GETCLIP_TEMP_YTDLP%"/)
+    expect(bat()).toContain('set "GETCLIP_TEMP_YTDLP=%TEMP%\\')
+    expect(sh()).toMatch(/curl .*-o "\$YTDLP"/)
+    expect(sh()).toContain('YTDLP_TMPDIR="$(mktemp -d)"')
+  })
+
+  it('efface le yt-dlp qu’il a téléchargé', () => {
+    expect(bat()).toContain('del "%GETCLIP_TEMP_YTDLP%"')
+    expect(sh()).toContain('rm -rf "$YTDLP_TMPDIR"')
+  })
+
+  // Le cas qui interdit un `del yt-dlp.exe` nu : le visiteur peut l'avoir
+  // installé par brew ou pip, ou déposé lui-même à côté du script.
+  it('ne touche pas à un yt-dlp que le visiteur a installé', () => {
+    expect(bat()).not.toMatch(/del\s+"?yt-dlp\.exe/)
+    expect(sh()).not.toMatch(/rm\s+(?:-\S+\s+)*"?\.?\/?yt-dlp"?\s*$/m)
+  })
+
+  // Un binaire à moitié écrit, ou une fouille interrompue, ne doivent pas
+  // laisser derrière eux le fichier périmé que tout ceci cherche à éviter.
+  it('nettoie aussi quand ça tourne mal', () => {
+    // .bat : le téléchargement raté efface sa propre trace avant de sortir.
+    expect(bat()).toMatch(/if errorlevel 1 \([\s\S]*del "%GETCLIP_TEMP_YTDLP%"[\s\S]*exit \/b 1/)
+    // .sh : un seul nettoyage, armé avant tout téléchargement.
+    expect(sh()).toContain('trap cleanup EXIT INT TERM')
+    expect(sh().indexOf('trap cleanup')).toBeLessThan(sh().indexOf('curl'))
+  })
+
+  it('n’exécute que le yt-dlp qu’il a résolu', () => {
+    expect(bat()).toMatch(/"%YTDLP%" -a /)
+    expect(sh()).toMatch(/"\$YTDLP" -a /)
+  })
+})
+
 describe('buildDownloadScript, injection de commandes', () => {
   // Les URLs viennent de l’API, mais elles finissent dans du code exécuté sur la
   // machine de l’utilisateur : tout ce qui n’est pas une URL de clip est écarté.

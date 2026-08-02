@@ -30,14 +30,18 @@ export function ExportPanel({
     <>
       <section className="group">
         <h2>Télécharger les vidéos</h2>
+        {/* « Sans rien installer » plutôt que « installe » : le script emprunte
+          yt-dlp le temps de la récolte et l'efface en partant. Le dire ici
+          évite deux malentendus — qu'il laisse quelque chose derrière lui, et
+          qu'un yt-dlp déjà présent serait remplacé. */}
         <p className="group-lede">
-          Un script à lancer sur ta machine : il installe{' '}
+          Un script à lancer sur ta machine : il récupère{' '}
           {/* Nouvel onglet : quitter la page perdrait les clips déjà récupérés,
             qui ne vivent que dans la mémoire de l'application. */}
           <a href="https://github.com/yt-dlp/yt-dlp#readme" target="_blank" rel="noreferrer">
             yt-dlp
           </a>{' '}
-          au besoin, puis récupère les clips.
+          au besoin sans rien installer, puis télécharge les clips.
         </p>
         <div className="group-actions">
           {(flavor ?? 'bat') === 'bat' && (
