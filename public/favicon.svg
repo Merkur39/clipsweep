@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!--
+    La marque de `Icon.tsx` (`Mark`), rendue autonome.
+
+    Un favicon est chargé comme document isolé : les variables CSS du document
+    parent ne l'atteignent pas, et `light-dark()` n'y a aucun `color-scheme` à
+    lire. Les valeurs de `base.css` sont donc reportées ici en dur, et la bascule
+    se fait par media query. C'est le prix de l'autonomie.
+
+    Attention en éditant ce bloc : deux tirets consécutifs ferment un commentaire
+    XML. Une mention littérale d'une variable CSS y rend le fichier illisible au
+    parseur, et le favicon disparaît sans que rien ne le signale (le fichier se
+    sert toujours en 200).
+
+    Le motif est celui de la frise : une période entière, recoupée en deux, puis
+    encore, et un dernier segment resté saturé au plancher, que l'outil déclare
+    plutôt que de le taire.
+  -->
+  <style>
+    .rule { fill: #b6ada0 }
+    .half { fill: #8f6ae8 }
+    .full { fill: #6b3fd4 }
+    .lost { fill: #cf2b2b }
+
+    @media (prefers-color-scheme: dark) {
+      .rule { fill: #39415c }
+      .half { fill: #6a45c8 }
+      .full { fill: #a481ff }
+      .lost { fill: #ff5d5d }
+    }
+  </style>
+
+  <rect class="rule" x="1" y="2.4" width="14" height="2.2" rx="0.6" />
+  <rect class="rule" x="1" y="6.9" width="6.4" height="2.2" rx="0.6" />
+  <rect class="half" x="8.6" y="6.9" width="6.4" height="2.2" rx="0.6" />
+  <rect class="half" x="1" y="11.4" width="2.8" height="2.2" rx="0.6" />
+  <rect class="full" x="5" y="11.4" width="2.4" height="2.2" rx="0.6" />
+  <rect class="full" x="8.6" y="11.4" width="2.4" height="2.2" rx="0.6" />
+  <rect class="lost" x="12.2" y="11.4" width="2.8" height="2.2" rx="0.6" />
+</svg>
