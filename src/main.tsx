@@ -1,3 +1,4 @@
+import { Analytics } from '@vercel/analytics/react'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
@@ -18,5 +19,10 @@ applyTheme(document.documentElement, parseTheme(localStorage.getItem(persistedKe
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App authError={authError} />
+    {/* Mesure d'audience Vercel : elle charge son script depuis
+        `/_vercel/insights/`, chemin que seul un déploiement Vercel sert — sur
+        GitHub Pages la requête échoue sans conséquence. Rien de ce que le
+        visiteur saisit ou récupère n'y passe : seulement la page vue. */}
+    <Analytics />
   </StrictMode>,
 )
