@@ -94,7 +94,7 @@ export default function App({ authError }: { authError: string | null }) {
   const theme = parseTheme(storedTheme)
   useEffect(() => applyTheme(document.documentElement, theme), [theme])
 
-  const [channel, setChannel] = usePersistedState('channel', 'kaliyami')
+  const [channel, setChannel] = usePersistedState('channel', '')
   const [since, setSince] = usePersistedState('since', '2019-01-01')
   const [until, setUntil] = usePersistedState('until', day(new Date()))
   // Filtres d'affichage : ils portent sur les clips déjà récupérés, jamais sur
