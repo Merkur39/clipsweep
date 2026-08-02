@@ -97,6 +97,14 @@ Le script écrit la liste d'URLs, appelle yt-dlp avec des noms de fichiers lisib
 `archive.txt` : **relancer reprend là où ça s'est arrêté**. Si yt-dlp est absent, il propose de le
 récupérer — après confirmation, jamais en silence.
 
+Ce yt-dlp-là est **jetable** : téléchargé dans le dossier temporaire du système, jamais à côté du
+script, et effacé en partant — y compris si le script est interrompu. Un binaire laissé sur le
+disque ne serait jamais mis à jour et finirait par ne plus savoir télécharger ; le reprendre à
+chaque fois garantit la version du jour.
+
+Un yt-dlp que vous avez **installé vous-même**, dans le `PATH` ou déposé à côté du script, est
+utilisé tel quel et n'est jamais effacé. Le script ne supprime que ce qu'il a lui-même téléchargé.
+
 Ces scripts sont du code exécuté sur la machine de l'utilisateur : les URLs y sont injectées après
 validation par liste blanche ([scripts.ts](src/scripts.ts)), tout ce qui n'est pas une URL de clip
 Twitch est écarté plutôt qu'échappé.
