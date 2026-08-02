@@ -1,6 +1,6 @@
 # Design
 
-Le monde visuel de GetClipTwitch, tel qu'il est construit dans `src/styles/`. Le produit, lui, est
+Le monde visuel de ClipSweep, tel qu'il est construit dans `src/styles/`. Le produit, lui, est
 décrit dans [PRODUCT.md](PRODUCT.md).
 
 ## Où vivent les règles

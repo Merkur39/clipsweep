@@ -35,7 +35,7 @@ const input = {
   authError: null,
   clientId: 'abc123',
   hasStoredToken: false,
-  redirectUri: 'https://merkur39.github.io/get-clip-twitch/',
+  redirectUri: 'https://example.com/clipsweep/',
 }
 
 describe('describeAccess', () => {
@@ -51,7 +51,7 @@ describe('describeAccess', () => {
     const state = describeAccess({ ...input, clientId: '' })
 
     expect(state.message).toContain('VITE_TWITCH_CLIENT_ID')
-    expect(state.message).toContain('https://merkur39.github.io/get-clip-twitch/')
+    expect(state.message).toContain('https://example.com/clipsweep/')
     expect(state.kind).toBe('bad')
   })
 

@@ -1,6 +1,9 @@
-# GetClipTwitch
+# ClipSweep
 
 Énumère **tous** les clips d'une chaîne Twitch — y compris ceux que le site n'affiche plus.
+
+> Projet indépendant, **sans lien avec Twitch Interactive, Inc.** « Twitch » est une marque
+> déposée de son propriétaire, citée ici pour désigner le service avec lequel l'outil fonctionne.
 
 ## Pourquoi
 
@@ -56,7 +59,7 @@ build est déployable en statique.
 ## Déploiement
 
 La mise en ligne se fait sur **Vercel**, qui construit et déploie à chaque push sur `main` :
-[`get-clip-twitch.vercel.app`](https://get-clip-twitch.vercel.app/).
+[`clipsweep.vercel.app`](https://clipsweep.vercel.app/).
 
 Côté GitHub, [`.github/workflows/ci.yml`](.github/workflows/ci.yml) ne déploie rien : il enchaîne
 `format:check`, lint, tests et build à titre de vérification.
@@ -67,7 +70,7 @@ Deux réglages à faire une fois :
    n'est pas confidentiel — il finit de toute façon en clair dans le bundle servi. Sans elle, le build
    part au vert et le site s'affiche, mais refuse toute connexion.
 2. Ajouter l'URL de production aux « OAuth Redirect URLs » de l'application Twitch, **slash final
-   compris** : `https://get-clip-twitch.vercel.app/`. Twitch compare la chaîne à l'octet près ; l'app
+   compris** : `https://clipsweep.vercel.app/`. Twitch compare la chaîne à l'octet près ; l'app
    normalise l'URI (slash final ajouté, `index.html` retiré) pour qu'elle soit stable quel que soit le
    chemin d'arrivée.
 

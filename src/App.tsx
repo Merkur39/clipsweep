@@ -272,7 +272,7 @@ export default function App({ authError }: { authError: string | null }) {
       <header className="masthead">
         <h1 className="masthead-name">
           <Mark />
-          GetClipTwitch
+          ClipSweep
         </h1>
         <p className="lede">
           L'inventaire complet des clips d'une chaîne, du plus vu au jamais vu.
