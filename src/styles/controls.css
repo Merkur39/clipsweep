@@ -7,8 +7,12 @@ label {
   margin: 0 0 var(--s-3);
 }
 
+/* `.field-control` est aussi un `<span>` enfant direct de son `<label>`, mais
+   c'est un conteneur de contrôle, pas une étiquette : la marge basse d'étiquette
+   lui ajoutait 5px sous son champ, et décalait toute la rangée de filtres par
+   rapport aux contrôles qui n'en ont pas. */
 .field-label,
-label > span {
+label > span:not(.field-control) {
   display: block;
   font-size: 11px;
   font-weight: 600;
