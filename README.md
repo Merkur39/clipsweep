@@ -21,7 +21,7 @@ Une fenêtre encore saturée au plancher signifie que des clips restent hors d'a
 dans `incomplete`, tracée en rouge sur la frise et signalée par une alerte. **L'outil ne prétend jamais à
 l'exhaustivité sans l'avoir vérifiée.**
 
-Le filtre « vues max » est **optionnel** et purement local : par défaut tout est affiché.
+Les filtres au-dessus de la table sont **optionnels** et purement locaux : par défaut tout est affiché.
 
 ## Setup
 
@@ -77,8 +77,10 @@ Deux réglages à faire une fois :
 `base: './'` dans [vite.config.ts](vite.config.ts) rend les chemins d'assets relatifs : le build
 fonctionne aussi bien à la racine d'un domaine que sous un sous-chemin.
 
-Chaque visiteur reste maître de son accès : il déclare sa propre application Twitch avec cette URL de
-redirection, saisit son Client ID et se connecte avec son compte.
+La mesure d'audience Vercel (`@vercel/analytics`) est montée dans [main.tsx](src/main.tsx). Elle charge
+son script depuis `/_vercel/insights/`, chemin que seul un déploiement Vercel sert — ailleurs la requête
+échoue sans conséquence. Elle ne rapporte que la page vue : ni la chaîne fouillée, ni les clips, ni le
+jeton n'y passent.
 
 ## Télécharger les vidéos
 
@@ -109,7 +111,7 @@ Un yt-dlp que vous avez **installé vous-même**, dans le `PATH` ou déposé à 
 utilisé tel quel et n'est jamais effacé. Le script ne supprime que ce qu'il a lui-même téléchargé.
 
 Ces scripts sont du code exécuté sur la machine de l'utilisateur : les URLs y sont injectées après
-validation par liste blanche ([scripts.ts](src/scripts.ts)), tout ce qui n'est pas une URL de clip
+validation par liste blanche ([scripts.ts](src/domain/scripts.ts)), tout ce qui n'est pas une URL de clip
 Twitch est écarté plutôt qu'échappé.
 
 ## Architecture
@@ -120,11 +122,14 @@ Twitch est écarté plutôt qu'échappé.
 | `src/twitch/clips.ts`          | parcours, pagination, dédoublonnage, rapport d'exhaustivité |
 | `src/twitch/auth.ts`           | flux implicite, validation du jeton                         |
 | `src/twitch/api.ts`            | client Helix : throttle, retry 429/5xx                      |
+| `src/hooks/useClipSearch.ts`   | orchestration de la fouille, progression, journal           |
+| `src/domain/filters.ts`        | filtres d'affichage et facettes                             |
 | `src/components/Frieze.tsx`    | frise du découpage temporel                                 |
 | `src/components/ClipTable.tsx` | table virtualisée — affiche tout, sans plafond DOM          |
-| `src/scripts.ts`               | génération des scripts yt-dlp `.bat` / `.sh`                |
+| `src/domain/scripts.ts`        | génération des scripts yt-dlp `.bat` / `.sh`                |
 
-La logique de collecte est couverte par des tests ; l'UI ne l'est pas.
+La logique de collecte, le domaine et les composants sont couverts par des tests — Vitest pour la
+logique, Testing Library pour le rendu.
 
 ## Réglages
 
@@ -138,9 +143,21 @@ ferait payer ce péage à chaque nœud interne de l'arbre, soit environ **trois 
 amorçage bien dimensionné. Les frontières d'année suppriment les niveaux hauts, les plus chers, sans
 rien demander à l'utilisateur ni sonder une densité que l'API ne sait pas rapporter.
 
-Les filtres au-dessus de la table — vues min et max, créateur, jeu — ne portent que sur l'affichage et
-la sélection, jamais sur la fouille. Ils ne sont pas persistés : un seuil oublié d'une session à
-l'autre donnerait une table vide sans raison apparente.
+La période s'ouvre sur **le mois écoulé**, et non sur toute l'histoire de la chaîne : un clic immédiat
+sur « Lancer » doit rester bon marché plutôt qu'engager sept fenêtres annuelles avant que la période
+ait été choisie. La borne basse est bridée par la date de création de la chaîne, résolue via Helix puis
+gardée dans un cache local ([channelCache.ts](src/domain/channelCache.ts)) plafonné à 50 entrées.
+
+Chaîne et période vivent en `sessionStorage` : elles survivent à un rechargement d'onglet, pas à sa
+fermeture. Ce sont les paramètres d'une fouille, pas des préférences — les retrouver d'une session à
+l'autre ferait repartir, au premier clic, une recherche que personne n'a demandée. Seul le thème est
+durable. Les clips, eux, ne vivent qu'en mémoire : tant qu'une fouille tourne ou que ses résultats sont
+à l'écran, quitter la page demande confirmation ([useUnloadGuard.ts](src/hooks/useUnloadGuard.ts)).
+
+Les filtres au-dessus de la table — vues min et max, plage de dates, créateur, jeu — ne portent que sur
+l'affichage et la sélection, jamais sur la fouille : resserrer la plage affichée ne relance rien, c'est
+tout son intérêt. Ils ne sont pas persistés, pas même le temps de l'onglet : un seuil oublié d'un écran
+à l'autre donnerait une table vide sans raison apparente.
 
 Coût : ~1 requête par tranche de 100 clips, plus une par bissection. Quota Helix : 800 points/min, le
 client respecte `Ratelimit-Reset` sur 429 et s'espace de 60 ms entre deux requêtes.
@@ -150,7 +167,9 @@ client respecte `Ratelimit-Reset` sur 429 et s'espace de 60 ms entre deux requê
 | Commande               | Effet                       |
 | ---------------------- | --------------------------- |
 | `npm run dev`          | serveur de dev              |
+| `npm run preview`      | sert le build de `dist/`    |
 | `npm test`             | Vitest                      |
+| `npm run test:watch`   | Vitest en continu           |
 | `npm run typecheck`    | `tsc -b`                    |
 | `npm run lint`         | ESLint                      |
 | `npm run format`       | Prettier, écriture          |
