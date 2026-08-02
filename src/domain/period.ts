@@ -36,6 +36,31 @@ export function clampUntil(until: string, today: string): string {
   return until > today ? today : until
 }
 
+const pad = (value: number, width: number) => String(value).padStart(width, '0')
+
+/**
+ * Le mois qui précède une date `yyyy-mm-dd`, en UTC comme le reste des bornes.
+ *
+ * C'est la valeur par défaut du champ « Depuis » : une période d'un mois se
+ * fouille en une poignée de requêtes, là où un début posé aux origines de
+ * Twitch en dépense une par fenêtre annuelle — dépense qu'un clic immédiat sur
+ * « Lancer la fouille » engage sans que rien ne l'ait demandée.
+ *
+ * Le quantième est ramené au dernier jour du mois visé quand il n'y existe pas :
+ * `setMonth` glisserait sur le mois suivant, et rendrait pour le 31 mars une
+ * date postérieure à celle d'où l'on part.
+ */
+export function monthBefore(today: string): string {
+  const [year, month, dayOfMonth] = today.split('-').map(Number)
+  const previousMonth = month === 1 ? 12 : month - 1
+  const previousYear = month === 1 ? year - 1 : year
+  // Le jour 0 du mois suivant, soit le dernier du mois visé — années
+  // bissextiles comprises.
+  const lastDay = new Date(Date.UTC(previousYear, previousMonth, 0)).getUTCDate()
+
+  return `${pad(previousYear, 4)}-${pad(previousMonth, 2)}-${pad(Math.min(dayOfMonth, lastDay), 2)}`
+}
+
 /**
  * Le seul désordre que les bornes ne peuvent pas empêcher — elles contraignent
  * chaque date séparément, jamais leur ordre.

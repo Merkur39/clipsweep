@@ -1,6 +1,27 @@
 import { describe, expect, it } from 'vitest'
 
-import { clampSince, clampUntil, describePeriodError } from './period'
+import { clampSince, clampUntil, describePeriodError, monthBefore } from './period'
+
+describe('monthBefore', () => {
+  it('rend le même quantième du mois précédent', () => {
+    expect(monthBefore('2026-08-02')).toBe('2026-07-02')
+  })
+
+  it('remonte à l’année précédente depuis janvier', () => {
+    expect(monthBefore('2026-01-15')).toBe('2025-12-15')
+  })
+
+  // Le 31 mars moins un mois n'existe pas : le glissement naturel de `Date`
+  // rendrait le 3 mars, une date postérieure à celle d'où l'on part.
+  it('cale sur le dernier jour quand le mois précédent est plus court', () => {
+    expect(monthBefore('2026-03-31')).toBe('2026-02-28')
+    expect(monthBefore('2026-05-31')).toBe('2026-04-30')
+  })
+
+  it('tient compte des années bissextiles', () => {
+    expect(monthBefore('2024-03-31')).toBe('2024-02-29')
+  })
+})
 
 describe('describePeriodError', () => {
   it('ne dit rien d’une période valable', () => {
