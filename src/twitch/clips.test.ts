@@ -14,7 +14,7 @@ const clip = (id: string, viewCount = 1, createdAt = '2024-01-01T00:00:00Z'): Cl
   thumbnail_url: '',
   duration: 30,
   creator_name: 'someone',
-  broadcaster_name: 'kaliyami',
+  broadcaster_name: 'testchannel',
   game_id: '1',
 })
 

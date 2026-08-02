@@ -11,9 +11,9 @@ afterEach(cleanup)
 const clip = (id: string, viewCount = 1): Clip =>
   ({
     id,
-    url: `https://www.twitch.tv/kaliyami/clip/${id}`,
+    url: `https://www.twitch.tv/testchannel/clip/${id}`,
     embed_url: '',
-    broadcaster_name: 'KaliYami',
+    broadcaster_name: 'TestChannel',
     creator_name: 'SpiZ',
     title: `Titre ${id}`,
     view_count: viewCount,

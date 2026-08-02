@@ -17,7 +17,7 @@ const setup = (props: Partial<SearchPanelProps> = {}) => {
       canConnect
       onConnect={onConnect}
       onDisconnect={onDisconnect}
-      channel="kaliyami"
+      channel="testchannel"
       onChannelChange={vi.fn()}
       since="2019-01-01"
       onSinceChange={vi.fn()}

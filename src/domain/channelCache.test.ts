@@ -10,19 +10,21 @@ const logins = (raw: string) =>
 
 describe('lookupChannel', () => {
   it('ne trouve rien dans un cache absent', () => {
-    expect(lookupChannel(null, 'kaliyami')).toBeNull()
+    expect(lookupChannel(null, 'testchannel')).toBeNull()
   })
 
   it('rend la date d’une chaîne connue', () => {
-    expect(lookupChannel(cacheDe(['kaliyami', '2017-07-10']), 'kaliyami')).toBe('2017-07-10')
+    expect(lookupChannel(cacheDe(['testchannel', '2017-07-10']), 'testchannel')).toBe('2017-07-10')
   })
 
   it('ne rend rien pour une chaîne inconnue', () => {
-    expect(lookupChannel(cacheDe(['kaliyami', '2017-07-10']), 'autre')).toBeNull()
+    expect(lookupChannel(cacheDe(['testchannel', '2017-07-10']), 'autre')).toBeNull()
   })
 
   it('ignore la casse et les espaces de la saisie', () => {
-    expect(lookupChannel(cacheDe(['kaliyami', '2017-07-10']), '  KaliYami ')).toBe('2017-07-10')
+    expect(lookupChannel(cacheDe(['testchannel', '2017-07-10']), '  TestChannel ')).toBe(
+      '2017-07-10',
+    )
   })
 
   // Le cache vit en localStorage : il peut avoir été trituré à la main.
@@ -35,28 +37,28 @@ describe('lookupChannel', () => {
 
 describe('rememberChannel', () => {
   it('crée le cache à la première chaîne', () => {
-    const raw = rememberChannel(null, 'kaliyami', '2017-07-10')
+    const raw = rememberChannel(null, 'testchannel', '2017-07-10')
 
-    expect(lookupChannel(raw, 'kaliyami')).toBe('2017-07-10')
+    expect(lookupChannel(raw, 'testchannel')).toBe('2017-07-10')
   })
 
   it('conserve les chaînes déjà connues', () => {
-    const raw = rememberChannel(cacheDe(['ancienne', '2015-01-01']), 'kaliyami', '2017-07-10')
+    const raw = rememberChannel(cacheDe(['ancienne', '2015-01-01']), 'testchannel', '2017-07-10')
 
     expect(lookupChannel(raw, 'ancienne')).toBe('2015-01-01')
-    expect(lookupChannel(raw, 'kaliyami')).toBe('2017-07-10')
+    expect(lookupChannel(raw, 'testchannel')).toBe('2017-07-10')
   })
 
   it('ne duplique pas une chaîne déjà présente', () => {
-    const raw = rememberChannel(cacheDe(['kaliyami', '2017-07-10']), 'kaliyami', '2017-07-10')
+    const raw = rememberChannel(cacheDe(['testchannel', '2017-07-10']), 'testchannel', '2017-07-10')
 
-    expect(logins(raw)).toEqual(['kaliyami'])
+    expect(logins(raw)).toEqual(['testchannel'])
   })
 
   it('normalise le login enregistré', () => {
-    const raw = rememberChannel(null, '  KaliYami ', '2017-07-10')
+    const raw = rememberChannel(null, '  TestChannel ', '2017-07-10')
 
-    expect(logins(raw)).toEqual(['kaliyami'])
+    expect(logins(raw)).toEqual(['testchannel'])
   })
 
   it('repousse la chaîne réutilisée en fin de file', () => {
@@ -75,8 +77,8 @@ describe('rememberChannel', () => {
   })
 
   it('repart d’un cache sain même si l’ancien était corrompu', () => {
-    const raw = rememberChannel('pas du json', 'kaliyami', '2017-07-10')
+    const raw = rememberChannel('pas du json', 'testchannel', '2017-07-10')
 
-    expect(lookupChannel(raw, 'kaliyami')).toBe('2017-07-10')
+    expect(lookupChannel(raw, 'testchannel')).toBe('2017-07-10')
   })
 })
