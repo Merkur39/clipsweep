@@ -3,12 +3,12 @@ import { describe, expect, it } from 'vitest'
 import { buildDownloadScript, detectScriptFlavor } from './scripts'
 
 const URLS = [
-  'https://www.twitch.tv/kaliyami/clip/SpotlessVenomousPterodactylMikeHogu-RzvnjSqiUhzTIIdE',
+  'https://www.twitch.tv/testchannel/clip/SpotlessVenomousPterodactylMikeHogu-RzvnjSqiUhzTIIdE',
   'https://clips.twitch.tv/SpicyLittleDragonSSSsss-L5iMcsYB7AxMN_Vt',
 ]
 
-const bat = (urls = URLS, channel = 'kaliyami') => buildDownloadScript('bat', channel, urls)
-const sh = (urls = URLS, channel = 'kaliyami') => buildDownloadScript('sh', channel, urls)
+const bat = (urls = URLS, channel = 'testchannel') => buildDownloadScript('bat', channel, urls)
+const sh = (urls = URLS, channel = 'testchannel') => buildDownloadScript('sh', channel, urls)
 
 describe('detectScriptFlavor', () => {
   const ua = (userAgent: string, platform?: string) => detectScriptFlavor({ userAgent, platform })
@@ -51,7 +51,7 @@ describe('buildDownloadScript, quelle que soit la variante', () => {
 
   it('nomme le dossier de sortie et l’archive d’après la chaîne', () => {
     for (const script of [bat(), sh()]) {
-      expect(script).toContain('clips_kaliyami')
+      expect(script).toContain('clips_testchannel')
       expect(script).toContain('archive.txt')
     }
   })

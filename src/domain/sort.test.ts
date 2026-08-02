@@ -6,7 +6,7 @@ import type { Clip } from '../twitch/types'
 const clip = (over: Partial<Clip> & { id: string }): Clip => ({
   url: '',
   embed_url: '',
-  broadcaster_name: 'KaliYami',
+  broadcaster_name: 'TestChannel',
   creator_name: 'SpiZ',
   title: over.id,
   view_count: 1,

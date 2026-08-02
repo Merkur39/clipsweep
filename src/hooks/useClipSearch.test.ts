@@ -29,14 +29,14 @@ vi.mock('../domain/channelCache', () => ({
 afterEach(cleanup)
 
 const session: Session = { clientId: 'c', accessToken: 't', expiresInSeconds: 3600 }
-const request = { channel: 'kaliyami', since: '2026-01-01', until: '2026-01-31' }
+const request = { channel: 'testchannel', since: '2026-01-01', until: '2026-01-31' }
 
 const clip = (id: string, gameId = '1'): Clip =>
   ({
     id,
-    url: `https://www.twitch.tv/kaliyami/clip/${id}`,
+    url: `https://www.twitch.tv/testchannel/clip/${id}`,
     embed_url: '',
-    broadcaster_name: 'KaliYami',
+    broadcaster_name: 'TestChannel',
     creator_name: 'SpiZ',
     title: id,
     view_count: 1,
@@ -49,8 +49,8 @@ const clip = (id: string, gameId = '1'): Clip =>
 const channelFound = () =>
   fetchUser.mockResolvedValue({
     id: '1',
-    login: 'kaliyami',
-    display_name: 'KaliYami',
+    login: 'testchannel',
+    display_name: 'TestChannel',
     profile_image_url: '',
     created_at: '2017-07-10T00:00:00Z',
   })
@@ -124,7 +124,7 @@ describe('useClipSearch', () => {
     const { result } = renderHook(() => useClipSearch(session, vi.fn()))
     await act(async () => result.current.start(request))
 
-    await waitFor(() => expect(remember).toHaveBeenCalledWith('kaliyami', '2017-07-10'))
+    await waitFor(() => expect(remember).toHaveBeenCalledWith('testchannel', '2017-07-10'))
   })
 
   it('ne retient rien quand la chaîne est introuvable', async () => {

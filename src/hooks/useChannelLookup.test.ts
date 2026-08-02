@@ -53,7 +53,7 @@ const settle = async () => {
 
 describe('useChannelLookup', () => {
   it('ne consulte pas l’API sans session', async () => {
-    renderHook(() => useChannelLookup(null, 'kaliyami'))
+    renderHook(() => useChannelLookup(null, 'testchannel'))
 
     await settle()
 
@@ -69,9 +69,9 @@ describe('useChannelLookup', () => {
   })
 
   it('rend la date de création de la chaîne résolue', async () => {
-    fetchUser.mockResolvedValue(user('kaliyami', '2017-07-10T00:00:00Z'))
+    fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
 
-    const { result } = renderHook(() => useChannelLookup(session, 'kaliyami'))
+    const { result } = renderHook(() => useChannelLookup(session, 'testchannel'))
     expect(result.current).toBeNull()
 
     await settle()
@@ -80,9 +80,9 @@ describe('useChannelLookup', () => {
   })
 
   it('normalise la casse de la saisie', async () => {
-    fetchUser.mockResolvedValue(user('kaliyami', '2017-07-10T00:00:00Z'))
+    fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
 
-    const { result } = renderHook(() => useChannelLookup(session, '  KaliYami '))
+    const { result } = renderHook(() => useChannelLookup(session, '  TestChannel '))
     await settle()
 
     expect(result.current).toBe('2017-07-10')
@@ -91,12 +91,12 @@ describe('useChannelLookup', () => {
   // Sans temporisation, « k », « ka », « kal »… interrogeraient l'API chacun
   // pour un préfixe qui n'existe pas.
   it('ne lance qu’une requête pour une frappe continue', async () => {
-    fetchUser.mockResolvedValue(user('kaliyami', '2017-07-10T00:00:00Z'))
+    fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
 
     const { rerender } = renderHook(({ nom }) => useChannelLookup(session, nom), {
       initialProps: { nom: 'k' },
     })
-    for (const nom of ['ka', 'kal', 'kaliyami']) {
+    for (const nom of ['ka', 'kal', 'testchannel']) {
       rerender({ nom })
       await act(async () => {
         vi.advanceTimersByTime(100)
@@ -105,18 +105,18 @@ describe('useChannelLookup', () => {
     await settle()
 
     expect(fetchUser).toHaveBeenCalledTimes(1)
-    expect(fetchUser).toHaveBeenCalledWith('kaliyami')
+    expect(fetchUser).toHaveBeenCalledWith('testchannel')
   })
 
   it('n’affiche pas la date d’une chaîne qu’on ne demande plus', async () => {
-    fetchUser.mockResolvedValue(user('kaliyami', '2017-07-10T00:00:00Z'))
+    fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
     const { result, rerender } = renderHook(({ nom }) => useChannelLookup(session, nom), {
-      initialProps: { nom: 'kaliyami' },
+      initialProps: { nom: 'testchannel' },
     })
     await settle()
     expect(result.current).toBe('2017-07-10')
 
-    // La réponse en vol décrit « kaliyami », la saisie dit désormais autre chose.
+    // La réponse en vol décrit « testchannel », la saisie dit désormais autre chose.
     rerender({ nom: 'autrechaine' })
 
     expect(result.current).toBeNull()
@@ -127,7 +127,7 @@ describe('useChannelLookup', () => {
   it('rend une date connue sans interroger l’API', async () => {
     cacheRead.mockReturnValue('2017-07-10')
 
-    const { result } = renderHook(() => useChannelLookup(session, 'kaliyami'))
+    const { result } = renderHook(() => useChannelLookup(session, 'testchannel'))
 
     expect(result.current).toBe('2017-07-10')
     await settle()
@@ -136,12 +136,12 @@ describe('useChannelLookup', () => {
 
   it('interroge l’API pour une chaîne absente du cache', async () => {
     cacheRead.mockReturnValue(null)
-    fetchUser.mockResolvedValue(user('kaliyami', '2017-07-10T00:00:00Z'))
+    fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
 
-    const { result } = renderHook(() => useChannelLookup(session, 'kaliyami'))
+    const { result } = renderHook(() => useChannelLookup(session, 'testchannel'))
     await settle()
 
-    expect(fetchUser).toHaveBeenCalledWith('kaliyami')
+    expect(fetchUser).toHaveBeenCalledWith('testchannel')
     expect(result.current).toBe('2017-07-10')
   })
 

@@ -4,9 +4,9 @@ import { applyFilters, dateExtent, facets, NO_FILTERS } from './filters'
 import type { Clip } from '../twitch/types'
 
 const clip = (over: Partial<Clip> & { id: string }): Clip => ({
-  url: `https://www.twitch.tv/kaliyami/clip/${over.id}`,
+  url: `https://www.twitch.tv/testchannel/clip/${over.id}`,
   embed_url: '',
-  broadcaster_name: 'KaliYami',
+  broadcaster_name: 'TestChannel',
   creator_name: 'SpiZ',
   title: over.id,
   view_count: 1,
