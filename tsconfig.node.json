@@ -8,10 +8,15 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    // `scripts/` est exécuté par Node, qui efface les types sans les compiler :
+    // il ne saurait pas rendre `enum`, `namespace` ni les propriétés de
+    // constructeur. Sans cette option, une telle syntaxe passerait le typecheck
+    // et casserait au lancement.
+    "erasableSyntaxOnly": true,
     "skipLibCheck": true,
     "noEmit": true,
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo"
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "scripts/**/*.ts"]
 }
