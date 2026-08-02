@@ -285,3 +285,24 @@ l'autonomie du favicon, et la seule duplication de couleurs que le projet accept
 Piège propre à ce fichier : **deux tirets consécutifs ferment un commentaire XML**. Y écrire le nom
 littéral d'une variable CSS rend le SVG illisible au parseur — il continue de se servir en 200, mais
 plus aucune icône ne s'affiche. Vérifier le rendu, pas le code de retour.
+
+[`public/favicon.png`](public/favicon.png) est le repli 32×32 pour Safari, qui ne lit pas les
+favicons SVG. Il est déclaré **avant** le SVG dans `index.html` : à support égal c'est la dernière
+déclaration qui l'emporte, donc les navigateurs qui lisent le SVG le préfèrent, et Safari retombe
+sur le PNG. Un PNG ne suivant pas le thème, il fige la **variante claire** — le beige de la première
+barre reste lisible sur un onglet sombre, l'inverse n'aurait pas tenu.
+
+Trois fichiers portent donc la marque, et une retouche du `Mark` doit descendre dans les trois. Le
+PNG ne s'édite pas à la main : il se régénère par `npm run favicon`
+([`scripts/make-favicon.ts`](scripts/make-favicon.ts)), qui rastérise les mêmes rectangles et les
+anti-aliase par suréchantillonnage. Sa sortie est déterministe — régénérer sans avoir touché à la
+marque rend un fichier au bit près identique, donc un diff sur ce PNG signale un vrai changement.
+
+Le script encode le PNG lui-même avec le `zlib` de Node plutôt que d'ajouter `sharp` ou `resvg` :
+des dizaines de mégaoctets de `devDependencies` pour produire 272 octets, et une dépendance binaire
+à recompiler, ne valaient pas la cinquantaine de lignes d'encodeur.
+
+Il est en TypeScript comme le reste, et Node l'exécute tel quel en effaçant les types — sans
+compilation ni exécuteur tiers. `tsconfig.node.json` l'inclut, donc `npm run typecheck` le couvre,
+et y active `erasableSyntaxOnly` : `enum`, `namespace` et propriétés de constructeur passeraient le
+typecheck mais casseraient au lancement, l'effacement ne sachant pas les rendre.
