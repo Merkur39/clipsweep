@@ -71,6 +71,13 @@ yt-dlp.
   sous son Client ID.
 - **Quota Helix de 800 points/minute**, avec temporisation entre requêtes et respect de
   `Ratelimit-Reset` sur 429.
+- **Aucune marque de Twitch dans le nom.** Ni le produit, ni le dépôt, ni le domaine ne portent
+  « Twitch » — leurs Trademark Guidelines interdisent d'intégrer leurs marques au nom d'un produit,
+  d'un service ou d'un domaine. L'outil s'est appelé GetClipTwitch jusqu'au 2026-08-02 ; le risque
+  était d'autant moins théorique qu'il tourne sous un Client ID nominatif, dont le Contrat
+  Développeur rend le propriétaire comptable. Nommer Twitch **en description** — « clips Twitch »,
+  « API Twitch », « se connecter à Twitch » — reste nécessaire et légitime : c'est le nom du
+  produit, pas la mention du service, que les guidelines visent.
 
 **Terminologie :** « période » côté interface, « fenêtre » dans le code et la documentation
 technique. Une période « saturée » a atteint le plafond de l'API ; « recoupée » signifie divisée en
@@ -82,7 +89,7 @@ risque est connu et accepté faute d'arbitrage contraire.
 
 ## Brand Commitments
 
-Nom : **GetClipTwitch**. Accroche actuelle : « L'inventaire complet des clips d'une chaîne, du plus
+Nom : **ClipSweep**. Accroche actuelle : « L'inventaire complet des clips d'une chaîne, du plus
 vu au jamais vu. »
 
 Voix : française, directe, sans jargon dans l'interface — le vocabulaire technique reste dans le
@@ -93,8 +100,8 @@ Licence GPL-3.0.
 
 ## Evidence on Hand
 
-- Dépôt public `github.com/Merkur39/get-clip-twitch`, déployé sur
-  `https://get-clip-twitch.vercel.app/`.
+- Dépôt public `github.com/Merkur39/clipsweep`, déployé sur
+  `https://clipsweep.vercel.app/`.
 - Chaîne de test réelle : `kaliyami`, créée le 2017-07-10.
 - Aucun témoignage, chiffre d'usage, mesure de performance ou référence client n'existe à ce jour.
   Le travail futur ne doit en fabriquer aucun.

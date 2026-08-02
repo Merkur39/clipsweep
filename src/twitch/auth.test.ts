@@ -34,20 +34,20 @@ describe('normalizeRedirectUri', () => {
   })
 
   it('keeps a project subpath served with its trailing slash', () => {
-    expect(normalizeRedirectUri('https://merkur39.github.io', '/get-clip-twitch/')).toBe(
-      'https://merkur39.github.io/get-clip-twitch/',
+    expect(normalizeRedirectUri('https://example.com', '/clipsweep/')).toBe(
+      'https://example.com/clipsweep/',
     )
   })
 
   it('adds the trailing slash when the subpath is reached without one', () => {
-    expect(normalizeRedirectUri('https://merkur39.github.io', '/get-clip-twitch')).toBe(
-      'https://merkur39.github.io/get-clip-twitch/',
+    expect(normalizeRedirectUri('https://example.com', '/clipsweep')).toBe(
+      'https://example.com/clipsweep/',
     )
   })
 
   it('drops an explicit html filename', () => {
-    expect(normalizeRedirectUri('https://merkur39.github.io', '/get-clip-twitch/index.html')).toBe(
-      'https://merkur39.github.io/get-clip-twitch/',
+    expect(normalizeRedirectUri('https://example.com', '/clipsweep/index.html')).toBe(
+      'https://example.com/clipsweep/',
     )
   })
 })
