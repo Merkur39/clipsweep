@@ -141,4 +141,86 @@ describe('describeEmptyResults', () => {
 
     expect(message).not.toContain('Vues max')
   })
+
+  it('nomme la plage de dates qui vide la table', () => {
+    const message = describeEmptyResults({
+      searched: true,
+      running: false,
+      clipsFound: 412,
+      maxViews: null,
+      period: { from: '2020-01-01', to: '2020-06-30' },
+    })
+
+    expect(message).toContain('412 clips')
+    expect(message).toContain('entre le 2020-01-01 et le 2020-06-30')
+    expect(message).toContain('Du / Au')
+  })
+
+  it('dit « à partir du » quand seule la borne de début est posée', () => {
+    const message = describeEmptyResults({
+      searched: true,
+      running: false,
+      clipsFound: 6,
+      maxViews: null,
+      period: { from: '2021-05-05', to: null },
+    })
+
+    expect(message).toContain('à partir du 2021-05-05')
+    expect(message).not.toContain('entre')
+  })
+
+  it('dit « jusqu’au » quand seule la borne de fin est posée', () => {
+    const message = describeEmptyResults({
+      searched: true,
+      running: false,
+      clipsFound: 6,
+      maxViews: null,
+      period: { from: null, to: '2019-01-01' },
+    })
+
+    expect(message).toContain('jusqu’au 2019-01-01')
+    expect(message).not.toContain('entre')
+  })
+
+  // Deux filtres actifs, une seule cause à nommer : la plage est ce que
+  // l'utilisateur vient de resserrer à la main, et c'est elle que l'action de la
+  // table vide propose de rouvrir.
+  it('nomme la plage plutôt que le seuil quand les deux sont posés', () => {
+    const message = describeEmptyResults({
+      searched: true,
+      running: false,
+      clipsFound: 6,
+      maxViews: 2,
+      period: { from: '2020-01-01', to: '2020-06-30' },
+    })
+
+    expect(message).toContain('2020-01-01')
+    expect(message).not.toContain('Vues max')
+  })
+
+  it('se tait sur les dates quand aucune borne n’est posée', () => {
+    const message = describeEmptyResults({
+      searched: true,
+      running: false,
+      clipsFound: 6,
+      maxViews: null,
+      period: { from: null, to: null },
+    })
+
+    expect(message).not.toContain('Du / Au')
+  })
+
+  // Le manque de clips prime sur les filtres : une plage posée sur une fouille
+  // vide n'explique rien, c'est la période fouillée qu'il faut élargir.
+  it('garde la priorité au cas « aucun clip récupéré »', () => {
+    const message = describeEmptyResults({
+      searched: true,
+      running: false,
+      clipsFound: 0,
+      maxViews: null,
+      period: { from: '2020-01-01', to: '2020-06-30' },
+    })
+
+    expect(message).toBe('Aucun clip sur cette période. Élargis l’intervalle de dates.')
+  })
 })

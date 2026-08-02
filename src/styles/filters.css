@@ -10,11 +10,18 @@
   color: var(--text-dim);
 }
 
+/* Six contrôles tiennent sur une ligne à condition de ne pas leur donner le
+   même gabarit : un champ de vues loge six chiffres, un champ date ne descend
+   pas sous 137px (ses segments, son calendrier et sa croix), et les facettes
+   veulent tout ce qui reste — ce sont elles qui tronquent (« SpiZ, Ori +3 »).
+   Chaque base est donc calibrée sur son contenu, chaque croissance plafonnée :
+   c'est le plafond qui évite qu'un contrôle reporté s'étire seul sur toute la
+   largeur, ce que faisait la rangée avant. */
 .filters {
   display: flex;
-  gap: var(--s-3);
-  align-items: flex-end;
   flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: end;
   padding: var(--s-3) var(--s-4);
   border: 1px solid var(--rule);
   border-bottom: 0;
@@ -25,8 +32,36 @@
 .field,
 .multiselect {
   margin: 0;
-  flex: 1 1 150px;
   min-width: 0;
+}
+
+.filters .field {
+  flex: 1 1 90px;
+  max-width: 130px;
+}
+
+/* `min-width` autant que `flex-basis` : sous 137px les segments de date se
+   feraient rogner par le calendrier natif. */
+.filters .field.date {
+  flex: 1 1 137px;
+  min-width: 137px;
+  max-width: 148px;
+}
+
+/* Base basse, plafond haut : une facette n'a besoin que de 73px pour son
+   contenu minimal, et c'est elle qui récupère toute la place disponible. */
+.filters .multiselect {
+  flex: 1 1 110px;
+  max-width: 240px;
+}
+
+/* Trois contrôles natifs, trois hauteurs intrinsèques chez Chromium (33px pour
+   un champ nombre, 34 pour le bouton, 35 pour un champ date, qui ne cède ni au
+   `line-height` ni au style de son shadow DOM). Sans hauteur commune, les
+   étiquettes de la rangée ne s'alignent pas. */
+.filters .field-control input,
+.filters .multiselect-button {
+  height: 35px;
 }
 
 /* Le bouton d'effacement est superposé, pas inséré : son apparition ne doit
@@ -38,6 +73,17 @@
 
 .field-control input {
   padding-right: 30px;
+}
+
+/* Un champ date porte déjà son indicateur de calendrier à droite : le bouton
+   d'effacement se range à sa gauche plutôt que par-dessus. Masquer l'indicateur
+   coûterait l'ouverture du sélecteur à la souris, seule voie qui l'ouvre. */
+.field-control.date input {
+  padding-right: 26px;
+}
+
+.field-control.date .field-clear {
+  right: 4px;
 }
 
 /* Les flèches natives volent la place du bouton. */
@@ -71,10 +117,16 @@
   color: var(--text);
 }
 
-.filters-reset {
+/* Posé au bout de l'étiquette « Résultats », après le filet que trace son
+   `::after` — d'où l'`order`, sans quoi le filet passerait à droite du bouton
+   au lieu de le pousser. */
+.section-label .filters-reset {
+  order: 1;
   width: auto;
-  padding: 0 0 9px;
-  flex: none;
+  padding: 0;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }
 
 /* ---- sélection multiple ---- */

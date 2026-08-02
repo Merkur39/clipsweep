@@ -51,7 +51,7 @@ l'utilisateur, via yt-dlp lancé par un script que l'outil génère.
 ## Capabilities and Constraints
 
 **Fonctionnalités confirmées :** fouille exhaustive sur intervalle de dates ; filtres d'affichage
-(vues min/max, créateurs, jeux, en sélection multiple) ; tri par colonne ; sélection par clip ;
+(vues min/max, plage de dates, créateurs, jeux, en sélection multiple) ; tri par colonne ; sélection par clip ;
 exports CSV, JSON et liste d'URLs ; génération de scripts de téléchargement `.bat` et `.sh` pilotant
 yt-dlp.
 

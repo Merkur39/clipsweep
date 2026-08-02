@@ -9,6 +9,8 @@ export interface EmptyResultsInput {
   /** Clips collected before the view filter is applied. */
   clipsFound: number
   maxViews: number | null
+  /** Plage d'affichage, en `yyyy-mm-dd`. Deux bornes nulles : pas de plage. */
+  period?: { from: string | null; to: string | null }
 }
 
 const plural = (count: number, singular: string, pluralForm = `${singular}s`) =>
@@ -66,11 +68,20 @@ export function describeResultCount({ found, shown, selected }: ResultCountInput
  * Why the table is empty, and what to do about it. Silence here is the worst
  * outcome: a filter that hides every clip looks exactly like a failed search.
  */
+/** La plage telle qu'on la lit, selon les bornes réellement posées. */
+function describeRange(from: string | null, to: string | null): string | null {
+  if (from && to) return `entre le ${from} et le ${to}`
+  if (from) return `à partir du ${from}`
+  if (to) return `jusqu’au ${to}`
+  return null
+}
+
 export function describeEmptyResults({
   searched,
   running,
   clipsFound,
   maxViews,
+  period,
 }: EmptyResultsInput): string {
   if (!searched) return 'Aucune fouille lancée.'
 
@@ -80,6 +91,14 @@ export function describeEmptyResults({
   if (running && clipsFound === 0) return 'Fouille en cours — les premiers clips arrivent.'
 
   if (clipsFound === 0) return 'Aucun clip sur cette période. Élargis l’intervalle de dates.'
+
+  // Nommée avant le seuil de vues quand les deux sont actifs : la plage est ce
+  // que l'utilisateur vient de resserrer à la main, et c'est elle que l'action
+  // de la table vide propose de rouvrir.
+  const range = describeRange(period?.from ?? null, period?.to ?? null)
+  if (range !== null) {
+    return `${plural(clipsFound, 'clip')} ${agree(clipsFound, 'récupéré')}, aucun ${range}. Élargis la plage « Du / Au », ou vide les champs pour tout afficher.`
+  }
 
   if (maxViews !== null) {
     return `${plural(clipsFound, 'clip')} récupéré${clipsFound > 1 ? 's' : ''}, aucun à ${plural(maxViews, 'vue')} ou moins. Relève « Vues max », ou vide le champ pour tout afficher.`

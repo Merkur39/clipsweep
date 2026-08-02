@@ -9,7 +9,7 @@ import { SearchProgress } from './components/SearchProgress'
 import { ThemeToggle } from './components/ThemeToggle'
 import { applyTheme, parseTheme } from './domain/theme'
 import { describeAccess, describeTokenLife, TOKEN_EXPIRED } from './domain/access'
-import { applyFilters, facets } from './domain/filters'
+import { applyFilters, dateExtent, facets } from './domain/filters'
 import { clampSince, clampUntil, describePeriodError } from './domain/period'
 import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
@@ -101,6 +101,10 @@ export default function App({ authError }: { authError: string | null }) {
   // un seuil oublié d'une session à l'autre donne une table vide inexpliquée.
   const [minViewsInput, setMinViewsInput] = useState('')
   const [maxViewsInput, setMaxViewsInput] = useState('')
+  // La plage d'affichage, distincte de la période fouillée : la resserrer ne
+  // relance rien, c'est tout son intérêt.
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const [creators, setCreators] = useState<readonly string[]>([])
   const [gameIds, setGameIds] = useState<readonly string[]>([])
   const [sort, setSort] = useState<ClipSort>(DEFAULT_SORT)
@@ -191,23 +195,49 @@ export default function App({ authError }: { authError: string | null }) {
 
   const maxViews = numberOrNull(maxViewsInput)
   const minViews = numberOrNull(minViewsInput)
+  const from = fromDate || null
+  const to = toDate || null
   const shown = useMemo(
-    () => sortClips(applyFilters(clips, { minViews, maxViews, creators, gameIds }), sort),
-    [clips, minViews, maxViews, creators, gameIds, sort],
+    () => sortClips(applyFilters(clips, { minViews, maxViews, from, to, creators, gameIds }), sort),
+    [clips, minViews, maxViews, from, to, creators, gameIds, sort],
   )
   const creatorFacets = useMemo(() => facets(clips, (clip) => clip.creator_name), [clips])
   const gameFacets = useMemo(() => facets(clips, (clip) => clip.game_id), [clips])
+  // Bornes des champs de plage : l'étendue réelle des clips en main, qui grandit
+  // au fil de la fouille comme les facettes.
+  const dateBounds = useMemo(() => dateExtent(clips), [clips])
   const gameLabel = (id: string) => gameNames.get(id) ?? id
 
   const filtersActive =
-    Boolean(minViewsInput || maxViewsInput) || creators.length > 0 || gameIds.length > 0
+    Boolean(minViewsInput || maxViewsInput || fromDate || toDate) ||
+    creators.length > 0 ||
+    gameIds.length > 0
   const resetFilters = () => {
     setMinViewsInput('')
     setMaxViewsInput('')
+    setFromDate('')
+    setToDate('')
     setCreators([])
     setGameIds([])
   }
+  const clearDates = () => {
+    setFromDate('')
+    setToDate('')
+  }
   const selected = useMemo(() => selectedClips(shown, deselected), [shown, deselected])
+
+  /**
+   * L'échappatoire d'une table vidée par un filtre : elle rouvre celui que le
+   * message vient de nommer, et suit donc la même préséance — la plage d'abord,
+   * puisque c'est elle que l'utilisateur vient de resserrer à la main.
+   */
+  const reopenFilter = () => {
+    if (clips.length === 0) return null
+    if (from !== null || to !== null) return clearDates
+    if (maxViews !== null) return () => setMaxViewsInput('')
+    return null
+  }
+  const reopen = reopenFilter()
 
   const run = () => {
     if (running) {
@@ -282,7 +312,21 @@ export default function App({ authError }: { authError: string | null }) {
             running={running}
           />
 
-          <p className="section-label">Résultats</p>
+          {/* La remise à zéro d'ensemble vit au bout de l'étiquette, pas dans la
+              rangée : elle y volait une colonne, alors que chaque contrôle porte
+              déjà sa propre remise à zéro. Toujours rendue — son apparition
+              décalerait le filet de l'étiquette. */}
+          <p className="section-label">
+            Résultats
+            <button
+              type="button"
+              className="link filters-reset"
+              onClick={resetFilters}
+              disabled={!filtersActive}
+            >
+              Réinitialiser
+            </button>
+          </p>
           {clips.length > 0 && (
             <p className="result-count">
               {describeResultCount({
@@ -298,6 +342,11 @@ export default function App({ authError }: { authError: string | null }) {
             onMinViewsChange={setMinViewsInput}
             maxViews={maxViewsInput}
             onMaxViewsChange={setMaxViewsInput}
+            from={fromDate}
+            onFromChange={setFromDate}
+            to={toDate}
+            onToChange={setToDate}
+            dateBounds={dateBounds}
             creatorFacets={creatorFacets}
             creators={creators}
             onCreatorsChange={setCreators}
@@ -305,8 +354,6 @@ export default function App({ authError }: { authError: string | null }) {
             gameIds={gameIds}
             onGameIdsChange={setGameIds}
             gameLabel={gameLabel}
-            active={filtersActive}
-            onReset={resetFilters}
           />
 
           <ClipTable
@@ -319,11 +366,10 @@ export default function App({ authError }: { authError: string | null }) {
               running,
               clipsFound: clips.length,
               maxViews,
+              period: { from, to },
             })}
             emptyAction={
-              clips.length > 0 && maxViews !== null
-                ? { label: `Voir les ${clips.length}`, onClick: () => setMaxViewsInput('') }
-                : undefined
+              reopen ? { label: `Voir les ${clips.length}`, onClick: reopen } : undefined
             }
             sort={sort}
             onSortChange={(key) => setSort((current) => nextSort(current, key))}

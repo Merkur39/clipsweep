@@ -19,7 +19,7 @@ composants viennent après `controls.css` parce qu'ils surchargent le bouton et 
 | `search-panel.css`    | `SearchPanel.tsx` — la lampe d'état                                 |
 | `search-progress.css` | `SearchProgress.tsx` — alerte, repli, compteurs, journal            |
 | `chart.css`           | `Frieze.tsx` — la bande graduée et sa légende                       |
-| `filters.css`         | `FiltersBar` · `NumberField` · `MultiSelect`                        |
+| `filters.css`         | `FiltersBar` · `NumberField` · `DateField` · `MultiSelect`          |
 | `table.css`           | `ClipTable.tsx`                                                     |
 | `export-panel.css`    | `ExportPanel.tsx`                                                   |
 
@@ -190,6 +190,31 @@ Surface de travail principale, donc la plus réglée :
   `tabIndex` ni de `role="button"` sur la ligne : la case porte l'accès clavier, en dupliquer un
   par ligne mettrait des milliers d'arrêts de tabulation dans la table.
 
+## La rangée de filtres
+
+Soudée au haut de la table (bord bas retiré, rayon coupé) : les deux forment un seul panneau.
+
+- **Chaque contrôle à la mesure de son contenu, pas un gabarit unique.** Des colonnes égales
+  faisaient déborder six contrôles sur deux lignes dès 1180px de fenêtre. Les bases sont donc
+  calibrées : 90px pour un champ de vues (six chiffres suffisent), 137px incompressibles pour un
+  champ date (segments + calendrier + croix — en dessous, le natif rogne), 110px pour une facette,
+  qui récupère ensuite tout le surplus puisque c'est elle qui tronque (« SpiZ, Ori +3 »). Une
+  ligne jusqu'à 800px de largeur de scène.
+- **Chaque croissance est plafonnée** (`max-width`). C'est le plafond, pas le `flex-wrap`, qui
+  empêche un contrôle reporté de s'étirer seul sur toute la largeur — mesuré à 883px pour « Jeux »
+  contre 182px pour ses voisins avant qu'il existe.
+- **La remise à zéro d'ensemble n'est pas dans la rangée** mais au bout de l'étiquette
+  « Résultats », après le filet que trace son `::after`. Chaque contrôle porte déjà la sienne — la
+  croix d'un champ, « Tout décocher » d'une facette — et le bouton global volait une colonne à une
+  rangée qui n'en a pas de trop.
+- **Une hauteur commune, posée.** Trois contrôles natifs, trois hauteurs intrinsèques chez
+  Chromium : 33px pour un champ nombre, 34 pour un bouton, 35 pour un champ date. Ce dernier ne
+  cède ni au `line-height` ni au style de son shadow DOM — c'est donc la hauteur qui se pose, sans
+  quoi les étiquettes de la rangée ne s'alignent pas.
+- **Le bouton d'effacement se range à gauche de l'icône de calendrier**, jamais par-dessus :
+  masquer `::-webkit-calendar-picker-indicator` coûterait l'ouverture du sélecteur à la souris,
+  qui est la seule voie qui l'ouvre.
+
 ## Règles transverses
 
 - **Pas d'état d'attente qui ne dure qu'une requête.** Un jeton en `sessionStorage` est lu avant
@@ -208,6 +233,14 @@ Surface de travail principale, donc la plus réglée :
   redevient valable d'elle-même quand elle le peut : une date de début antérieure retrouve son
   sens sur une chaîne plus ancienne, une date de fin trop lointaine le jour venu. Écraser le champ
   ferait perdre une intention encore légitime ailleurs.
+- **Le `clamp` protège d'une dépense, pas d'une saisie.** La règle précédente vaut pour les dates
+  de la fouille, où sortir des bornes coûte des requêtes Helix et des dalles vides. Les dates de
+  la rangée de filtres (« Du » / « Au ») n'ont donc pas de `clamp` : elles ne touchent jamais la
+  fouille, une valeur hors étendue ne dépense rien, et le seul effet — une table vide — est nommé
+  par son message, avec l'action qui rouvre la plage. Leurs `min`/`max` viennent des **clips
+  récupérés** (`dateExtent`), pas de la période fouillée : une fouille lancée avant la création de
+  la chaîne offrirait sinon des dates dont aucune ne peut rien rendre, ce que `facets` évite déjà
+  en écartant les valeurs vides.
 - **Ce qu'aucune borne ne couvre s'annonce là où ça se corrige.** Les bornes contraignent chaque
   date séparément, jamais leur ordre : un début postérieur à la fin reste possible. Il s'affiche
   sous les champs fautifs — pas dans le seul journal, replié par défaut — et désactive la fouille
