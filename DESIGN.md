@@ -275,3 +275,13 @@ Soudée au haut de la table (bord bas retiré, rayon coupé) : les deux forment 
 `<Mark />` est le mécanisme du produit : une période, coupée en deux, recoupée — et un segment
 resté rouge, que l'outil déclare au lieu de le taire. C'est la légende de la frise, compressée,
 posée dans l'en-tête.
+
+Elle sert aussi de favicon, via [`public/favicon.svg`](public/favicon.svg) — **une copie, pas un
+import**. Un favicon est chargé comme document isolé : les variables de `base.css` ne l'atteignent
+pas et `light-dark()` n'y a aucun `color-scheme` à lire, d'où des valeurs en dur et une bascule par
+`prefers-color-scheme`. Les deux fichiers sont donc à tenir en accord à la main ; c'est le prix de
+l'autonomie du favicon, et la seule duplication de couleurs que le projet accepte.
+
+Piège propre à ce fichier : **deux tirets consécutifs ferment un commentaire XML**. Y écrire le nom
+littéral d'une variable CSS rend le SVG illisible au parseur — il continue de se servir en 200, mais
+plus aucune icône ne s'affiche. Vérifier le rendu, pas le code de retour.
