@@ -274,9 +274,7 @@ export default function App({ authError }: { authError: string | null }) {
           <Mark />
           ClipSweep
         </h1>
-        <p className="lede">
-          L'inventaire complet des clips d'une chaîne, du plus vu au jamais vu.
-        </p>
+        <p className="lede">Tous les clips d'une chaîne. Oui, même celui-là.</p>
         <ThemeToggle theme={theme} onChange={setTheme} />
       </header>
 
