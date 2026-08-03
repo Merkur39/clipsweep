@@ -1,13 +1,14 @@
 /**
- * Le vocabulaire de forme des messages, isolé de leur contenu comme de leur
- * rendu : les catalogues et le moteur s'y réfèrent tous deux sans se citer.
+ * The shape vocabulary of messages, isolated from both their content and their
+ * rendering: the catalogues and the engine each refer to it without citing each
+ * other.
  */
 
 /**
- * Un message dont la forme dépend d'un décompte. Deux formes suffisent aux deux
- * langues traitées ; c'est `Intl.PluralRules` qui tranche laquelle, et non une
- * comparaison écrite à la main — le français accorde « 0 clip » au singulier là
- * où l'anglais dit « 0 clips ».
+ * A message whose shape depends on a count. Two forms are enough for the two
+ * languages handled; it is `Intl.PluralRules` that decides which, not a
+ * hand-written comparison — French agrees "0 clip" in the singular where English
+ * says "0 clips".
  */
 export interface Plural {
   one: string
@@ -16,20 +17,20 @@ export interface Plural {
 
 export type Message = string | Plural
 
-/** Un jour à formater dans la langue courante, en `yyyy-mm-dd` ou horodaté. */
+/** A day to format in the current language, as `yyyy-mm-dd` or timestamped. */
 export interface DayParam {
   day: string
 }
 
 /**
- * Les valeurs substituées aux `{marqueurs}`.
+ * The values substituted into the `{markers}`.
  *
- * Le type porte les conventions de formatage, ce qui dispense les appelants de
- * connaître la langue servie :
+ * The type carries the formatting conventions, which spares callers from knowing
+ * which language is being served:
  *
- * - un **nombre** est un décompte destiné à être lu, donc groupé par milliers ;
- * - un **`{ day }`** est une date, rendue dans l'ordre de la langue ;
- * - une **chaîne** traverse telle quelle — c'est l'échappatoire d'un
- *   identifiant, d'une année, d'un code HTTP, ou d'un segment déjà traduit.
+ * - a **number** is a count meant to be read, so grouped in thousands;
+ * - a **`{ day }`** is a date, rendered in the language's order;
+ * - a **string** passes through as it is — the escape hatch for an identifier, a
+ *   year, an HTTP code, or an already translated segment.
  */
 export type Params = Record<string, string | number | DayParam>

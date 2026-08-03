@@ -1,6 +1,6 @@
 import type { Catalogue } from './messages.fr'
 
-/** La traduction anglaise. Voir `messages.fr.ts` pour les règles de rédaction. */
+/** The English translation. See `messages.fr.ts` for the writing rules. */
 export const en: Catalogue = {
   // ── Masthead ─────────────────────────────────────────────────────────────
   'app.tagline': 'Every clip a channel ever had. Yes, that one too.',

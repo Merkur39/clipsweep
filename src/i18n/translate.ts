@@ -18,10 +18,10 @@ function pluralRules(locale: Locale): Intl.PluralRules {
 }
 
 /**
- * La forme d'un message pluriel, choisie sur le paramètre `n`.
+ * The form of a plural message, chosen on the `n` parameter.
  *
- * Sans décompte il n'y a rien à accorder : `other` est la forme neutre, et
- * c'est celle qui se lit le moins mal si un appelant oublie son `n`.
+ * With no count there is nothing to agree: `other` is the neutral form, and the
+ * one that reads least badly if a caller forgets its `n`.
  */
 function pick(message: Plural, locale: Locale, params: Params): string {
   const count = params.n
@@ -31,11 +31,11 @@ function pick(message: Plural, locale: Locale, params: Params): string {
 }
 
 /**
- * Un message rendu : forme choisie, puis marqueurs substitués.
+ * A rendered message: form chosen, then markers substituted.
  *
- * Un paramètre manquant laisse son `{marqueur}` en place plutôt que d'écrire
- * « undefined » — le trou se voit à la relecture comme au test de parité, alors
- * qu'un mot anglais surgi au milieu d'une phrase passe inaperçu.
+ * A missing parameter leaves its `{marker}` in place rather than writing
+ * "undefined" — the hole shows on review as it does in the parity test, whereas
+ * an English word surfacing mid-sentence goes unnoticed.
  */
 export function render(message: Message, locale: Locale, params: Params = {}): string {
   const template = typeof message === 'string' ? message : pick(message, locale, params)
@@ -50,10 +50,10 @@ export function render(message: Message, locale: Locale, params: Params = {}): s
 }
 
 /**
- * La fonction de traduction d'une langue.
+ * A language's translation function.
  *
- * Elle se passe en argument plutôt que de se lire dans un contexte : la couche
- * domaine est pure et testée hors de React, et doit le rester.
+ * It is passed as an argument rather than read from a context: the domain layer
+ * is pure and tested outside React, and must stay that way.
  */
 export type T = (key: MessageKey, params?: Params) => string
 

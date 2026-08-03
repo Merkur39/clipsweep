@@ -1,28 +1,28 @@
 import type { Plural } from './message'
 
 /**
- * Le catalogue de référence : c'est lui qui définit les clés, la forme de
- * chacune, et les paramètres qu'elle attend. Les autres langues s'y conforment
- * par le typage.
+ * The reference catalogue: it defines the keys, the shape of each, and the
+ * parameters each expects. The other languages conform to it through the type
+ * system.
  *
- * Les clés sont préfixées par la zone qui les affiche. Les phrases sont
- * **entières** : un message ne se fabrique jamais en collant des mots, parce que
- * l'accord et l'ordre des mots ne se transposent pas d'une langue à l'autre.
- * Ce qui se compose légitimement est le **segment** — trois décomptes joints par
- * un séparateur neutre, une plage insérée dans une phrase — et il se passe alors
- * en paramètre, déjà traduit.
+ * Keys are prefixed by the zone that displays them. Sentences are **whole**: a
+ * message is never built by gluing words together, because agreement and word
+ * order do not transpose from one language to the next. What legitimately
+ * composes is the **segment** — three counts joined by a neutral separator, a
+ * range inserted into a sentence — and it is then passed as a parameter,
+ * already translated.
  */
 export const fr = {
-  // ── Plaque d'identification ──────────────────────────────────────────────
+  // ── Masthead ─────────────────────────────────────────────────────────────
   'app.tagline': 'Tous les clips d’une chaîne. Oui, même celui-là.',
 
-  // ── Accès ────────────────────────────────────────────────────────────────
+  // ── Access ───────────────────────────────────────────────────────────────
   'access.disconnected': 'Déconnecté de Twitch.',
   'access.connected': 'Connecté.',
   'access.connectedFor': 'Connecté — {life}.',
   /**
-   * Le pari optimiste qui se dédit, et le rejet d'un jeton en cours de scan,
-   * disent la même chose : la reconnexion, elle, est portée par le bouton.
+   * The optimistic bet taking itself back, and a token refused mid-sweep, say
+   * the same thing: reconnecting, for its part, is carried by the button.
    */
   'access.tokenExpired': 'Jeton expiré.',
   'access.refused': 'Twitch a refusé la connexion : {error}',
@@ -31,14 +31,14 @@ export const fr = {
   'access.verifying': 'Vérification du jeton, réessaie.',
   'access.required': 'Connecte-toi à Twitch avant de lancer le scan.',
 
-  // La durée de vie restante d'un jeton, dans l'unité qui se lit : un jeton
-  // Twitch dure une soixantaine de jours, et « 1477 h » est exact, illisible, et
-  // déborde du panneau sur deux lignes.
+  // A token's remaining life, in whichever unit reads: a Twitch token lasts
+  // some sixty days, and "1477 h" is exact, unreadable, and spills out of the
+  // panel onto two lines.
   'access.life.minutes': { one: '{n} min restante', other: '{n} min restantes' },
   'access.life.hours': { one: '{n} h restante', other: '{n} h restantes' },
   'access.life.days': { one: '{n} j restant', other: '{n} j restants' },
 
-  // ── Panneau de scan ───────────────────────────────────────────────────
+  // ── Search panel ─────────────────────────────────────────────────────────
   'panel.access': 'Accès',
   'panel.connect': 'Se connecter à Twitch',
   'panel.disconnect': 'Se déconnecter',
@@ -50,16 +50,16 @@ export const fr = {
   'panel.run': 'Lancer le scan',
   'panel.stop': 'Arrêter le scan',
 
-  // ── Période ──────────────────────────────────────────────────────────────
+  // ── Period ───────────────────────────────────────────────────────────────
   /**
-   * Le seul désordre que les bornes ne peuvent pas empêcher — elles contraignent
-   * chaque date séparément, jamais leur ordre. Une même clé sert l'interface et
-   * le journal : celui qui corrige la période doit lire le même message que
-   * celui qu'on retrouve dans la trace technique.
+   * The only disorder the bounds cannot prevent — they constrain each date
+   * separately, never their order. One key serves both the interface and the
+   * log: whoever fixes the period must read the same message as the one found
+   * in the technical trace.
    */
   'period.order': 'La date de début doit précéder la date de fin.',
 
-  // ── État du scan ───────────────────────────────────────────────────
+  // ── Sweep status ─────────────────────────────────────────────────────────
   'results.status.running': {
     one: 'Scan en cours — {done}/{total} périodes, {n} clip trouvé.',
     other: 'Scan en cours — {done}/{total} périodes, {n} clips trouvés.',
@@ -69,9 +69,9 @@ export const fr = {
     other: 'Scan terminé — {n} clips trouvés.',
   },
 
-  // ── Décomptes ────────────────────────────────────────────────────────────
-  // Trois segments joints par « · », séparateur neutre : chaque nombre s'accorde
-  // sur lui-même, ce qu'une phrase unique ne saurait pas faire.
+  // ── Counts ───────────────────────────────────────────────────────────────
+  // Three segments joined by "·", a neutral separator: each number agrees with
+  // itself, which a single sentence could not manage.
   'results.label': 'Résultats',
   'results.reset': 'Réinitialiser',
   'results.showAll': 'Voir les {n}',
@@ -79,9 +79,9 @@ export const fr = {
   'results.count.shown': { one: '{n} affiché', other: '{n} affichés' },
   'results.count.selected': { one: '{n} sélectionné', other: '{n} sélectionnés' },
 
-  // ── Table vide ───────────────────────────────────────────────────────────
-  // Le silence est ici le pire résultat : un filtre qui cache tous les clips
-  // ressemble trait pour trait à un scan sans réponse.
+  // ── Empty table ──────────────────────────────────────────────────────────
+  // Silence is the worst outcome here: a filter hiding every clip looks exactly
+  // like a sweep that returned nothing.
   'results.empty.notSearched': 'Aucun scan lancé.',
   'results.empty.running': 'Scan en cours — les premiers clips arrivent.',
   'results.empty.nothing': 'Aucun clip sur cette période. Élargis l’intervalle de dates.',
@@ -100,15 +100,15 @@ export const fr = {
     other: '{n} clips récupérés, mais rien à afficher.',
   },
 
-  // La plage telle qu'on la lit, selon les bornes réellement posées. Segment,
-  // inséré dans `results.empty.outOfRange`.
+  // The range as it reads, according to which bounds are actually set. A
+  // segment, inserted into `results.empty.outOfRange`.
   'results.range.between': 'entre le {from} et le {to}',
   'results.range.from': 'à partir du {from}',
   'results.range.to': 'jusqu’au {to}',
-  /** Segment, inséré dans `results.empty.aboveViews`. */
+  /** A segment, inserted into `results.empty.aboveViews`. */
   'results.views': { one: '{n} vue', other: '{n} vues' },
 
-  // ── Filtres ──────────────────────────────────────────────────────────────
+  // ── Filters ──────────────────────────────────────────────────────────────
   'filters.minViews': 'Vues min',
   'filters.maxViews': 'Vues max',
   'filters.noThreshold': 'aucune',
@@ -131,7 +131,7 @@ export const fr = {
   'table.untitledClip': 'Clip sans titre',
   'table.untitled': '(sans titre)',
 
-  // ── Avancement ───────────────────────────────────────────────────────────
+  // ── Progress ─────────────────────────────────────────────────────────────
   'progress.incomplete': {
     one: '{n} période n’a pas pu être explorée entièrement : il manque des clips sur celle-ci. Resserre l’intervalle de dates.',
     other:
@@ -148,7 +148,7 @@ export const fr = {
   'progress.log': 'Journal',
   'progress.logEmpty': 'En attente.',
 
-  // ── Frise ────────────────────────────────────────────────────────────────
+  // ── Frieze ───────────────────────────────────────────────────────────────
   'frieze.empty': 'Chaque période explorée apparaîtra ici, sa hauteur donnant le nombre de clips.',
   'frieze.plot': {
     one: 'Découpage du temps : {n} période explorée entre {from} et {to}.',
@@ -159,15 +159,15 @@ export const fr = {
     one: '{n} période · survole pour le détail · hauteur logarithmique',
     other: '{n} périodes · survole pour le détail · hauteur logarithmique',
   },
-  // Plus terse que la légende : la ligne de lecture nomme déjà la période.
+  // Terser than the legend: the readout line already names the period.
   'frieze.kind.done': 'complète',
   'frieze.kind.split': 'saturée, recoupée',
   'frieze.kind.lost': 'saturée au plancher — clips manquants',
 
   // ── Export ───────────────────────────────────────────────────────────────
   'export.download.title': 'Télécharger les vidéos',
-  // La phrase est coupée autour du lien vers yt-dlp : les deux moitiés se
-  // traduisent ensemble, et l'espace qui les sépare vit dans le JSX.
+  // The sentence is cut around the yt-dlp link: the two halves are translated
+  // together, and the space between them lives in the JSX.
   'export.download.ledeBefore': 'Un script à lancer sur ta machine : il récupère',
   'export.download.ledeAfter': 'au besoin sans rien installer, puis télécharge les clips.',
   'export.download.all': 'Télécharger les clips',
@@ -191,7 +191,7 @@ export const fr = {
   'export.tally': '{selected} sur {found}',
   'export.tallyFound': { one: '{n} récupéré', other: '{n} récupérés' },
 
-  // ── Préférences ──────────────────────────────────────────────────────────
+  // ── Preferences ──────────────────────────────────────────────────────────
   'theme.label': 'Thème',
   'theme.system': 'Système',
   'theme.light': 'Clair',
@@ -199,7 +199,7 @@ export const fr = {
   'locale.label': 'Langue',
   'locale.auto': 'Automatique',
 
-  // ── Pied de page ─────────────────────────────────────────────────────────
+  // ── Colophon ─────────────────────────────────────────────────────────────
   'colophon.source': 'Code source — GPL-3.0',
   'colophon.twitchApi': 'API Twitch',
   'colophon.independent': 'Projet indépendant, sans lien avec Twitch Interactive, Inc.',
@@ -207,7 +207,7 @@ export const fr = {
     'Les clips restent la propriété de leurs auteurs : ce que tu en fais te regarde.',
   'colophon.analytics': 'Mesure d’audience anonyme, sans cookie.',
 
-  // ── Journal de scan ───────────────────────────────────────────────────
+  // ── Sweep log ────────────────────────────────────────────────────────────
   'log.stopRequested': 'Arrêt demandé.',
   'log.channel': 'Chaîne : {name} (id {id}), créée le {date}.',
   'log.beforeCreation':
@@ -225,27 +225,27 @@ export const fr = {
   'log.gameNames': 'Noms des jeux indisponibles : le filtre listera les identifiants.',
   'log.failed': 'Échec : {reason}',
 
-  // ── Erreurs réseau ───────────────────────────────────────────────────────
+  // ── Network errors ───────────────────────────────────────────────────────
   'error.tokenRejected': 'Jeton refusé par Twitch. Reconnecte-toi.',
   'error.tokenInvalid': 'Jeton expiré ou révoqué.',
   'error.helixStatus': 'Twitch répond {status}',
   'error.attemptsExhausted': 'Tentatives infructueuses sur /{path} : {n}.',
   'error.channelNotFound': 'Chaîne « {login} » introuvable.',
 
-  // ── Scripts générés ──────────────────────────────────────────────────────
+  // ── Generated scripts ────────────────────────────────────────────────────
   /**
-   * Ces messages sortent dans une console dont la page de code n'est pas
-   * garantie : un accent y devient du charabia. Ils restent donc en **ASCII
-   * pur** dans les deux langues — contrainte gratuite en anglais, assumée en
-   * français. Un test la vérifie sur toutes les clés `script.`.
+   * These messages come out in a console whose code page is not guaranteed: an
+   * accent becomes garbage there. They therefore stay **pure ASCII** in both
+   * languages — a free constraint in English, an accepted one in French. A test
+   * checks it across every `script.` key.
    */
-  // `{count}` traverse en chaîne, jamais en nombre : le groupement français
-  // insère une espace insécable, qui n'est pas de l'ASCII.
+  // `{count}` goes through as a string, never a number: French grouping
+  // inserts a no-break space, which is not ASCII.
   'script.header': 'ClipSweep - {count} clip(s) de {channel}',
   'script.missingBat': 'yt-dlp.exe est introuvable dans ce dossier.',
   'script.missingSh': 'yt-dlp est introuvable.',
-  // La lettre de confirmation change avec la langue ; les deux scripts
-  // acceptent « O » et « Y » quoi qu'il arrive.
+  // The confirmation letter changes with the language; both scripts accept
+  // "O" and "Y" whatever happens.
   'script.askFetch': 'Le telecharger depuis GitHub ? [O/N]',
   'script.abortBat': 'Abandon. Placez yt-dlp.exe a cote de ce script, puis relancez.',
   'script.abortSh': 'Abandon.',
@@ -257,9 +257,9 @@ export const fr = {
 export type MessageKey = keyof typeof fr
 
 /**
- * La forme qu'une traduction doit reproduire, dérivée du catalogue de
- * référence : une clé manquante, ou une forme simple là où le français accorde,
- * échoue au `typecheck` plutôt qu'à l'exécution.
+ * The shape a translation must reproduce, derived from the reference
+ * catalogue: a missing key, or a plain form where French agrees, fails
+ * `typecheck` rather than failing at runtime.
  */
 export type Catalogue = {
   [K in MessageKey]: (typeof fr)[K] extends string ? string : Plural
