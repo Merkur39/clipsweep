@@ -1,10 +1,12 @@
-import { MoonIcon, SunIcon, SystemIcon } from './Icon'
 import { THEMES, type Theme } from '../domain/theme'
+import { useTranslation } from '../i18n/LocaleProvider'
+import type { MessageKey } from '../i18n/messages.fr'
+import { MoonIcon, SunIcon, SystemIcon } from './Icon'
 
-const OPTIONS: Record<Theme, { label: string; icon: () => React.ReactElement }> = {
-  system: { label: 'Système', icon: SystemIcon },
-  light: { label: 'Clair', icon: SunIcon },
-  dark: { label: 'Sombre', icon: MoonIcon },
+const OPTIONS: Record<Theme, { label: MessageKey; icon: () => React.ReactElement }> = {
+  system: { label: 'theme.system', icon: SystemIcon },
+  light: { label: 'theme.light', icon: SunIcon },
+  dark: { label: 'theme.dark', icon: MoonIcon },
 }
 
 interface ThemeToggleProps {
@@ -21,8 +23,10 @@ interface ThemeToggleProps {
  * une préférence d'affichage, elle ne doit pas peser autant que la tâche.
  */
 export function ThemeToggle({ theme, onChange }: ThemeToggleProps) {
+  const { t } = useTranslation()
+
   return (
-    <div className="theme-toggle" role="group" aria-label="Thème">
+    <div className="segmented" role="group" aria-label={t('theme.label')}>
       {THEMES.map((option) => {
         const { label, icon: Icon } = OPTIONS[option]
         return (
@@ -30,11 +34,11 @@ export function ThemeToggle({ theme, onChange }: ThemeToggleProps) {
             key={option}
             type="button"
             aria-pressed={option === theme}
-            title={label}
+            title={t(label)}
             onClick={() => onChange(option)}
           >
             <Icon />
-            <span className="visually-hidden">{label}</span>
+            <span className="visually-hidden">{t(label)}</span>
           </button>
         )
       })}

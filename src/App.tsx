@@ -6,6 +6,7 @@ import { ExportPanel } from './components/ExportPanel'
 import { FiltersBar } from './components/FiltersBar'
 import { SearchPanel } from './components/SearchPanel'
 import { Mark } from './components/Icon'
+import { LocaleToggle } from './components/LocaleToggle'
 import { SearchProgress } from './components/SearchProgress'
 import { ThemeToggle } from './components/ThemeToggle'
 import { applyTheme, parseTheme } from './domain/theme'
@@ -16,6 +17,7 @@ import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
 import { selectedClips, toggle, toggleAll } from './domain/selection'
 import { DEFAULT_SORT, nextSort, sortClips, type ClipSort } from './domain/sort'
+import { useTranslation } from './i18n/LocaleProvider'
 import { useChannelLookup } from './hooks/useChannelLookup'
 import { useClipSearch } from './hooks/useClipSearch'
 import { usePersistedState } from './hooks/usePersistedState'
@@ -64,6 +66,7 @@ function toCsv(clips: Clip[]): string {
 }
 
 export default function App({ authError }: { authError: string | null }) {
+  const { t } = useTranslation()
   const [session, setSession] = useState<Session | null>(null)
   // Lu une seule fois, avant le premier rendu : c'est ce qui permet d'annoncer
   // « vérification » plutôt que « aucun jeton » pendant l'aller-retour.
@@ -274,8 +277,13 @@ export default function App({ authError }: { authError: string | null }) {
           <Mark />
           ClipSweep
         </h1>
-        <p className="lede">Tous les clips d'une chaîne. Oui, même celui-là.</p>
-        <ThemeToggle theme={theme} onChange={setTheme} />
+        <p className="lede">{t('app.tagline')}</p>
+        {/* Deux préférences d'affichage de même statut, donc de même forme,
+            rangées ensemble au bout de la plaque. */}
+        <div className="masthead-prefs">
+          <LocaleToggle />
+          <ThemeToggle theme={theme} onChange={setTheme} />
+        </div>
       </header>
 
       <div className="layout">
