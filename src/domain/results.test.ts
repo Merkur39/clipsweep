@@ -6,12 +6,12 @@ import { makeT } from '../i18n/translate'
 const t = makeT('fr')
 
 describe('describeSearchStatus', () => {
-  it('ne dit rien tant qu’aucun scan n’a tourné', () => {
+  it('says nothing while no sweep has run', () => {
     expect(describeSearchStatus({ running: false, progress: null, clipsFound: 0 }, t)).toBeNull()
   })
 
-  it('rend compte de l’avancement pendant le scan', () => {
-    const texte = describeSearchStatus(
+  it('reports progress while the sweep runs', () => {
+    const text = describeSearchStatus(
       {
         running: true,
         progress: { windowsDone: 12, windowsTotal: 40, clipsFound: 340, requests: 55 },
@@ -20,13 +20,13 @@ describe('describeSearchStatus', () => {
       t,
     )
 
-    expect(texte).toContain('12')
-    expect(texte).toContain('40')
-    expect(texte).toContain('340')
+    expect(text).toContain('12')
+    expect(text).toContain('40')
+    expect(text).toContain('340')
   })
 
-  it('annonce le bilan une fois le scan fini', () => {
-    const texte = describeSearchStatus(
+  it('announces the tally once the sweep is done', () => {
+    const text = describeSearchStatus(
       {
         running: false,
         progress: { windowsDone: 40, windowsTotal: 40, clipsFound: 412, requests: 90 },
@@ -35,12 +35,12 @@ describe('describeSearchStatus', () => {
       t,
     )
 
-    expect(texte).toContain('412')
-    expect(texte).not.toContain('en cours')
+    expect(text).toContain('412')
+    expect(text).not.toContain('en cours')
   })
 
-  it('accorde le singulier', () => {
-    const texte = describeSearchStatus(
+  it('agrees the singular', () => {
+    const text = describeSearchStatus(
       {
         running: false,
         progress: { windowsDone: 1, windowsTotal: 1, clipsFound: 1, requests: 1 },
@@ -49,42 +49,42 @@ describe('describeSearchStatus', () => {
       t,
     )
 
-    expect(texte).toContain('1 clip ')
-    expect(texte).not.toContain('1 clips')
+    expect(text).toContain('1 clip ')
+    expect(text).not.toContain('1 clips')
   })
 })
 
 describe('describeResultCount', () => {
-  it('se tait tant qu’il n’y a rien à compter', () => {
+  it('stays quiet while there is nothing to count', () => {
     expect(describeResultCount({ found: 0, shown: 0, selected: 0 }, t)).toBe('')
   })
 
-  // Forme stable : les trois nombres toujours présents, plus lisibles d'un coup
-  // d'œil qu'un libellé dont la structure change selon les valeurs.
-  it('donne les trois nombres', () => {
+  // Stable shape: the three numbers always present, easier to read at a glance
+  // than a label whose structure changes with the values.
+  it('gives the three numbers', () => {
     expect(describeResultCount({ found: 412, shown: 87, selected: 40 }, t)).toBe(
       '412 clips récupérés · 87 affichés · 40 sélectionnés',
     )
   })
 
-  it('accorde chaque nombre séparément', () => {
+  it('agrees each number separately', () => {
     expect(describeResultCount({ found: 1, shown: 1, selected: 1 }, t)).toBe(
       '1 clip récupéré · 1 affiché · 1 sélectionné',
     )
   })
 
-  it('gère une sélection vide', () => {
+  it('handles an empty selection', () => {
     expect(describeResultCount({ found: 5, shown: 5, selected: 0 }, t)).toBe(
       '5 clips récupérés · 5 affichés · 0 sélectionné',
     )
   })
 
   /**
-   * Le zéro sépare les deux langues : le français accorde « 0 sélectionné » au
-   * singulier, l'anglais dit « 0 selected ». C'est exactement ce que la
-   * composition par segments préserve, et qu'une phrase unique perdrait.
+   * Zero separates the two languages: French agrees "0 sélectionné" in the
+   * singular, English says "0 selected". That is exactly what composing by
+   * segments preserves, and what a single sentence would lose.
    */
-  it('accorde selon la langue servie', () => {
+  it('agrees according to the language served', () => {
     expect(describeResultCount({ found: 1, shown: 1, selected: 0 }, makeT('en'))).toBe(
       '1 clip collected · 1 shown · 0 selected',
     )
@@ -92,21 +92,21 @@ describe('describeResultCount', () => {
 })
 
 describe('describeEmptyResults', () => {
-  it('invite à lancer un scan tant que rien n’a tourné', () => {
+  it('invites a sweep while nothing has run', () => {
     expect(
       describeEmptyResults({ searched: false, running: false, clipsFound: 0, maxViews: null }, t),
     ).toBe('Aucun scan lancé.')
   })
 
-  it('distingue une période sans aucun clip', () => {
+  it('tells apart a period with no clips at all', () => {
     expect(
       describeEmptyResults({ searched: true, running: false, clipsFound: 0, maxViews: 2 }, t),
     ).toBe('Aucun clip sur cette période. Élargis l’intervalle de dates.')
   })
 
-  // Le scan dure de quelques secondes à plusieurs minutes. Conclure « aucun
-  // clip » pendant ce temps est faux : la première période n'a pas encore rendu.
-  it('ne conclut pas à l’absence de clips tant que le scan tourne', () => {
+  // A sweep runs from a few seconds to several minutes. Concluding "no clips"
+  // during that time is false: the first period has not returned yet.
+  it('does not conclude clips are absent while the sweep runs', () => {
     const message = describeEmptyResults(
       { searched: true, running: true, clipsFound: 0, maxViews: null },
       t,
@@ -117,9 +117,9 @@ describe('describeEmptyResults', () => {
     expect(message).toContain('cours')
   })
 
-  // Une fois des clips récupérés, le filtre redevient l'explication valable,
-  // scan en cours ou non.
-  it('explique quand même le filtre pendant le scan', () => {
+  // Once clips have been collected, the filter becomes the valid explanation
+  // again, sweep running or not.
+  it('still explains the filter while the sweep runs', () => {
     const message = describeEmptyResults(
       { searched: true, running: true, clipsFound: 6, maxViews: 2 },
       t,
@@ -128,7 +128,7 @@ describe('describeEmptyResults', () => {
     expect(message).toContain('Vues max')
   })
 
-  it('dit combien de clips le filtre masque, et comment les voir', () => {
+  it('says how many clips the filter hides, and how to see them', () => {
     const message = describeEmptyResults(
       { searched: true, running: false, clipsFound: 6, maxViews: 2 },
       t,
@@ -139,7 +139,7 @@ describe('describeEmptyResults', () => {
     expect(message).toContain('Vues max')
   })
 
-  it('accorde le singulier', () => {
+  it('agrees the singular', () => {
     expect(
       describeEmptyResults({ searched: true, running: false, clipsFound: 1, maxViews: 0 }, t),
     ).toContain('1 clip ')
@@ -148,7 +148,7 @@ describe('describeEmptyResults', () => {
     ).toContain('1 vue')
   })
 
-  it('ne parle pas de seuil quand le filtre est vide', () => {
+  it('does not mention a threshold when the filter is empty', () => {
     const message = describeEmptyResults(
       { searched: true, running: false, clipsFound: 6, maxViews: null },
       t,
@@ -157,9 +157,9 @@ describe('describeEmptyResults', () => {
     expect(message).not.toContain('Vues max')
   })
 
-  // Les dates s'affichent dans l'ordre de la langue, jamais en `yyyy-mm-dd` :
-  // c'est le format pivot des champs et des exports, pas une manière de lire.
-  it('nomme la plage de dates qui vide la table', () => {
+  // Dates display in the language's order, never in `yyyy-mm-dd`: that is the
+  // pivot format of the fields and the exports, not a way of reading.
+  it('names the date range that empties the table', () => {
     const message = describeEmptyResults(
       {
         searched: true,
@@ -176,7 +176,7 @@ describe('describeEmptyResults', () => {
     expect(message).toContain('Du / Au')
   })
 
-  it('dit « à partir du » quand seule la borne de début est posée', () => {
+  it('says "from" when only the start bound is set', () => {
     const message = describeEmptyResults(
       {
         searched: true,
@@ -192,7 +192,7 @@ describe('describeEmptyResults', () => {
     expect(message).not.toContain('entre')
   })
 
-  it('dit « jusqu’au » quand seule la borne de fin est posée', () => {
+  it('says "up to" when only the end bound is set', () => {
     const message = describeEmptyResults(
       {
         searched: true,
@@ -208,10 +208,10 @@ describe('describeEmptyResults', () => {
     expect(message).not.toContain('entre')
   })
 
-  // Deux filtres actifs, une seule cause à nommer : la plage est ce que
-  // l'utilisateur vient de resserrer à la main, et c'est elle que l'action de la
-  // table vide propose de rouvrir.
-  it('nomme la plage plutôt que le seuil quand les deux sont posés', () => {
+  // Two active filters, one cause to name: the range is what the user just
+  // narrowed by hand, and it is the one the empty table's action offers to
+  // reopen.
+  it('names the range rather than the threshold when both are set', () => {
     const message = describeEmptyResults(
       {
         searched: true,
@@ -227,7 +227,7 @@ describe('describeEmptyResults', () => {
     expect(message).not.toContain('Vues max')
   })
 
-  it('se tait sur les dates quand aucune borne n’est posée', () => {
+  it('stays quiet about dates when no bound is set', () => {
     const message = describeEmptyResults(
       {
         searched: true,
@@ -242,9 +242,9 @@ describe('describeEmptyResults', () => {
     expect(message).not.toContain('Du / Au')
   })
 
-  // Le manque de clips prime sur les filtres : une plage posée sur un scan
-  // vide n'explique rien, c'est la période scannée qu'il faut élargir.
-  it('garde la priorité au cas « aucun clip récupéré »', () => {
+  // Missing clips outrank the filters: a range set over an empty sweep explains
+  // nothing, it is the period swept that needs widening.
+  it('keeps the priority on the "no clip collected" case', () => {
     const message = describeEmptyResults(
       {
         searched: true,
@@ -259,9 +259,9 @@ describe('describeEmptyResults', () => {
     expect(message).toBe('Aucun clip sur cette période. Élargis l’intervalle de dates.')
   })
 
-  // La date anglaise place le mois d'abord : le mois de janvier et le jour 1er
-  // sont indiscernables sur `2020-01-01`, pas sur une paire de bornes distinctes.
-  it('range les dates dans l’ordre de la langue servie', () => {
+  // The English date puts the month first: January and the 1st of the month are
+  // indistinguishable on `2020-01-01`, but not on a pair of distinct bounds.
+  it('orders dates the way the language served does', () => {
     const message = describeEmptyResults(
       {
         searched: true,

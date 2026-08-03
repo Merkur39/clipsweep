@@ -1,9 +1,9 @@
 /**
- * Le choix de thème, et rien de plus : la palette elle-même vit en CSS, où
- * chaque jeton porte ses deux valeurs dans un `light-dark()`.
+ * The theme choice, and nothing more: the palette itself lives in CSS, where
+ * every token carries both of its values inside a `light-dark()`.
  *
- * Suivre le système n'est donc pas un troisième thème à écrire — c'est le fait
- * de ne rien affirmer, et de laisser `color-scheme: light dark` trancher.
+ * Following the system is therefore not a third theme to write — it is the act
+ * of asserting nothing, and letting `color-scheme: light dark` decide.
  */
 export const THEMES = ['system', 'light', 'dark'] as const
 
@@ -12,21 +12,21 @@ export type Theme = (typeof THEMES)[number]
 const isTheme = (value: string): value is Theme => (THEMES as readonly string[]).includes(value)
 
 /**
- * La préférence vit en localStorage, donc elle est modifiable à la main et peut
- * dater d'une version qui nommait les thèmes autrement. Tout ce qui n'est pas
- * un choix reconnu revient au système, qui est toujours un état valable.
+ * The preference lives in localStorage, so it is hand-editable and may date from
+ * a version that named the themes differently. Anything that is not a recognized
+ * choice falls back to the system, which is always a valid state.
  */
 export function parseTheme(stored: string | null): Theme {
   return stored !== null && isTheme(stored) ? stored : 'system'
 }
 
 /**
- * Pose le choix sur `<html>`. L'attribut ne réécrit aucun jeton : il restreint
- * `color-scheme` à une seule branche, et les `light-dark()` suivent.
+ * Puts the choice on `<html>`. The attribute rewrites no token: it restricts
+ * `color-scheme` to a single branch, and the `light-dark()` calls follow.
  *
- * Suivre le système efface l'attribut plutôt que d'en poser un troisième :
- * une valeur `data-theme="system"` laisserait `color-scheme` restreint au
- * dernier choix, ce qui est exactement le contraire de ce qu'elle annonce.
+ * Following the system clears the attribute rather than setting a third value:
+ * a `data-theme="system"` would leave `color-scheme` pinned to the last choice,
+ * which is exactly the opposite of what it announces.
  */
 export function applyTheme(root: HTMLElement, theme: Theme): void {
   if (theme === 'system') {

@@ -20,10 +20,10 @@ export const NO_FILTERS: ClipFilters = {
   gameIds: [],
 }
 
-/** Le jour d'un clip, tel que la colonne Date l'affiche. */
+/** A clip's day, as the Date column shows it. */
 const day = (clip: Clip) => clip.created_at.slice(0, 10)
 
-/** Filtre seulement : l'ordre relève de `sortClips`, que l'utilisateur pilote. */
+/** Filtering only: ordering belongs to `sortClips`, which the user drives. */
 export function applyFilters(clips: Clip[], filters: ClipFilters): Clip[] {
   // Sets rather than includes(): the creator facet can hold hundreds of values
   // and this runs against the whole catalogue on every keystroke.
@@ -33,10 +33,10 @@ export function applyFilters(clips: Clip[], filters: ClipFilters): Clip[] {
   const kept = clips.filter((clip) => {
     if (filters.minViews !== null && clip.view_count < filters.minViews) return false
     if (filters.maxViews !== null && clip.view_count > filters.maxViews) return false
-    // Comparé au jour affiché, pas à l'horodatage : `created_at` porte une heure
-    // que la table ne montre pas, et un clip de 23h30 doit rester dans la plage
-    // dont sa ligne affiche la date de fin. En `yyyy-mm-dd`, l'ordre
-    // lexicographique est l'ordre chronologique.
+    // Compared against the displayed day, not the timestamp: `created_at` carries
+    // a time the table does not show, and a clip from 23:30 must stay inside the
+    // range whose end date its own row displays. In `yyyy-mm-dd`, lexicographic
+    // order is chronological order.
     if (filters.from !== null && day(clip) < filters.from) return false
     if (filters.to !== null && day(clip) > filters.to) return false
     if (creators.size > 0 && !creators.has(clip.creator_name)) return false
@@ -52,11 +52,12 @@ export interface DateExtent {
 }
 
 /**
- * L'étendue réelle des clips récupérés, pour borner les champs de plage.
+ * The actual extent of the collected clips, to bound the range fields.
  *
- * Elle vient des clips, pas de la période scannée : un scan lancé en 2019
- * sur une chaîne créée en 2021 offrirait sinon deux années de dates dont aucune
- * ne peut rien rendre. Même parti que [facets], qui écarte les valeurs vides.
+ * It comes from the clips, not from the period swept: a sweep started in 2019
+ * over a channel created in 2021 would otherwise offer two years of dates none
+ * of which can return anything. Same stance as [facets], which drops empty
+ * values.
  */
 export function dateExtent(clips: readonly Clip[]): DateExtent | null {
   if (clips.length === 0) return null

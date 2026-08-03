@@ -1,19 +1,17 @@
 import type { T } from '../i18n/translate'
 
 /**
- * La date de début effective : jamais antérieure à la création de la chaîne.
+ * The effective start date: never earlier than the channel's creation.
  *
- * Une période qui commence avant l'existence de la chaîne ne peut rien rendre,
- * et coûte une fenêtre annuelle — donc au moins une requête — par année de
- * trop, plus autant de dalles vides dans la frise.
+ * A period that begins before the channel existed can return nothing, and costs
+ * one yearly window — so at least one request — per year too many, plus as many
+ * empty slabs on the frieze.
  *
- * La contrainte est **dérivée, pas écrite** : la saisie de l'utilisateur reste
- * telle quelle en mémoire, et redevient valable si la chaîne visée change pour
- * une plus ancienne. Écraser le champ ferait perdre une intention encore
- * légitime ailleurs.
+ * The constraint is **derived, not written**: the user's input stays as typed in
+ * memory, and becomes valid again if the target channel changes to an older one.
+ * Overwriting the field would destroy an intent still legitimate elsewhere.
  *
- * Les dates sont au format `yyyy-mm-dd`, où l'ordre lexicographique est l'ordre
- * chronologique.
+ * Dates are `yyyy-mm-dd`, where lexicographic order is chronological order.
  */
 export function clampSince(since: string, channelCreatedAt: string | null): string {
   if (!channelCreatedAt) return since
@@ -21,18 +19,17 @@ export function clampSince(since: string, channelCreatedAt: string | null): stri
 }
 
 /**
- * La date de fin effective : jamais au-delà d'aujourd'hui.
+ * The effective end date: never beyond today.
  *
- * Le pendant de [clampSince] : aucun clip ne peut exister dans le futur, donc
- * les fenêtres au-delà d'aujourd'hui ne rendraient rien tout en dépensant une
- * requête chacune.
+ * The counterpart of [clampSince]: no clip can exist in the future, so windows
+ * past today would return nothing while spending one request each.
  *
- * Dérivée elle aussi, et pour une raison de plus : le temps avance. Une date
- * saisie trop loin devient légitime le jour venu — à condition de ne pas
- * l'avoir écrasée entre-temps.
+ * Derived as well, and for one more reason: time moves. A date typed too far
+ * ahead becomes legitimate when the day comes — provided it was not overwritten
+ * in the meantime.
  *
- * `today` s'exprime en UTC, comme la valeur par défaut du champ et comme les
- * bornes envoyées à Helix.
+ * `today` is expressed in UTC, like the field's default value and like the
+ * bounds sent to Helix.
  */
 export function clampUntil(until: string, today: string): string {
   return until > today ? today : until
@@ -41,34 +38,34 @@ export function clampUntil(until: string, today: string): string {
 const pad = (value: number, width: number) => String(value).padStart(width, '0')
 
 /**
- * Le mois qui précède une date `yyyy-mm-dd`, en UTC comme le reste des bornes.
+ * The month before a `yyyy-mm-dd` date, in UTC like every other bound.
  *
- * C'est la valeur par défaut du champ « Depuis » : une période d'un mois se
- * scanne en une poignée de requêtes, là où un début posé aux origines de
- * Twitch en dépense une par fenêtre annuelle — dépense qu'un clic immédiat sur
- * « Lancer le scan » engage sans que rien ne l'ait demandée.
+ * This is the default value of the "From" field: a one-month period sweeps in a
+ * handful of requests, where a start set at the dawn of Twitch spends one per
+ * yearly window — an expense an immediate click on "Start the sweep" commits
+ * without anyone having asked for it.
  *
- * Le quantième est ramené au dernier jour du mois visé quand il n'y existe pas :
- * `setMonth` glisserait sur le mois suivant, et rendrait pour le 31 mars une
- * date postérieure à celle d'où l'on part.
+ * The day of month is pulled back to the last day of the target month when it
+ * does not exist there: `setMonth` would slide onto the following month, and
+ * would return, for 31 March, a date later than the one we started from.
  */
 export function monthBefore(today: string): string {
   const [year, month, dayOfMonth] = today.split('-').map(Number)
   const previousMonth = month === 1 ? 12 : month - 1
   const previousYear = month === 1 ? year - 1 : year
-  // Le jour 0 du mois suivant, soit le dernier du mois visé — années
-  // bissextiles comprises.
+  // Day 0 of the following month, that is the last day of the target month —
+  // leap years included.
   const lastDay = new Date(Date.UTC(previousYear, previousMonth, 0)).getUTCDate()
 
   return `${pad(previousYear, 4)}-${pad(previousMonth, 2)}-${pad(Math.min(dayOfMonth, lastDay), 2)}`
 }
 
 /**
- * Le scan borne la fin à `23:59:59`, donc un début et une fin le même jour
- * couvrent bien cette journée-là : seul un début **postérieur** est fautif.
+ * The sweep bounds the end at `23:59:59`, so a start and an end on the same day
+ * do cover that day: only a **later** start is at fault.
  *
- * Une même clé sert l'interface et le journal : le message que lit celui qui
- * corrige la période doit être celui qu'on retrouve dans la trace technique.
+ * One key serves both the interface and the log: whoever fixes the period must
+ * read the same message as the one found in the technical trace.
  */
 export function describePeriodError(since: string, until: string, t: T): string | null {
   return since > until ? t('period.order') : null

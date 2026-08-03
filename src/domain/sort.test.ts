@@ -20,14 +20,14 @@ const clip = (over: Partial<Clip> & { id: string }): Clip => ({
 const ids = (clips: Clip[]) => clips.map((c) => c.id)
 
 describe('nextSort', () => {
-  it('trie une nouvelle colonne en croissant', () => {
+  it('sorts a new column ascending', () => {
     expect(nextSort({ key: 'views', direction: 'desc' }, 'title')).toEqual({
       key: 'title',
       direction: 'asc',
     })
   })
 
-  it('inverse le sens sur la colonne déjà triée', () => {
+  it('flips the direction on the already sorted column', () => {
     expect(nextSort({ key: 'views', direction: 'asc' }, 'views')).toEqual({
       key: 'views',
       direction: 'desc',
@@ -40,28 +40,28 @@ describe('nextSort', () => {
 })
 
 describe('sortClips', () => {
-  it('classe du moins vu au plus vu par défaut', () => {
+  it('orders from least to most viewed by default', () => {
     const clips = [clip({ id: 'a', view_count: 9 }), clip({ id: 'b', view_count: 0 })]
 
     expect(ids(sortClips(clips, DEFAULT_SORT))).toEqual(['b', 'a'])
   })
 
-  it('inverse les vues en décroissant', () => {
+  it('reverses views when descending', () => {
     const clips = [clip({ id: 'a', view_count: 9 }), clip({ id: 'b', view_count: 0 })]
 
     expect(ids(sortClips(clips, { key: 'views', direction: 'desc' }))).toEqual(['a', 'b'])
   })
 
-  it('classe par date, les chaînes ISO se comparant telles quelles', () => {
+  it('orders by date, ISO strings comparing as they are', () => {
     const clips = [
       clip({ id: 'recent', created_at: '2026-03-01T00:00:00Z' }),
-      clip({ id: 'ancien', created_at: '2026-01-01T00:00:00Z' }),
+      clip({ id: 'older', created_at: '2026-01-01T00:00:00Z' }),
     ]
 
-    expect(ids(sortClips(clips, { key: 'date', direction: 'asc' }))).toEqual(['ancien', 'recent'])
+    expect(ids(sortClips(clips, { key: 'date', direction: 'asc' }))).toEqual(['older', 'recent'])
   })
 
-  it('classe les titres sans se laisser piéger par les accents', () => {
+  it('orders titles without being tripped up by accents', () => {
     const clips = [
       clip({ id: 'z', title: 'Zoé' }),
       clip({ id: 'e', title: 'Élodie' }),
@@ -71,21 +71,21 @@ describe('sortClips', () => {
     expect(ids(sortClips(clips, { key: 'title', direction: 'asc' }))).toEqual(['a', 'e', 'z'])
   })
 
-  it('ignore la casse sur les créateurs', () => {
+  it('ignores case on creators', () => {
     const clips = [clip({ id: 'b', creator_name: 'ori' }), clip({ id: 'a', creator_name: 'Alice' })]
 
     expect(ids(sortClips(clips, { key: 'creator', direction: 'asc' }))).toEqual(['a', 'b'])
   })
 
-  it('ordonne les nombres dans les titres comme des nombres', () => {
-    const clips = [clip({ id: 'dix', title: 'Clip 10' }), clip({ id: 'deux', title: 'Clip 2' })]
+  it('orders numbers inside titles as numbers', () => {
+    const clips = [clip({ id: 'ten', title: 'Clip 10' }), clip({ id: 'two', title: 'Clip 2' })]
 
-    expect(ids(sortClips(clips, { key: 'title', direction: 'asc' }))).toEqual(['deux', 'dix'])
+    expect(ids(sortClips(clips, { key: 'title', direction: 'asc' }))).toEqual(['two', 'ten'])
   })
 
-  // Des milliers de clips partagent view_count à 0 : sans clé secondaire, leur
-  // ordre relatif changerait d'un rendu à l'autre.
-  it('départage les ex æquo par id, dans les deux sens', () => {
+  // Thousands of clips share a view_count of 0: without a secondary key, their
+  // relative order would change from one render to the next.
+  it('breaks ties by id, in both directions', () => {
     const clips = [
       clip({ id: 'c', view_count: 0 }),
       clip({ id: 'a', view_count: 0 }),
@@ -96,7 +96,7 @@ describe('sortClips', () => {
     expect(ids(sortClips(clips, { key: 'views', direction: 'desc' }))).toEqual(['a', 'b', 'c'])
   })
 
-  it('ne modifie pas le tableau reçu', () => {
+  it('does not mutate the array it receives', () => {
     const clips = [clip({ id: 'a', view_count: 9 }), clip({ id: 'b', view_count: 0 })]
 
     sortClips(clips, DEFAULT_SORT)
@@ -104,9 +104,9 @@ describe('sortClips', () => {
     expect(ids(clips)).toEqual(['a', 'b'])
   })
 
-  it('accepte un titre vide sans le faire disparaître', () => {
-    const clips = [clip({ id: 'vide', title: '' }), clip({ id: 'plein', title: 'Alice' })]
+  it('accepts an empty title without making it disappear', () => {
+    const clips = [clip({ id: 'empty', title: '' }), clip({ id: 'filled', title: 'Alice' })]
 
-    expect(ids(sortClips(clips, { key: 'title', direction: 'asc' }))).toEqual(['vide', 'plein'])
+    expect(ids(sortClips(clips, { key: 'title', direction: 'asc' }))).toEqual(['empty', 'filled'])
   })
 })
