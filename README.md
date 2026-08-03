@@ -58,29 +58,40 @@ build est déployable en statique.
 
 ## Déploiement
 
-La mise en ligne se fait sur **Vercel**, qui construit et déploie à chaque push sur `main` :
-[`clipsweep.vercel.app`](https://clipsweep.vercel.app/).
+`npm run build` produit un site **statique** dans `dist/`. Il n'y a pas de backend : le navigateur
+parle directement à Helix, et rien n'a besoin de tourner côté serveur. N'importe quel hébergeur de
+fichiers convient — un nginx sur sa propre machine, GitHub Pages, un seau S3, une plateforme de
+déploiement continu. Une instance publique tourne sur
+[`clipsweep.vercel.app`](https://clipsweep.vercel.app/), mais rien dans le code n'y est lié.
 
-Côté GitHub, [`.github/workflows/ci.yml`](.github/workflows/ci.yml) ne déploie rien : il enchaîne
-`format:check`, lint, tests et build à titre de vérification.
+Deux réglages, quel que soit l'endroit :
 
-Deux réglages à faire une fois :
-
-1. **Settings → Environment Variables** du projet Vercel : ajouter `VITE_TWITCH_CLIENT_ID`. Un Client ID
-   n'est pas confidentiel — il finit de toute façon en clair dans le bundle servi. Sans elle, le build
-   part au vert et le site s'affiche, mais refuse toute connexion.
-2. Ajouter l'URL de production aux « OAuth Redirect URLs » de l'application Twitch, **slash final
-   compris** : `https://clipsweep.vercel.app/`. Twitch compare la chaîne à l'octet près ; l'app
-   normalise l'URI (slash final ajouté, `index.html` retiré) pour qu'elle soit stable quel que soit le
-   chemin d'arrivée.
+1. **`VITE_TWITCH_CLIENT_ID` au moment du build.** Vite l'inline dans le bundle : c'est une variable
+   de _build_, pas d'exécution — la poser sur le serveur qui sert les fichiers n'a aucun effet. Un
+   Client ID n'est pas confidentiel, il finit de toute façon en clair dans le bundle servi. Sans elle,
+   le build part au vert et le site s'affiche, mais refuse toute connexion.
+2. **L'URL publique déclarée dans les « OAuth Redirect URLs »** de l'application Twitch, **slash final
+   compris**. Twitch compare la chaîne à l'octet près ; l'app normalise l'URI (slash final ajouté,
+   `index.html` retiré) pour qu'elle soit stable quel que soit le chemin d'arrivée.
 
 `base: './'` dans [vite.config.ts](vite.config.ts) rend les chemins d'assets relatifs : le build
-fonctionne aussi bien à la racine d'un domaine que sous un sous-chemin.
+fonctionne aussi bien à la racine d'un domaine que sous un sous-chemin — une page de projet GitHub
+Pages, par exemple.
 
-La mesure d'audience Vercel (`@vercel/analytics`) est montée dans [main.tsx](src/main.tsx). Elle charge
-son script depuis `/_vercel/insights/`, chemin que seul un déploiement Vercel sert — ailleurs la requête
-échoue sans conséquence. Elle ne rapporte que la page vue : ni la chaîne scannée, ni les clips, ni le
-jeton n'y passent.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) ne déploie rien — mais rien n'entre dans `main`
+sans lui. Il enchaîne `format:check`, lint, tests et build, et la **protection de branche** en fait la
+condition du merge : un push direct sur `main` est refusé, une PR ne se fusionne que verte.
+
+C'est ce qui tient lieu de barrière, et non un couplage entre les deux chaînes. Un hébergeur branché
+sur le dépôt construit sur le webhook de push, sans jamais lire les résultats d'Actions ; les deux
+partent en parallèle du même commit. Ce qui est gardé, c'est donc l'entrée dans `main` — le seul
+écrivain de la branche de production étant le merge. Les previews de branche, elles, partent quoi
+qu'il arrive : c'est précisément à ça qu'elles servent.
+
+La mesure d'audience (`@vercel/analytics`) est montée dans [main.tsx](src/main.tsx). Elle charge son
+script depuis `/_vercel/insights/`, chemin que seul un hébergement Vercel sert : **ailleurs la requête
+échoue sans conséquence et rien n'est mesuré**. Là où elle fonctionne, elle ne rapporte que la page
+vue — ni la chaîne scannée, ni les clips, ni le jeton n'y passent.
 
 ## Télécharger les vidéos
 
@@ -207,5 +218,6 @@ client respecte `Ratelimit-Reset` sur 429 et s'espace de 60 ms entre deux requê
 
 Le formatage est figé par [.prettierrc](.prettierrc) : quotes simples, pas de point-virgule, 100
 colonnes. Ces valeurs reprennent le style déjà en place — les défauts de Prettier (guillemets doubles,
-point-virgules, 80 colonnes) auraient réécrit tout le dépôt. `format:check` tourne en CI, donc un
-fichier mal formaté fait échouer le déploiement avant la mise en ligne.
+point-virgules, 80 colonnes) auraient réécrit tout le dépôt. `format:check` tourne en CI, et la
+protection de branche en fait la condition du merge : un fichier mal formaté empêche `main` d'avancer,
+donc empêche la mise en ligne.
