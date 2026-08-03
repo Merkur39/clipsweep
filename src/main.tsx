@@ -14,14 +14,14 @@ import './styles/index.css'
 // the token is already in place on first paint.
 const authError = captureRedirect()
 
-// Avant le rendu, pour la même raison : sans préférence enregistrée le CSS
-// tranche déjà seul, mais un choix qui contredit le système doit être posé
-// avant que la page se peigne, sinon il s'y voit arriver.
+// Before rendering, for the same reason: with no stored preference the CSS
+// already decides on its own, but a choice that contradicts the system must be
+// set before the page paints, otherwise it is seen arriving.
 applyTheme(document.documentElement, parseTheme(localStorage.getItem(persistedKey('theme'))))
 
-// Même raison, autre sens : `index.html` code `lang="fr"` en dur, valeur que le
-// premier rendu contredirait pour un visiteur anglophone. L'attribut pilote la
-// prononciation des lecteurs d'écran, qui le lisent au chargement.
+// Same reason, other direction: `index.html` hard-codes `lang="fr"`, a value the
+// first render would contradict for an English-speaking visitor. The attribute
+// drives screen-reader pronunciation, and they read it at load time.
 applyLocale(
   document.documentElement,
   resolveLocale(
@@ -30,9 +30,9 @@ applyLocale(
   ),
 )
 
-// La cible et la période sont passées en `sessionStorage` : ce qu'une version
-// précédente avait laissé dans le stockage durable n'y est plus relu, et n'a
-// donc plus de raison d'y rester.
+// The target and the period have moved to `sessionStorage`: what a previous
+// version left in durable storage is no longer read from there, and therefore
+// has no reason to stay.
 forgetSessionScopedKeys(localStorage)
 
 createRoot(document.getElementById('root')!).render(
@@ -40,10 +40,10 @@ createRoot(document.getElementById('root')!).render(
     <LocaleProvider>
       <App authError={authError} />
     </LocaleProvider>
-    {/* Mesure d'audience Vercel : elle charge son script depuis
-        `/_vercel/insights/`, chemin que seul un déploiement Vercel sert —
-        ailleurs la requête échoue sans conséquence. Rien de ce que le visiteur
-        saisit ou récupère n'y passe : seulement la page vue. */}
+    {/* Vercel analytics: it loads its script from `/_vercel/insights/`, a path
+        only a Vercel deployment serves — anywhere else the request fails without
+        consequence. Nothing the visitor types or collects goes through it: only
+        the page view. */}
     <Analytics />
   </StrictMode>,
 )

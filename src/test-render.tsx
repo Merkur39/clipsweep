@@ -4,14 +4,14 @@ import type { ReactElement } from 'react'
 import { LocaleProvider } from './i18n/LocaleProvider'
 
 /**
- * Rend un composant sous le fournisseur de langue, que tout composant traduit
- * exige.
+ * Renders a component under the locale provider, which every translated
+ * component requires.
  *
- * La langue servie est celle du navigateur de test, épinglée au français par
- * `test-setup.ts` : les attentes de ces tests sont écrites en français, et une
- * langue qui dépendrait de la machine les rendrait ingouvernables. Un test qui
- * vise l'anglais le déclare, en supplantant `navigator.languages` ou en posant
- * la préférence.
+ * The language served is the test browser's, pinned to French by
+ * `test-setup.ts`: these tests' expectations are written in French, and a
+ * language that depended on the machine would make them ungovernable. A test
+ * aiming at English declares it, by overriding `navigator.languages` or by
+ * setting the preference.
  */
 export const render = (ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) =>
   rtlRender(ui, { ...options, wrapper: LocaleProvider })
