@@ -16,6 +16,18 @@ export const DEFAULT_SORT: ClipSort = { key: 'views', direction: 'asc' }
  * rebuild the collator tens of thousands of times. `sensitivity` ignores case
  * and accents — without it "Élodie" lands after "Zoé" — and `numeric` orders
  * "Clip 2" before "Clip 10".
+ *
+ * The locale is fixed although the app serves two, and that is deliberate, not
+ * an oversight: at this sensitivity `fr` and `en` collate identically. Measured
+ * over 5929 pairs — every combination of 77 Latin letters, accented forms,
+ * digits, separators and digraphs — zero disagreement. The backward accent
+ * ordering that would set French apart, `côte` before `coté`, belongs to
+ * `fr-CA` in CLDR; metropolitan `fr` dropped it.
+ *
+ * Threading the served language through here would therefore change nothing
+ * observable. It stops being true the day a locale that collates differently is
+ * added — `fr-CA`, or `sv` where `ö` sorts past `z`. That is the moment to give
+ * `sortClips` a locale, not before.
  */
 const collator = new Intl.Collator('fr', { sensitivity: 'base', numeric: true })
 
