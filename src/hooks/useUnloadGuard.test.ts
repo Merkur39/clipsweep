@@ -6,44 +6,44 @@ import { useUnloadGuard } from './useUnloadGuard'
 
 afterEach(cleanup)
 
-/** Le navigateur ne demande confirmation que si l'évènement est annulé. */
-const quitter = () => {
+/** The browser only asks for confirmation if the event is cancelled. */
+const leave = () => {
   const event = new Event('beforeunload', { cancelable: true })
   window.dispatchEvent(event)
   return event.defaultPrevented
 }
 
 describe('useUnloadGuard', () => {
-  // Une garde qui se déclenche sur une page vide n'est qu'une gêne.
-  it('laisse partir quand il n’y a rien à perdre', () => {
+  // A guard that fires on an empty page is nothing but a nuisance.
+  it('lets you leave when there is nothing to lose', () => {
     renderHook(() => useUnloadGuard(false))
 
-    expect(quitter()).toBe(false)
+    expect(leave()).toBe(false)
   })
 
-  it('demande confirmation quand il y a quelque chose à perdre', () => {
+  it('asks for confirmation when there is something to lose', () => {
     renderHook(() => useUnloadGuard(true))
 
-    expect(quitter()).toBe(true)
+    expect(leave()).toBe(true)
   })
 
-  it('cesse de garder dès qu’il n’y a plus rien à perdre', () => {
-    const { rerender } = renderHook(({ actif }) => useUnloadGuard(actif), {
-      initialProps: { actif: true },
+  it('stops guarding as soon as there is nothing left to lose', () => {
+    const { rerender } = renderHook(({ active }) => useUnloadGuard(active), {
+      initialProps: { active: true },
     })
-    expect(quitter()).toBe(true)
+    expect(leave()).toBe(true)
 
-    rerender({ actif: false })
+    rerender({ active: false })
 
-    expect(quitter()).toBe(false)
+    expect(leave()).toBe(false)
   })
 
-  // Un écouteur laissé derrière garderait une page qui n'a plus rien à perdre.
-  it('retire son écouteur au démontage', () => {
+  // A listener left behind would guard a page with nothing left to lose.
+  it('removes its listener on unmount', () => {
     const { unmount } = renderHook(() => useUnloadGuard(true))
 
     unmount()
 
-    expect(quitter()).toBe(false)
+    expect(leave()).toBe(false)
   })
 })

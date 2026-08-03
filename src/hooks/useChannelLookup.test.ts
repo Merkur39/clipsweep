@@ -15,8 +15,8 @@ vi.mock('../twitch/api', () => ({
   },
 }))
 
-// jsdom n'expose pas de vrai Storage dans ce montage : on simule le module de
-// cache plutôt que le global. Sa logique a ses propres tests.
+// jsdom exposes no real Storage in this setup: we mock the cache module
+// rather than the global. Its own logic has its own tests.
 const cacheRead = vi.fn<(login: string) => string | null>()
 vi.mock('../domain/channelCache', () => ({
   channelCache: {
@@ -52,7 +52,7 @@ const settle = async () => {
 }
 
 describe('useChannelLookup', () => {
-  it('ne consulte pas l’API sans session', async () => {
+  it('does not call the API without a session', async () => {
     renderHook(() => useChannelLookup(null, 'testchannel'))
 
     await settle()
@@ -60,7 +60,7 @@ describe('useChannelLookup', () => {
     expect(fetchUser).not.toHaveBeenCalled()
   })
 
-  it('ne consulte pas l’API sur une saisie vide', async () => {
+  it('does not call the API on empty input', async () => {
     renderHook(() => useChannelLookup(session, '   '))
 
     await settle()
@@ -68,7 +68,7 @@ describe('useChannelLookup', () => {
     expect(fetchUser).not.toHaveBeenCalled()
   })
 
-  it('rend la date de création de la chaîne résolue', async () => {
+  it('returns the creation date of the resolved channel', async () => {
     fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
 
     const { result } = renderHook(() => useChannelLookup(session, 'testchannel'))
@@ -79,7 +79,7 @@ describe('useChannelLookup', () => {
     expect(result.current).toBe('2017-07-10')
   })
 
-  it('normalise la casse de la saisie', async () => {
+  it('normalizes the case of the input', async () => {
     fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
 
     const { result } = renderHook(() => useChannelLookup(session, '  TestChannel '))
@@ -88,16 +88,16 @@ describe('useChannelLookup', () => {
     expect(result.current).toBe('2017-07-10')
   })
 
-  // Sans temporisation, « k », « ka », « kal »… interrogeraient l'API chacun
-  // pour un préfixe qui n'existe pas.
-  it('ne lance qu’une requête pour une frappe continue', async () => {
+  // Without debouncing, "k", "ka", "kal"… would each query the API for a
+  // prefix that does not exist.
+  it('fires a single request for continuous typing', async () => {
     fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
 
-    const { rerender } = renderHook(({ nom }) => useChannelLookup(session, nom), {
-      initialProps: { nom: 'k' },
+    const { rerender } = renderHook(({ name }) => useChannelLookup(session, name), {
+      initialProps: { name: 'k' },
     })
-    for (const nom of ['ka', 'kal', 'testchannel']) {
-      rerender({ nom })
+    for (const name of ['ka', 'kal', 'testchannel']) {
+      rerender({ name })
       await act(async () => {
         vi.advanceTimersByTime(100)
       })
@@ -108,23 +108,23 @@ describe('useChannelLookup', () => {
     expect(fetchUser).toHaveBeenCalledWith('testchannel')
   })
 
-  it('n’affiche pas la date d’une chaîne qu’on ne demande plus', async () => {
+  it('does not show the date of a channel no longer asked for', async () => {
     fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
-    const { result, rerender } = renderHook(({ nom }) => useChannelLookup(session, nom), {
-      initialProps: { nom: 'testchannel' },
+    const { result, rerender } = renderHook(({ name }) => useChannelLookup(session, name), {
+      initialProps: { name: 'testchannel' },
     })
     await settle()
     expect(result.current).toBe('2017-07-10')
 
-    // La réponse en vol décrit « testchannel », la saisie dit désormais autre chose.
-    rerender({ nom: 'autrechaine' })
+    // The in-flight response describes "testchannel", the input now says otherwise.
+    rerender({ name: 'otherchannel' })
 
     expect(result.current).toBeNull()
   })
 
-  // Une chaîne déjà scannée a sa date en cache : la redemander à Helix à
-  // chaque rechargement serait une requête pour rien.
-  it('rend une date connue sans interroger l’API', async () => {
+  // A channel already swept has its date in cache: asking Helix again on every
+  // reload would be a request for nothing.
+  it('returns a known date without querying the API', async () => {
     cacheRead.mockReturnValue('2017-07-10')
 
     const { result } = renderHook(() => useChannelLookup(session, 'testchannel'))
@@ -134,7 +134,7 @@ describe('useChannelLookup', () => {
     expect(fetchUser).not.toHaveBeenCalled()
   })
 
-  it('interroge l’API pour une chaîne absente du cache', async () => {
+  it('queries the API for a channel missing from the cache', async () => {
     cacheRead.mockReturnValue(null)
     fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
 
@@ -145,8 +145,8 @@ describe('useChannelLookup', () => {
     expect(result.current).toBe('2017-07-10')
   })
 
-  it('reste silencieux sur une chaîne introuvable', async () => {
-    fetchUser.mockRejectedValue(new Error('Chaîne introuvable'))
+  it('stays silent on a channel that cannot be found', async () => {
+    fetchUser.mockRejectedValue(new Error('Channel not found'))
 
     const { result } = renderHook(() => useChannelLookup(session, 'nexistepas'))
     await settle()

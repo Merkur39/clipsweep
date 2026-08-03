@@ -75,8 +75,8 @@ export function useClipSearch(
 
       const from = new Date(`${since}T00:00:00Z`)
       const to = new Date(`${until}T23:59:59Z`)
-      // L'interface interdit déjà ce cas ; le garde-fou reste, le hook étant
-      // appelable sans elle.
+      // The interface already forbids this case; the guard stays, the hook being
+      // callable without it.
       if (!(from < to)) {
         log(t('period.order'), 'err')
         return
@@ -96,8 +96,8 @@ export function useClipSearch(
       try {
         const api = new TwitchApi(session, controller.signal)
         const user = await api.fetchUser(channel)
-        // Retenue seulement ici : une chaîne réellement scannée mérite sa place
-        // en cache, un préfixe croisé au fil de la frappe non.
+        // Remembered only here: a channel actually swept earns its place in the
+        // cache, a prefix crossed while typing does not.
         channelCache.remember(user.login, user.created_at.slice(0, 10))
         log(
           t('log.channel', {
@@ -120,7 +120,7 @@ export function useClipSearch(
           fetchPage: api.clipPageFetcher(user.id),
           signal: controller.signal,
           onProgress: setProgress,
-          // La table se remplit pendant le scan au lieu d'attendre la fin.
+          // The table fills in during the sweep instead of waiting for the end.
           onClips: setClips,
           onWindow: (report) => {
             setReports((previous) => [...previous, report])
