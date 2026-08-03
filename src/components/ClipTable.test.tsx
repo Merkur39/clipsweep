@@ -43,10 +43,10 @@ const setup = (options: { clips?: Clip[]; sort?: ClipSort } = {}) => {
 
 const header = (name: string) => screen.getByRole('button', { name })
 
-describe('ClipTable, sélection à la ligne', () => {
+describe('ClipTable, row selection', () => {
   const row = (title: string) => screen.getByTitle(title).closest('.table-row')!
 
-  it('coche la ligne cliquée', () => {
+  it('checks the clicked row', () => {
     const { onToggle } = setup()
 
     fireEvent.click(row('Titre a'))
@@ -55,7 +55,7 @@ describe('ClipTable, sélection à la ligne', () => {
   })
 
   // Le titre est un lien vers le clip : le clic doit l'ouvrir, pas cocher.
-  it('laisse le lien du titre ouvrir le clip', () => {
+  it('lets the title link open the clip', () => {
     const { onToggle } = setup()
 
     fireEvent.click(screen.getByTitle('Titre a'))
@@ -63,9 +63,9 @@ describe('ClipTable, sélection à la ligne', () => {
     expect(onToggle).not.toHaveBeenCalled()
   })
 
-  // La case déclenche déjà son propre onChange : sans garde, le clic
-  // remonterait à la ligne et annulerait aussitôt le basculement.
-  it('ne bascule qu’une fois quand on clique la case elle-même', () => {
+  // The checkbox already fires its own onChange: without a guard, the click
+  // would bubble to the row and immediately undo the toggle.
+  it('toggles only once when the checkbox itself is clicked', () => {
     const { onToggle } = setup()
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Titre a' }))
@@ -75,7 +75,7 @@ describe('ClipTable, sélection à la ligne', () => {
 })
 
 describe('ClipTable, tri', () => {
-  it('rend chaque colonne triable comme un bouton', () => {
+  it('renders every sortable column as a button', () => {
     setup()
 
     for (const nom of ['Vues', 'Date', 'Titre', 'Créateur']) {
@@ -83,7 +83,7 @@ describe('ClipTable, tri', () => {
     }
   })
 
-  it('demande le tri de la colonne cliquée', () => {
+  it('requests sorting on the clicked column', () => {
     const { onSortChange } = setup()
 
     fireEvent.click(header('Titre'))
@@ -91,22 +91,22 @@ describe('ClipTable, tri', () => {
     expect(onSortChange).toHaveBeenCalledWith('title')
   })
 
-  it('annonce la colonne triée et son sens', () => {
+  it('announces the sorted column and its direction', () => {
     setup({ sort: { key: 'views', direction: 'asc' } })
 
     expect(header('Vues').closest('[aria-sort]')).toHaveAttribute('aria-sort', 'ascending')
     expect(header('Date').closest('[aria-sort]')).toHaveAttribute('aria-sort', 'none')
   })
 
-  it('reflète le sens décroissant', () => {
+  it('reflects the descending direction', () => {
     setup({ sort: { key: 'date', direction: 'desc' } })
 
     expect(header('Date').closest('[aria-sort]')).toHaveAttribute('aria-sort', 'descending')
   })
 
-  // Rester au pixel 170 000 devant des clips entièrement différents n'aide
-  // personne : on vient de demander un nouvel ordre, on veut en voir le début.
-  it('revient en haut quand le tri change', () => {
+  // Staying at pixel 170,000 in front of entirely different clips helps nobody:
+  // a new order has just been asked for, and its beginning is what we want.
+  it('returns to the top when the sort changes', () => {
     const clips = Array.from({ length: 500 }, (_, index) => clip(`c${index}`, index))
     const { view } = setup({ clips, sort: { key: 'views', direction: 'asc' } })
 
@@ -128,7 +128,7 @@ describe('ClipTable, tri', () => {
     expect(scroller.scrollTop).toBe(0)
   })
 
-  it('ne touche pas au défilement quand seul le contenu change', () => {
+  it('leaves the scroll alone when only the content changes', () => {
     const clips = Array.from({ length: 500 }, (_, index) => clip(`c${index}`, index))
     const sort: ClipSort = { key: 'views', direction: 'asc' }
     const { view } = setup({ clips, sort })

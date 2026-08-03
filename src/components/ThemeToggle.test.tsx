@@ -14,38 +14,38 @@ const setup = (theme: Theme = 'system') => {
   return { onChange }
 }
 
-const choix = (name: string) => screen.getByRole('button', { name })
+const choice = (name: string) => screen.getByRole('button', { name })
 
 describe('ThemeToggle', () => {
-  it('offre les trois choix sous un groupe nommé', () => {
+  it('offers the three choices under a named group', () => {
     setup()
 
     expect(screen.getByRole('group', { name: 'Thème' })).toBeInTheDocument()
     expect(screen.getAllByRole('button')).toHaveLength(3)
   })
 
-  // L'état est porté par `aria-pressed`, pas par la seule teinte du bouton :
-  // le choix courant doit s'entendre autant qu'il se voit.
-  it('annonce le choix courant, et lui seul', () => {
+  // The state is carried by `aria-pressed`, not by the button's tint alone: the
+  // current choice must be heard as much as it is seen.
+  it('announces the current choice, and only it', () => {
     setup('light')
 
-    expect(choix('Clair')).toHaveAttribute('aria-pressed', 'true')
-    expect(choix('Sombre')).toHaveAttribute('aria-pressed', 'false')
-    expect(choix('Système')).toHaveAttribute('aria-pressed', 'false')
+    expect(choice('Clair')).toHaveAttribute('aria-pressed', 'true')
+    expect(choice('Sombre')).toHaveAttribute('aria-pressed', 'false')
+    expect(choice('Système')).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('remonte le choix cliqué', () => {
+  it('reports the clicked choice', () => {
     const { onChange } = setup('system')
 
-    choix('Sombre').click()
+    choice('Sombre').click()
 
     expect(onChange).toHaveBeenCalledWith('dark')
   })
 
-  it('remonte aussi le retour au système', () => {
+  it('reports the return to the system too', () => {
     const { onChange } = setup('dark')
 
-    choix('Système').click()
+    choice('Système').click()
 
     expect(onChange).toHaveBeenCalledWith('system')
   })

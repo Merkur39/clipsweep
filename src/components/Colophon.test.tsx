@@ -8,10 +8,10 @@ import { Colophon } from './Colophon'
 afterEach(cleanup)
 
 describe('Colophon', () => {
-  // Chaque visiteur reçoit le bundle compilé : c'est une distribution du
-  // programme, et la GPL-3.0 veut que la source correspondante lui soit offerte.
-  // Le dépôt est public, encore faut-il que l'application y mène.
-  it('offre le code source', () => {
+  // Every visitor receives the compiled bundle: that is a distribution of the
+  // program, and the GPL-3.0 wants the corresponding source offered to them. The
+  // repository is public, but the application still has to lead there.
+  it('offers the source code', () => {
     render(<Colophon />)
 
     const source = screen.getByRole('link', { name: /code source/i })
@@ -20,27 +20,27 @@ describe('Colophon', () => {
     expect(source).toHaveTextContent(/GPL-3\.0/)
   })
 
-  it('annonce l’absence de lien avec Twitch', () => {
+  it('states the absence of any link with Twitch', () => {
     render(<Colophon />)
 
     expect(screen.getByRole('contentinfo')).toHaveTextContent(/sans lien avec Twitch/i)
   })
 
-  it('informe de la mesure d’audience', () => {
+  it('discloses the analytics', () => {
     render(<Colophon />)
 
     expect(screen.getByRole('contentinfo')).toHaveTextContent(/audience/i)
   })
 
-  it('rappelle à qui appartiennent les clips', () => {
+  it('recalls who the clips belong to', () => {
     render(<Colophon />)
 
     expect(screen.getByRole('contentinfo')).toHaveTextContent(/auteurs/i)
   })
 
-  // Un lien qui remplace la page perdrait le scan en cours et les clips
-  // récupérés, qui ne vivent que dans la mémoire de l'application.
-  it('ouvre chaque lien dans un nouvel onglet', () => {
+  // A link that replaces the page would lose the running sweep and the clips
+  // collected, which live in the application's memory alone.
+  it('opens every link in a new tab', () => {
     render(<Colophon />)
 
     const links = screen.getAllByRole('link')

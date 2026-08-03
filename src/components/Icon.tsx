@@ -51,7 +51,7 @@ export function CloseIcon() {
   )
 }
 
-/** Une flèche qui sort du panneau : on quitte, on ne supprime rien. */
+/** An arrow leaving the panel: you are leaving, nothing is being deleted. */
 export function LogoutIcon() {
   return (
     <svg {...base} width={13} height={13}>
@@ -61,8 +61,8 @@ export function LogoutIcon() {
   )
 }
 
-/* ---- les trois thèmes ----
-   Le soleil et la lune sont les deux affirmations ; la façade est le fait de
+/* ---- the three themes ----
+   Sun and moon are the two assertions; the panel is the act of
    n'en faire aucune et de suivre la machine. */
 
 export function SunIcon() {
@@ -82,7 +82,7 @@ export function MoonIcon() {
   )
 }
 
-/** Une façade d'instrument : ce que la machine décide, l'outil le reprend. */
+/** An instrument panel: whatever the machine decides, the tool takes up. */
 export function SystemIcon() {
   return (
     <svg {...base} width={13} height={13}>

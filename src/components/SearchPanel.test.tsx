@@ -38,24 +38,24 @@ const setup = (props: Partial<SearchPanelProps> = {}) => {
 const connexion = () => screen.queryByRole('button', { name: 'Se connecter à Twitch' })
 const deconnexion = () => screen.queryByRole('button', { name: 'Se déconnecter' })
 
-describe('SearchPanel, accès', () => {
-  it('propose de se connecter tant qu’on ne l’est pas', () => {
+describe('SearchPanel, access', () => {
+  it('offers to connect while you are not', () => {
     setup()
 
     expect(connexion()).toBeInTheDocument()
     expect(deconnexion()).toBeNull()
   })
 
-  // Un bouton désactivé qui répète la ligne d'état n'est pas un contrôle :
-  // une fois connecté, la seule action qui reste est de partir.
-  it('propose de se déconnecter une fois connecté', () => {
+  // A disabled button repeating the status line is not a control: once
+  // connected, the only action left is leaving.
+  it('offers to disconnect once connected', () => {
     setup({ connected: true })
 
     expect(deconnexion()).toBeInTheDocument()
     expect(connexion()).toBeNull()
   })
 
-  it('remonte la demande de déconnexion', () => {
+  it('reports the disconnect request', () => {
     const { onDisconnect } = setup({ connected: true })
 
     fireEvent.click(deconnexion()!)
@@ -65,15 +65,15 @@ describe('SearchPanel, accès', () => {
 
   // Sans Client ID, aucune connexion n'est possible : le bouton reste visible
   // pour que le message de configuration ait un sujet, mais inerte.
-  it('désactive la connexion faute d’application configurée', () => {
+  it('disables connecting for lack of a configured application', () => {
     setup({ canConnect: false })
 
     expect(connexion()).toBeDisabled()
   })
 
-  // Le journal est replié par défaut : une erreur qui n'y figure que là est
-  // introuvable, et le clic qui la déclenche n'a aucun effet visible.
-  it('annonce l’erreur de période hors du journal', () => {
+  // The log is folded by default: an error that appears only there is
+  // impossible to find, and the click that triggers it has no visible effect.
+  it('announces the period error outside the log', () => {
     setup({ connected: true, periodError: 'La date de début doit précéder la date de fin.' })
 
     expect(screen.getByRole('alert')).toHaveTextContent(
@@ -81,23 +81,23 @@ describe('SearchPanel, accès', () => {
     )
   })
 
-  it('interdit le scan tant que la période est incohérente', () => {
+  it('forbids the sweep while the period is inconsistent', () => {
     setup({ connected: true, periodError: 'peu importe' })
 
     expect(screen.getByRole('button', { name: 'Lancer le scan' })).toBeDisabled()
   })
 
-  // La région reste dans le document, vide : sa place est réservée pour que le
-  // message n'écarte rien en apparaissant, et un lecteur d'écran annonce plus
-  // fiablement un contenu injecté dans une région vive déjà là.
-  it('laisse lancer le scan quand la période est cohérente, la région restant vide', () => {
+  // The region stays in the document, empty: its place is reserved so the
+  // message pushes nothing aside when it appears, and a screen reader announces
+  // content injected into an already present live region more reliably.
+  it('lets the sweep start when the period is consistent, the region staying empty', () => {
     setup({ connected: true })
 
     expect(screen.getByRole('button', { name: 'Lancer le scan' })).toBeEnabled()
     expect(screen.getByRole('alert')).toBeEmptyDOMElement()
   })
 
-  it('lance le scan, puis propose de l’arrêter', () => {
+  it('starts the sweep, then offers to stop it', () => {
     setup({ connected: true, running: true })
 
     expect(screen.getByRole('button', { name: 'Arrêter le scan' })).toBeInTheDocument()

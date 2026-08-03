@@ -3,24 +3,23 @@ export interface AxisTick {
   label: string
 }
 
-/** Au-delà, les étiquettes se touchent sur un tracé de largeur courante. */
+/** Past this, labels touch each other on a plot of ordinary width. */
 const MAX_TICKS = 12
 
 /**
- * Les repères de l'axe temporel : un par 1er janvier contenu dans la période.
+ * The ticks of the time axis: one per 1 January contained in the period.
  *
- * L'éclaircissement ne s'applique qu'au-delà de ce que la largeur peut porter.
- * Le pas précédent plafonnait à huit repères et sautait donc une année sur deux
- * dès neuf ans de scan : les colonnes de bord — souvent des années
- * partielles, donc plus étroites que leurs voisines — se retrouvaient sans
- * aucune date en dessous, ce qui les faisait passer pour tronquées alors
- * qu'elles sont exactes.
+ * Thinning only applies beyond what the width can carry. The previous step
+ * capped at eight ticks and therefore skipped every other year from nine years
+ * of sweep onwards: the edge columns — often partial years, so narrower than
+ * their neighbours — ended up with no date beneath them at all, which made them
+ * look truncated when they are exact.
  *
- * Les bornes de la période ne figurent pas ici : leur étiquette porte une date
- * complète, large d'une soixantaine de pixels, qui chevaucherait le 1er janvier
- * voisin. Le seuil qui l'éviterait s'exprime en pixels, la position des repères
- * en pourcentage — inconciliables à toutes les largeurs. La période est donc
- * énoncée dans la ligne de lecture, sous le tracé.
+ * The period's own bounds do not appear here: their label carries a full date,
+ * some sixty pixels wide, which would overlap the neighbouring 1 January. The
+ * threshold that would avoid it is expressed in pixels, the ticks' position in
+ * percent — irreconcilable at every width. The period is therefore stated in the
+ * readout line, under the plot.
  */
 export function axisTicks(from: number, to: number): AxisTick[] {
   if (to <= from) return []

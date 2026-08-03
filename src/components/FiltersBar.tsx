@@ -15,7 +15,7 @@ export interface FiltersBarProps {
   onFromChange: (next: string) => void
   to: string
   onToChange: (next: string) => void
-  /** L'étendue des clips récupérés, ou null tant qu'il n'y en a aucun. */
+  /** The extent of the collected clips, or null while there are none. */
   dateBounds: DateExtent | null
 
   creatorFacets: Facet[]
@@ -31,10 +31,10 @@ export interface FiltersBarProps {
 /**
  * Display filters. They never touch the search, only what it already returned.
  *
- * La remise à zéro d'ensemble n'est pas ici : chaque contrôle porte déjà la
- * sienne — croix pour un champ, « Tout décocher » pour une facette — et le
- * bouton global volait une colonne à une rangée qui n'en a pas de trop. Il vit
- * au bout de l'étiquette « Résultats », au-dessus.
+ * The blanket reset does not live here: every control already carries its own —
+ * a cross for a field, "Uncheck all" for a facet — and the global button stole a
+ * column from a row that has none to spare. It lives at the end of the "Results"
+ * label, above.
  */
 export function FiltersBar({
   minViews,
@@ -70,9 +70,9 @@ export function FiltersBar({
         value={maxViews}
         onChange={onMaxViewsChange}
       />
-      {/* Les bornes viennent des clips récupérés, pas de la période scannée :
-          un scan lancé avant la création de la chaîne offrirait sinon des
-          dates dont aucune ne peut rien rendre. */}
+      {/* The bounds come from the collected clips, not from the period swept: a
+          sweep started before the channel's creation would otherwise offer
+          dates none of which can return anything. */}
       <DateField
         label={t('filters.from')}
         value={from}

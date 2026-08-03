@@ -30,7 +30,7 @@ const BASELINE = 4
  */
 const DECADE = 52
 const CEILING = PLOT_HEIGHT - 6
-/** En part de la période : en deçà, une dalle deviendrait invisible. */
+/** As a share of the period: below this, a slab would become invisible. */
 const MIN_SLAB_WIDTH = 0.25
 
 const slabHeight = (clipCount: number) =>
@@ -126,17 +126,18 @@ export function Frieze({
             const kind = kindOf(report)
 
             /*
-             * Bord droit posé par `right`, et non par `width`.
+             * Right edge set by `right`, not by `width`.
              *
-             * Le navigateur résout chaque pourcentage séparément et arrondit au
-             * 1/64 de pixel : `left + width` peut retomber un cran avant le
-             * `left` du voisin, et ce cheveu d'écart laisse voir le fond entre
-             * deux périodes contiguës. Mesuré sur un scan de neuf ans :
-             * trois joints sur huit s'ouvraient ainsi. Exprimé par `right`, le
-             * bord partagé vient du même pourcentage des deux côtés.
+             * The browser resolves each percentage separately and rounds to
+             * 1/64 of a pixel: `left + width` can land one notch before the
+             * neighbour's `left`, and that hairline gap shows the background
+             * between two contiguous periods. Measured on a nine-year sweep:
+             * three joints out of eight opened up that way. Expressed through
+             * `right`, the shared edge comes from the same percentage on both
+             * sides.
              *
-             * Une période trop courte pour être vue garde un plancher de
-             * largeur : là, le joint importe moins que l'existence de la dalle.
+             * A period too short to be seen keeps a floor width: there, the
+             * joint matters less than the slab's existence.
              */
             const edges =
               end - start >= MIN_SLAB_WIDTH
@@ -178,10 +179,10 @@ export function Frieze({
             <span className="muted">{t(KIND_LABEL[kindOf(hovered)])}</span>
           </>
         ) : (
-          // La période est énoncée ici, et non aux bouts de l'axe où son
-          // étiquette chevaucherait le 1er janvier voisin. C'est aussi ce qui
-          // explique les colonnes de bord plus étroites : le scan commence
-          // et finit rarement un 1er janvier.
+          // The period is stated here, not at the ends of the axis where its
+          // label would overlap the neighbouring 1 January. That is also what
+          // explains the narrower edge columns: a sweep rarely starts or ends
+          // on a 1 January.
           <>
             <span>
               {formatDay(new Date(span.from).toISOString(), locale)} →{' '}

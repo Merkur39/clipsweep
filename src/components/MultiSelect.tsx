@@ -65,8 +65,8 @@ export function MultiSelect({
         disabled={options.length === 0}
         aria-expanded={open}
         aria-controls={panelId}
-        // Sans ça le nom accessible se réduit à la valeur : « Ori », sans dire
-        // de quelle facette il s'agit.
+        // Without this the accessible name collapses to the value: "Ori", with
+        // no mention of which facet it belongs to.
         aria-labelledby={`${labelId} ${valueId}`}
       >
         <span className="multiselect-value" id={valueId}>

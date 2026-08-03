@@ -27,25 +27,25 @@ const setup = (selected: string[] = [], props: Partial<Parameters<typeof MultiSe
   return { onChange, button: screen.getByRole('button', { name: /^Créateurs/ }) }
 }
 
-// Le nom accessible d'une option inclut son décompte : « SpiZ 12 ».
+// An option's accessible name includes its count: "SpiZ 12".
 const option = (name: string) => within(panel()!).getByRole('checkbox', { name: new RegExp(name) })
 
 const panel = () => screen.queryByRole('group', { name: 'Créateurs' })
 
 describe('MultiSelect', () => {
-  it('reste fermé tant qu’on ne l’ouvre pas', () => {
+  it('stays closed until it is opened', () => {
     setup()
 
     expect(panel()).toBeNull()
   })
 
-  it('annonce « Tous » quand rien n’est coché', () => {
+  it('announces "All" when nothing is checked', () => {
     const { button } = setup()
 
     expect(button).toHaveTextContent('Tous')
   })
 
-  it('liste les options avec leur décompte à l’ouverture', () => {
+  it('lists the options with their count on opening', () => {
     const { button } = setup()
 
     fireEvent.click(button)
@@ -56,7 +56,7 @@ describe('MultiSelect', () => {
     expect(panel()).toHaveTextContent('12')
   })
 
-  it('remonte la valeur cochée sans toucher aux autres', () => {
+  it('reports the checked value without touching the others', () => {
     const { button, onChange } = setup(['Ori'])
 
     fireEvent.click(button)
@@ -65,7 +65,7 @@ describe('MultiSelect', () => {
     expect(onChange).toHaveBeenCalledWith(['Ori', 'SpiZ'])
   })
 
-  it('retire une valeur déjà cochée', () => {
+  it('removes a value already checked', () => {
     const { button, onChange } = setup(['Ori', 'SpiZ'])
 
     fireEvent.click(button)
@@ -74,7 +74,7 @@ describe('MultiSelect', () => {
     expect(onChange).toHaveBeenCalledWith(['SpiZ'])
   })
 
-  it('vide la sélection d’un coup', () => {
+  it('empties the selection in one go', () => {
     const { button, onChange } = setup(['Ori', 'SpiZ'])
 
     fireEvent.click(button)
@@ -83,7 +83,7 @@ describe('MultiSelect', () => {
     expect(onChange).toHaveBeenCalledWith([])
   })
 
-  it('ne propose « Tout décocher » que s’il y a quelque chose à décocher', () => {
+  it('offers "Uncheck all" only when there is something to uncheck', () => {
     const { button } = setup()
 
     fireEvent.click(button)
@@ -91,7 +91,7 @@ describe('MultiSelect', () => {
     expect(within(panel()!).queryByRole('button', { name: 'Tout décocher' })).toBeNull()
   })
 
-  it('se ferme au clic à l’extérieur', () => {
+  it('closes on a click outside', () => {
     const { button } = setup()
     fireEvent.click(button)
     expect(panel()).not.toBeNull()
@@ -101,7 +101,7 @@ describe('MultiSelect', () => {
     expect(panel()).toBeNull()
   })
 
-  it('reste ouvert au clic à l’intérieur', () => {
+  it('stays open on a click inside', () => {
     const { button } = setup()
     fireEvent.click(button)
 
@@ -110,7 +110,7 @@ describe('MultiSelect', () => {
     expect(panel()).not.toBeNull()
   })
 
-  it('se ferme sur Échap', () => {
+  it('closes on Escape', () => {
     const { button } = setup()
     fireEvent.click(button)
 
@@ -119,7 +119,7 @@ describe('MultiSelect', () => {
     expect(panel()).toBeNull()
   })
 
-  it('traduit les valeurs via le libellé fourni', () => {
+  it('maps the values through the label provided', () => {
     const { button } = setup([], {
       options: [{ value: '1', count: 3 }],
       labelOf: (value) => (value === '1' ? 'Cult of the Lamb' : value),
@@ -130,7 +130,7 @@ describe('MultiSelect', () => {
     expect(panel()).toHaveTextContent('Cult of the Lamb')
   })
 
-  it('se désactive faute d’options, plutôt que d’ouvrir un panneau vide', () => {
+  it('disables itself for lack of options, rather than opening an empty panel', () => {
     const { button } = setup([], { options: [] })
 
     expect(button).toBeDisabled()

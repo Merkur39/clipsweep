@@ -5,7 +5,7 @@ import { AlertIcon, LogoutIcon } from './Icon'
 export interface SearchPanelProps {
   authMessage: string
   authKind: 'ok' | 'bad' | ''
-  /** Connecté, ou présumé tel sur la foi d'un jeton stocké. */
+  /** Connected, or presumed so on the strength of a stored token. */
   connected: boolean
   canConnect: boolean
   onConnect: () => void
@@ -17,9 +17,9 @@ export interface SearchPanelProps {
   onSinceChange: (next: string) => void
   until: string
   onUntilChange: (next: string) => void
-  /** `yyyy-mm-dd` en UTC : la fin de période ne peut pas aller au-delà. */
+  /** `yyyy-mm-dd` in UTC: the end of the period cannot go beyond it. */
   today: string
-  /** Le désordre que les bornes ne couvrent pas : début postérieur à la fin. */
+  /** The disorder the bounds do not cover: a start later than the end. */
   periodError: string | null
   /** `yyyy-mm-dd`, or null while the channel is unknown. */
   channelCreatedAt: string | null
@@ -55,10 +55,10 @@ export function SearchPanel({
       <div className="rail-inner">
         <p className="section-label">{t('panel.access')}</p>
         <div className={`status ${authKind}`}>{authMessage}</div>
-        {/* L'emphase suit ce qu'il reste à faire. Une fois connecté, l'état est
-          déjà dit — avec la durée restante — par la ligne au-dessus : garder un
-          « Connecté à Twitch » désactivé ne serait pas un contrôle, juste une
-          redite inerte. Il ne reste qu'une action, et c'est de partir. */}
+        {/* Emphasis follows what is left to do. Once connected, the state is
+          already stated — with the remaining life — by the line above: keeping a
+          disabled "Connected to Twitch" would not be a control, just an inert
+          restatement. One action is left, and it is leaving. */}
         {connected ? (
           <button type="button" className="disconnect wide" onClick={onDisconnect}>
             <LogoutIcon />
@@ -82,9 +82,9 @@ export function SearchPanel({
         <div className="duo">
           <label>
             <span>{t('panel.since')}</span>
-            {/* Le sélecteur grise ce qui précède la création de la chaîne ; la
-              valeur, elle, est déjà bornée en amont — `min` seul n'empêche pas
-              une saisie au clavier. */}
+            {/* The picker greys out what precedes the channel's creation; the
+              value itself is already clamped upstream — `min` alone does not
+              prevent typing. */}
             <input
               type="date"
               min={channelCreatedAt ?? undefined}
@@ -94,8 +94,8 @@ export function SearchPanel({
           </label>
           <label>
             <span>{t('panel.until')}</span>
-            {/* Chaque borne posée ici est adossée à un `clamp` côté App : une
-              borne seule marque le champ invalide sans rien empêcher. */}
+            {/* Every bound set here is backed by a `clamp` on the App side: a
+              bound alone marks the field invalid without preventing anything. */}
             <input
               type="date"
               max={today}
@@ -105,16 +105,16 @@ export function SearchPanel({
           </label>
         </div>
 
-        {/* Annoncé sous les champs fautifs, et non dans le seul journal — qui
-          est replié par défaut. Le bouton de scan est désactivé en même
-          temps : un clic sans effet visible est ce qui rendait l'erreur
-          introuvable.
+        {/* Announced under the offending fields, not in the log alone — which is
+          folded by default. The sweep button is disabled at the same time: a
+          click with no visible effect is what made the error impossible to
+          find.
 
-          Toujours rendu, sa hauteur réservée en CSS : l'apparition du message
-          ne doit décaler ni le bouton de scan ni la suite du panneau. La
-          région vive persistante est aussi ce qui fait annoncer le message par
-          les lecteurs d'écran — un `role="alert"` inséré au moment de l'erreur
-          passe souvent inaperçu. */}
+          Always rendered, its height reserved in CSS: the message appearing
+          must shift neither the sweep button nor the rest of the panel. The
+          persistent live region is also what makes screen readers announce the
+          message — a `role="alert"` inserted at the moment of the error often
+          goes unnoticed. */}
         <p className="field-error" role="alert">
           {periodError && (
             <>
@@ -124,15 +124,15 @@ export function SearchPanel({
           )}
         </p>
 
-        {/* Proposé seulement s'il élargit vraiment la période demandée. Sa place
-          reste tenue le reste du temps : il paraît et disparaît au gré de la
-          chaîne saisie, sans quoi il pousserait le bouton de scan à chaque
-          frappe.
+        {/* Offered only when it genuinely widens the period asked for. Its place
+          is held the rest of the time: it appears and disappears with whatever
+          channel is typed, otherwise it would push the sweep button on every
+          keystroke.
 
-          « de la chaîne » est sous-entendu par le champ juste au-dessus et par
-          l'étiquette « Cible » : le libellé long ne laissait que 9px de marge
-          dans le rail, et serait passé à deux lignes sur une police
-          d'interface plus large — la hauteur réservée aurait été dépassée. */}
+          "of the channel" is implied by the field just above and by the "Target"
+          label: the long wording left only 9px of margin in the rail, and would
+          have wrapped onto two lines on a wider interface font — the reserved
+          height would have been exceeded. */}
         <p className="channel-hint">
           {channelCreatedAt && channelCreatedAt < since && (
             <button type="button" className="link" onClick={() => onSinceChange(channelCreatedAt)}>
