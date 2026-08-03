@@ -8,10 +8,10 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    // `scripts/` est exécuté par Node, qui efface les types sans les compiler :
-    // il ne saurait pas rendre `enum`, `namespace` ni les propriétés de
-    // constructeur. Sans cette option, une telle syntaxe passerait le typecheck
-    // et casserait au lancement.
+    // `scripts/` is run by Node, which erases types without compiling them: it
+    // would not know how to render `enum`, `namespace` or constructor
+    // properties. Without this option, such syntax would pass the typecheck and
+    // break at launch.
     "erasableSyntaxOnly": true,
     "skipLibCheck": true,
     "noEmit": true,
