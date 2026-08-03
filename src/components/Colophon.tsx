@@ -3,23 +3,25 @@ import { useTranslation } from '../i18n/LocaleProvider'
 const REPOSITORY = 'https://github.com/Merkur39/clipsweep'
 
 /**
- * Le pied de page : ce que l'outil doit dire de lui-même.
+ * The footer: what the tool owes about itself.
  *
- * Trois de ces quatre mentions ne sont pas décoratives.
+ * Three of these four mentions are not decorative.
  *
- * - **Le code source.** Chaque visiteur reçoit le bundle compilé, ce qui est une
- *   distribution du programme : la GPL-3.0 veut que la source correspondante lui
- *   soit offerte. Le dépôt est public depuis toujours, mais rien dans
- *   l'application n'y menait.
- * - **La non-affiliation.** Le produit ne porte plus de marque de Twitch, mais il
- *   la nomme partout en description ; le dire lève l'ambiguïté qui reste.
- * - **La mesure d'audience.** Elle est anonyme et sans cookie, ce qui n'oblige
- *   probablement pas à demander un consentement — mais l'annoncer reste dû.
- * - **Les clips appartiennent à leurs auteurs.** L'outil énumère et prépare un
- *   téléchargement ; ce qui en est fait ensuite regarde celui qui le lance.
+ * - **The source code.** Every visitor receives the compiled bundle, which is a
+ *   distribution of the program: the GPL-3.0 wants the corresponding source
+ *   offered to them. The repository has always been public, but nothing in the
+ *   application led there.
+ * - **The non-affiliation.** The product no longer carries any Twitch branding,
+ *   but it names Twitch throughout its description; saying so clears what
+ *   ambiguity is left.
+ * - **The analytics.** It is anonymous and cookie-free, which probably does not
+ *   require asking for consent — but announcing it is still owed.
+ * - **Clips belong to their authors.** The tool enumerates and prepares a
+ *   download; what is done with them afterwards is the business of whoever runs
+ *   it.
  *
- * Aucune page dédiée : l'application n'a pas de routeur, et une mention légale
- * qu'il faut aller chercher est une mention qu'on ne lit pas.
+ * No dedicated page: the application has no router, and a legal notice you have
+ * to go looking for is a notice nobody reads.
  */
 export function Colophon() {
   const { t } = useTranslation()
@@ -27,9 +29,9 @@ export function Colophon() {
   return (
     <footer className="colophon">
       <p className="colophon-links">
-        {/* Nouvel onglet, comme partout ailleurs : quitter la page perdrait le
-          scan en cours et les clips récupérés, qui ne vivent que dans la
-          mémoire de l'application. */}
+        {/* New tab, as everywhere else: leaving the page would lose the running
+          sweep and the clips collected, which live in the application's memory
+          alone. */}
         <a href={REPOSITORY} target="_blank" rel="noreferrer">
           {t('colophon.source')}
         </a>

@@ -12,14 +12,13 @@ export interface DateFieldProps {
 }
 
 /**
- * Le pendant daté de [NumberField], jusqu'au bouton d'effacement superposé — un
- * champ date natif n'en offre aucun, et le vider au clavier demande de
- * sélectionner chaque segment.
+ * The dated counterpart of [NumberField], down to the overlaid clear button — a
+ * native date field offers none, and emptying it from the keyboard means
+ * selecting each segment.
  *
- * Les bornes grisent l'impossible dans le sélecteur, rien de plus : elles
- * n'appellent pas de `clamp`, contrairement à celles du scan. Une date
- * tapée hors étendue ne dépense aucune requête — elle vide la table, cas que le
- * message de table vide nomme.
+ * The bounds grey out the impossible in the picker, nothing more: they call no
+ * `clamp`, unlike the sweep's own. A date typed outside the extent spends no
+ * request — it empties the table, a case the empty-table message names.
  */
 export function DateField({ label, value, onChange, min, max }: DateFieldProps) {
   const { t } = useTranslation()

@@ -20,11 +20,10 @@ export interface SearchProgressProps {
 }
 
 /**
- * L'avancement du scan. Une ligne d'état suffit à la plupart des
- * visiteurs ; la frise et le journal répondent à « comment l'algorithme a
- * procédé », question qui n'intéresse que si quelque chose cloche — d'où le
- * repli. L'alerte d'exhaustivité reste dehors : ce n'est pas un détail
- * technique mais un constat sur la validité du résultat.
+ * The sweep's progress. A status line is enough for most visitors; the frieze
+ * and the log answer "how the algorithm went about it", a question that only
+ * matters when something is off — hence the fold. The completeness alert stays
+ * outside: it is not a technical detail but a verdict on the result's validity.
  */
 export function SearchProgress({
   reports,
@@ -55,8 +54,8 @@ export function SearchProgress({
         </p>
       )}
 
-      {/* Non contrôlé volontairement : React ne doit jamais refermer ce que
-          l'utilisateur vient d'ouvrir. */}
+      {/* Deliberately uncontrolled: React must never close again what the user
+          has just opened. */}
       <details className="technical">
         <summary>
           <CaretIcon />

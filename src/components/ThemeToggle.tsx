@@ -15,12 +15,12 @@ interface ThemeToggleProps {
 }
 
 /**
- * Trois boutons, pas un cycle : un interrupteur qui tourne oblige à cliquer
- * pour découvrir ce qu'il fera, et ne dit jamais lequel des trois états est le
- * courant. Ici l'état se lit sans agir — c'est la même règle que la lampe.
+ * Three buttons, not a cycle: a switch that rotates forces a click to discover
+ * what it will do, and never says which of the three states is the current one.
+ * Here the state reads without acting — the same rule as the lamp.
  *
- * Le libellé n'est visible qu'au clavier et au lecteur d'écran : la rangée est
- * une préférence d'affichage, elle ne doit pas peser autant que la tâche.
+ * The label is only visible to the keyboard and the screen reader: the row is a
+ * display preference, it must not weigh as much as the task.
  */
 export function ThemeToggle({ theme, onChange }: ThemeToggleProps) {
   const { t } = useTranslation()

@@ -2,12 +2,12 @@ import { useTranslation } from '../i18n/LocaleProvider'
 import { LOCALE_CHOICES, type Locale } from '../i18n/locales'
 
 /**
- * Chaque langue se nomme **dans sa propre langue**, et n'est donc pas dans le
- * catalogue : celui qui tombe sur une interface qu'il ne lit pas doit pouvoir y
- * reconnaître la sienne, ce que « Anglais » ne dit à aucun anglophone.
+ * Every language names itself **in its own language**, and is therefore not in
+ * the catalogue: someone landing on an interface they cannot read must be able
+ * to recognize their own, which "Anglais" tells no English speaker.
  *
- * Le code à deux lettres tient lieu de pastille, comme l'icône dans la rangée
- * des thèmes : le nom complet reste au lecteur d'écran et à l'infobulle.
+ * The two-letter code stands in for the pip, like the icon in the theme row: the
+ * full name is left to the screen reader and the tooltip.
  */
 const NAMES: Record<Locale, { full: string; short: string }> = {
   fr: { full: 'Français', short: 'FR' },
@@ -15,12 +15,12 @@ const NAMES: Record<Locale, { full: string; short: string }> = {
 }
 
 /**
- * Le pendant de [ThemeToggle], et pour les mêmes raisons : trois boutons plutôt
- * qu'un cycle, l'état lisible sans agir, et le libellé réservé au clavier et au
- * lecteur d'écran.
+ * The counterpart of [ThemeToggle], and for the same reasons: three buttons
+ * rather than a cycle, the state readable without acting, and the label reserved
+ * for the keyboard and the screen reader.
  *
- * « Automatique » n'est pas une langue mais l'absence de choix — il suit le
- * navigateur, et reste donc enfoncé alors même que l'interface est en français.
+ * "Automatic" is not a language but the absence of a choice — it follows the
+ * browser, and therefore stays pressed even while the interface is in French.
  */
 export function LocaleToggle() {
   const { choice, setChoice, t } = useTranslation()

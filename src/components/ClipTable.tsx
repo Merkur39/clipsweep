@@ -62,12 +62,12 @@ export function ClipTable({
     return () => observer.disconnect()
   }, [])
 
-  // Un nouvel ordre appelle son début : rester au même pixel laisserait
-  // l'utilisateur devant des clips entièrement différents, sans repère.
+  // A new order calls for its own beginning: staying at the same pixel would
+  // leave the user in front of entirely different clips, with no landmark.
   //
-  // L'état est ajusté pendant le rendu, pas dans l'effet : la fenêtre visible
-  // doit correspondre au défilement remis à zéro dès ce rendu, sinon on
-  // calculerait les lignes autour de l'ancienne position et l'écran serait vide.
+  // The state is adjusted during the render, not in the effect: the visible
+  // window must match the scroll reset from this very render, otherwise we would
+  // compute the rows around the old position and the screen would be blank.
   const [renderedSort, setRenderedSort] = useState(sort)
   if (renderedSort !== sort) {
     setRenderedSort(sort)
@@ -83,17 +83,17 @@ export function ClipTable({
 
   /**
    * Toute la ligne coche, sauf sur ses deux cibles propres : le titre est un
-   * lien vers le clip, et la case déclenche déjà son `onChange` — la laisser
-   * remonter jusqu'ici annulerait aussitôt le basculement.
+   * link to the clip, and the checkbox already fires its own `onChange` — letting
+   * it bubble up here would immediately undo the toggle.
    *
-   * Pas de `tabIndex` ni de `role="button"` : la case porte déjà l'accès
-   * clavier, en dupliquer un par ligne mettrait des milliers d'arrêts de
+   * No `tabIndex` and no `role="button"`: the checkbox already carries keyboard
+   * access, duplicating one per row would put thousands of stops on
    * tabulation dans la table.
    */
   const rowClick = useCallback(
     (event: MouseEvent<HTMLDivElement>, id: string) => {
       if ((event.target as HTMLElement).closest('a, input')) return
-      // Une sélection de texte se termine par un clic : elle ne coche rien.
+      // A text selection ends with a click: it must check nothing.
       if (!window.getSelection()?.isCollapsed) return
       onToggle(id)
     },

@@ -32,18 +32,18 @@ export function ExportPanel({
     <>
       <section className="group">
         <h2>{t('export.download.title')}</h2>
-        {/* « Sans rien installer » plutôt que « installe » : le script emprunte
-          yt-dlp le temps de la récolte et l'efface en partant. Le dire ici
-          évite deux malentendus — qu'il laisse quelque chose derrière lui, et
-          qu'un yt-dlp déjà présent serait remplacé.
+        {/* "Installing nothing" rather than "installs": the script borrows
+          yt-dlp for the length of the harvest and erases it on the way out.
+          Saying so here avoids two misunderstandings — that it leaves something
+          behind, and that a yt-dlp already present would be replaced.
 
-          La phrase est coupée en deux clés autour du lien : traduire un
-          fragment de phrase par langue reste plus sûr que de faire porter au
-          catalogue un balisage qu'il ne sait pas décrire. */}
+          The sentence is cut into two keys around the link: translating a
+          sentence fragment per language stays safer than making the catalogue
+          carry markup it has no way to describe. */}
         <p className="group-lede">
           {t('export.download.ledeBefore')}{' '}
-          {/* Nouvel onglet : quitter la page perdrait les clips déjà récupérés,
-            qui ne vivent que dans la mémoire de l'application. */}
+          {/* New tab: leaving the page would lose the clips already collected,
+            which live in the application's memory alone. */}
           <a href="https://github.com/yt-dlp/yt-dlp#readme" target="_blank" rel="noreferrer">
             yt-dlp
           </a>{' '}

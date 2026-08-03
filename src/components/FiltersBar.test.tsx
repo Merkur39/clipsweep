@@ -38,7 +38,7 @@ const setup = (props: Partial<Parameters<typeof FiltersBar>[0]> = {}) => {
 const field = (name: string) => screen.getByLabelText(name) as HTMLInputElement
 
 describe('FiltersBar', () => {
-  it('remonte la borne de début saisie', () => {
+  it('reports the start bound typed', () => {
     const { onFromChange } = setup()
 
     fireEvent.change(field('Du'), { target: { value: '2020-01-01' } })
@@ -46,7 +46,7 @@ describe('FiltersBar', () => {
     expect(onFromChange).toHaveBeenCalledWith('2020-01-01')
   })
 
-  it('remonte la borne de fin saisie', () => {
+  it('reports the end bound typed', () => {
     const { onToChange } = setup()
 
     fireEvent.change(field('Au'), { target: { value: '2020-06-30' } })
@@ -54,8 +54,8 @@ describe('FiltersBar', () => {
     expect(onToChange).toHaveBeenCalledWith('2020-06-30')
   })
 
-  // Une date hors du jeu récupéré ne peut rien rendre : le sélecteur la grise.
-  it('borne les deux champs sur l’étendue des clips récupérés', () => {
+  // A date outside the collected set can return nothing: the picker greys it out.
+  it('bounds both fields on the extent of the collected clips', () => {
     setup()
 
     expect(field('Du')).toHaveAttribute('min', '2019-03-04')
@@ -64,20 +64,20 @@ describe('FiltersBar', () => {
     expect(field('Au')).toHaveAttribute('max', '2021-12-25')
   })
 
-  it('ne pose aucune borne tant qu’aucun clip n’est récupéré', () => {
+  it('sets no bound while no clip has been collected', () => {
     setup({ dateBounds: null })
 
     expect(field('Du')).not.toHaveAttribute('min')
     expect(field('Du')).not.toHaveAttribute('max')
   })
 
-  it('n’offre d’effacement qu’une fois la date posée', () => {
+  it('offers clearing only once the date is set', () => {
     setup()
 
     expect(screen.queryByRole('button', { name: 'Effacer Du' })).toBeNull()
   })
 
-  it('vide la date par son bouton d’effacement', () => {
+  it('empties the date through its clear button', () => {
     const { onFromChange } = setup({ from: '2020-01-01' })
 
     fireEvent.click(screen.getByRole('button', { name: 'Effacer Du' }))
@@ -85,9 +85,9 @@ describe('FiltersBar', () => {
     expect(onFromChange).toHaveBeenCalledWith('')
   })
 
-  // La remise à zéro d'ensemble a quitté la rangée : chaque contrôle porte la
-  // sienne, et le bouton global vit au bout de l'étiquette « Résultats ».
-  it('ne porte pas de remise à zéro d’ensemble', () => {
+  // The blanket reset has left the row: every control carries its own, and the
+  // global button lives at the end of the "Results" label.
+  it('carries no blanket reset', () => {
     setup({ from: '2020-01-01' })
 
     expect(screen.queryByRole('button', { name: 'Réinitialiser' })).toBeNull()

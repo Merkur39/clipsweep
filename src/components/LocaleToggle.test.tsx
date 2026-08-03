@@ -19,10 +19,10 @@ const mount = () =>
     </LocaleProvider>,
   )
 
-const choix = (name: string) => screen.getByRole('button', { name })
+const choice = (name: string) => screen.getByRole('button', { name })
 
 describe('LocaleToggle', () => {
-  it('offre les trois choix sous un groupe nommé', () => {
+  it('offers the three choices under a named group', () => {
     mount()
 
     expect(screen.getByRole('group', { name: 'Langue' })).toBeInTheDocument()
@@ -30,43 +30,43 @@ describe('LocaleToggle', () => {
   })
 
   /**
-   * Chaque langue se nomme dans sa propre langue, et n'est donc jamais traduite.
-   * Celui qui tombe sur une interface qu'il ne lit pas doit pouvoir y
-   * reconnaître la sienne : « Anglais » ne dit rien à un anglophone.
+   * Every language names itself in its own language, and is therefore never
+   * translated. Someone landing on an interface they cannot read must be able
+   * to recognize their own: "Anglais" means nothing to an English speaker.
    */
-  it('nomme chaque langue dans sa propre langue', () => {
+  it('names every language in its own language', () => {
     mount()
 
-    expect(choix('Français')).toBeInTheDocument()
-    expect(choix('English')).toBeInTheDocument()
+    expect(choice('Français')).toBeInTheDocument()
+    expect(choice('English')).toBeInTheDocument()
   })
 
-  // L'état est porté par `aria-pressed`, pas par la seule teinte du bouton.
-  it('annonce le choix courant, et lui seul', () => {
+  // The state is carried by `aria-pressed`, not by the button's tint alone.
+  it('announces the current choice, and only it', () => {
     localStorage.setItem(persistedKey('locale'), 'en')
     mount()
 
-    expect(choix('English')).toHaveAttribute('aria-pressed', 'true')
-    expect(choix('Français')).toHaveAttribute('aria-pressed', 'false')
-    expect(choix('Automatic')).toHaveAttribute('aria-pressed', 'false')
+    expect(choice('English')).toHaveAttribute('aria-pressed', 'true')
+    expect(choice('Français')).toHaveAttribute('aria-pressed', 'false')
+    expect(choice('Automatic')).toHaveAttribute('aria-pressed', 'false')
   })
 
-  // Le navigateur parle français : « Automatique » est le choix par défaut, et
-  // c'est lui qui est enfoncé — pas « Français », qui n'a pas été choisi.
-  it('distingue la langue servie du choix fait', () => {
+  // The browser speaks French: "Automatic" is the default choice, and it is the
+  // one pressed — not "Français", which was never chosen.
+  it('tells the language served apart from the choice made', () => {
     mount()
 
-    expect(choix('Automatique')).toHaveAttribute('aria-pressed', 'true')
-    expect(choix('Français')).toHaveAttribute('aria-pressed', 'false')
+    expect(choice('Automatique')).toHaveAttribute('aria-pressed', 'true')
+    expect(choice('Français')).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('bascule la langue de toute l’interface', () => {
+  it('switches the language of the whole interface', () => {
     mount()
-    expect(choix('Automatique')).toBeInTheDocument()
+    expect(choice('Automatique')).toBeInTheDocument()
 
-    fireEvent.click(choix('English'))
+    fireEvent.click(choice('English'))
 
     expect(screen.getByRole('group', { name: 'Language' })).toBeInTheDocument()
-    expect(choix('Automatic')).toHaveAttribute('aria-pressed', 'false')
+    expect(choice('Automatic')).toHaveAttribute('aria-pressed', 'false')
   })
 })
