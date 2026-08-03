@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from 'react'
 import { channelCache } from '../domain/channelCache'
 import { makeLogAppender, type LogEntry, type LogKind } from '../domain/log'
 import { formatCount } from '../domain/numbers'
-import { PERIOD_ORDER_ERROR } from '../domain/period'
+import type { T } from '../i18n/translate'
 import { TokenRejectedError, TwitchApi } from '../twitch/api'
 import type { Session } from '../twitch/auth'
 import { collectClips, type WindowReport } from '../twitch/clips'
@@ -43,7 +43,11 @@ export interface ClipSearch {
  * user reads while it happens. Everything it owns is reset on each start, so a
  * second search never shows remnants of the first.
  */
-export function useClipSearch(session: Session | null, onTokenRejected: () => void): ClipSearch {
+export function useClipSearch(
+  session: Session | null,
+  onTokenRejected: () => void,
+  t: T,
+): ClipSearch {
   const [clips, setClips] = useState<Clip[]>([])
   const [reports, setReports] = useState<WindowReport[]>([])
   const [incomplete, setIncomplete] = useState<WindowReport[]>([])
@@ -74,7 +78,7 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
       // L'interface interdit déjà ce cas ; le garde-fou reste, le hook étant
       // appelable sans elle.
       if (!(from < to)) {
-        log(PERIOD_ORDER_ERROR, 'err')
+        log(t('period.order'), 'err')
         return
       }
 
@@ -161,7 +165,7 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
         abortRef.current = null
       }
     },
-    [session, log, onTokenRejected],
+    [session, log, onTokenRejected, t],
   )
 
   return {

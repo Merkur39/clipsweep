@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import { clampSince, clampUntil, describePeriodError, monthBefore } from './period'
+import { makeT } from '../i18n/translate'
+
+const t = makeT('fr')
 
 describe('monthBefore', () => {
   it('rend le même quantième du mois précédent', () => {
@@ -25,17 +28,17 @@ describe('monthBefore', () => {
 
 describe('describePeriodError', () => {
   it('ne dit rien d’une période valable', () => {
-    expect(describePeriodError('2019-01-01', '2026-08-01')).toBeNull()
+    expect(describePeriodError('2019-01-01', '2026-08-01', t)).toBeNull()
   })
 
-  // La fouille borne la fin à 23:59:59 : un début et une fin le même jour
+  // Le scan borne la fin à 23:59:59 : un début et une fin le même jour
   // couvrent bien cette journée-là.
   it('accepte une période d’un seul jour', () => {
-    expect(describePeriodError('2026-08-01', '2026-08-01')).toBeNull()
+    expect(describePeriodError('2026-08-01', '2026-08-01', t)).toBeNull()
   })
 
   it('signale un début postérieur à la fin', () => {
-    expect(describePeriodError('2026-08-02', '2026-08-01')).toBe(
+    expect(describePeriodError('2026-08-02', '2026-08-01', t)).toBe(
       'La date de début doit précéder la date de fin.',
     )
   })
@@ -71,7 +74,7 @@ describe('clampSince', () => {
     expect(clampSince('2019-01-01', '2017-07-10')).toBe('2019-01-01')
   })
 
-  // Fouiller avant l'existence de la chaîne ne peut rien rendre, et coûte une
+  // Scanner avant l'existence de la chaîne ne peut rien rendre, et coûte une
   // fenêtre annuelle — donc au moins une requête — par année de trop.
   it('cale la date sur la création quand elle lui est antérieure', () => {
     expect(clampSince('2015-01-01', '2017-07-10')).toBe('2017-07-10')
