@@ -1,5 +1,5 @@
+import type { T } from '../i18n/translate'
 import type { Progress } from '../twitch/types'
-import { formatCount } from './numbers'
 
 export interface EmptyResultsInput {
   /** A search has run at least once in this session. */
@@ -13,12 +13,6 @@ export interface EmptyResultsInput {
   period?: { from: string | null; to: string | null }
 }
 
-const plural = (count: number, singular: string, pluralForm = `${singular}s`) =>
-  `${formatCount(count)} ${count > 1 ? pluralForm : singular}`
-
-/** Accord d'un participe seul, sans son nom. */
-const agree = (count: number, word: string) => `${word}${count > 1 ? 's' : ''}`
-
 export interface SearchStatusInput {
   running: boolean
   progress: Progress | null
@@ -30,19 +24,21 @@ export interface SearchStatusInput {
  * pour l'essentiel des visiteurs, la frise et les compteurs techniques : ceux-ci
  * répondent à « comment », celle-ci à « où ça en est ».
  */
-export function describeSearchStatus({
-  running,
-  progress,
-  clipsFound,
-}: SearchStatusInput): string | null {
+export function describeSearchStatus(
+  { running, progress, clipsFound }: SearchStatusInput,
+  t: T,
+): string | null {
   if (!progress) return null
 
   if (running) {
-    return `Fouille en cours — ${formatCount(progress.windowsDone)}/${formatCount(progress.windowsTotal)} périodes, ${plural(progress.clipsFound, 'clip')} trouvé${agree(progress.clipsFound, '')}.`
+    return t('results.status.running', {
+      done: progress.windowsDone,
+      total: progress.windowsTotal,
+      n: progress.clipsFound,
+    })
   }
 
-  const total = clipsFound || progress.clipsFound
-  return `Fouille terminée — ${plural(total, 'clip')} ${agree(total, 'trouvé')}.`
+  return t('results.status.done', { n: clipsFound || progress.clipsFound })
 }
 
 export interface ResultCountInput {
@@ -53,56 +49,60 @@ export interface ResultCountInput {
   selected: number
 }
 
-/** Les trois nombres qui comptent, toujours dans le même ordre. */
-export function describeResultCount({ found, shown, selected }: ResultCountInput): string {
+/**
+ * Les trois nombres qui comptent, toujours dans le même ordre.
+ *
+ * Trois segments joints, et non une phrase : chaque nombre s'accorde sur
+ * lui-même, ce qu'aucune forme unique ne saurait faire. Le séparateur est
+ * neutre, donc il n'appartient à aucune des deux langues.
+ */
+export function describeResultCount({ found, shown, selected }: ResultCountInput, t: T): string {
   if (found === 0) return ''
 
   return [
-    `${plural(found, 'clip')} ${agree(found, 'récupéré')}`,
-    `${formatCount(shown)} ${agree(shown, 'affiché')}`,
-    `${formatCount(selected)} ${agree(selected, 'sélectionné')}`,
+    t('results.count.found', { n: found }),
+    t('results.count.shown', { n: shown }),
+    t('results.count.selected', { n: selected }),
   ].join(' · ')
+}
+
+/** La plage telle qu'on la lit, selon les bornes réellement posées. */
+function describeRange(from: string | null, to: string | null, t: T): string | null {
+  if (from && to) return t('results.range.between', { from: { day: from }, to: { day: to } })
+  if (from) return t('results.range.from', { from: { day: from } })
+  if (to) return t('results.range.to', { to: { day: to } })
+  return null
 }
 
 /**
  * Why the table is empty, and what to do about it. Silence here is the worst
  * outcome: a filter that hides every clip looks exactly like a failed search.
  */
-/** La plage telle qu'on la lit, selon les bornes réellement posées. */
-function describeRange(from: string | null, to: string | null): string | null {
-  if (from && to) return `entre le ${from} et le ${to}`
-  if (from) return `à partir du ${from}`
-  if (to) return `jusqu’au ${to}`
-  return null
-}
+export function describeEmptyResults(
+  { searched, running, clipsFound, maxViews, period }: EmptyResultsInput,
+  t: T,
+): string {
+  if (!searched) return t('results.empty.notSearched')
 
-export function describeEmptyResults({
-  searched,
-  running,
-  clipsFound,
-  maxViews,
-  period,
-}: EmptyResultsInput): string {
-  if (!searched) return 'Aucune fouille lancée.'
-
-  // Une fouille dure de quelques secondes à plusieurs minutes. Conclure à
+  // Un scan dure de quelques secondes à plusieurs minutes. Conclure à
   // l'absence de clips avant que la première période ait rendu est faux — et le
   // conseil qui suit (« élargis l'intervalle ») ferait recommencer pour rien.
-  if (running && clipsFound === 0) return 'Fouille en cours — les premiers clips arrivent.'
+  if (running && clipsFound === 0) return t('results.empty.running')
 
-  if (clipsFound === 0) return 'Aucun clip sur cette période. Élargis l’intervalle de dates.'
+  if (clipsFound === 0) return t('results.empty.nothing')
 
   // Nommée avant le seuil de vues quand les deux sont actifs : la plage est ce
   // que l'utilisateur vient de resserrer à la main, et c'est elle que l'action
   // de la table vide propose de rouvrir.
-  const range = describeRange(period?.from ?? null, period?.to ?? null)
-  if (range !== null) {
-    return `${plural(clipsFound, 'clip')} ${agree(clipsFound, 'récupéré')}, aucun ${range}. Élargis la plage « Du / Au », ou vide les champs pour tout afficher.`
-  }
+  const range = describeRange(period?.from ?? null, period?.to ?? null, t)
+  if (range !== null) return t('results.empty.outOfRange', { n: clipsFound, range })
 
   if (maxViews !== null) {
-    return `${plural(clipsFound, 'clip')} récupéré${clipsFound > 1 ? 's' : ''}, aucun à ${plural(maxViews, 'vue')} ou moins. Relève « Vues max », ou vide le champ pour tout afficher.`
+    return t('results.empty.aboveViews', {
+      n: clipsFound,
+      max: t('results.views', { n: maxViews }),
+    })
   }
 
-  return `${plural(clipsFound, 'clip')} récupéré${clipsFound > 1 ? 's' : ''}, mais rien à afficher.`
+  return t('results.empty.filtered', { n: clipsFound })
 }

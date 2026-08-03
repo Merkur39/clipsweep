@@ -1,7 +1,8 @@
 import { useEffect, useId, useRef, useState } from 'react'
 
 import type { Facet } from '../domain/filters'
-import { formatCount } from '../domain/numbers'
+import { formatCount } from '../i18n/format'
+import { useTranslation } from '../i18n/LocaleProvider'
 import { ChevronIcon } from './Icon'
 import { describeSelection } from './selectionLabel'
 
@@ -21,6 +22,7 @@ export function MultiSelect({
   onChange,
   labelOf = (value) => value,
 }: MultiSelectProps) {
+  const { locale, t } = useTranslation()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
   const baseId = useId()
@@ -68,7 +70,7 @@ export function MultiSelect({
         aria-labelledby={`${labelId} ${valueId}`}
       >
         <span className="multiselect-value" id={valueId}>
-          {describeSelection(selected, labelOf)}
+          {describeSelection(selected, labelOf, t)}
         </span>
         <ChevronIcon />
       </button>
@@ -88,7 +90,7 @@ export function MultiSelect({
                 onChange={() => toggle(option.value)}
               />
               <span className="multiselect-option-name">{labelOf(option.value)}</span>
-              <span className="multiselect-option-count">{formatCount(option.count)}</span>
+              <span className="multiselect-option-count">{formatCount(option.count, locale)}</span>
             </label>
           ))}
         </div>

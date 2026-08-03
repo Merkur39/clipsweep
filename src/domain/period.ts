@@ -1,3 +1,5 @@
+import type { T } from '../i18n/translate'
+
 /**
  * La date de début effective : jamais antérieure à la création de la chaîne.
  *
@@ -42,9 +44,9 @@ const pad = (value: number, width: number) => String(value).padStart(width, '0')
  * Le mois qui précède une date `yyyy-mm-dd`, en UTC comme le reste des bornes.
  *
  * C'est la valeur par défaut du champ « Depuis » : une période d'un mois se
- * fouille en une poignée de requêtes, là où un début posé aux origines de
+ * scanne en une poignée de requêtes, là où un début posé aux origines de
  * Twitch en dépense une par fenêtre annuelle — dépense qu'un clic immédiat sur
- * « Lancer la fouille » engage sans que rien ne l'ait demandée.
+ * « Lancer le scan » engage sans que rien ne l'ait demandée.
  *
  * Le quantième est ramené au dernier jour du mois visé quand il n'y existe pas :
  * `setMonth` glisserait sur le mois suivant, et rendrait pour le 31 mars une
@@ -62,18 +64,12 @@ export function monthBefore(today: string): string {
 }
 
 /**
- * Le seul désordre que les bornes ne peuvent pas empêcher — elles contraignent
- * chaque date séparément, jamais leur ordre.
+ * Le scan borne la fin à `23:59:59`, donc un début et une fin le même jour
+ * couvrent bien cette journée-là : seul un début **postérieur** est fautif.
  *
- * Une même chaîne sert l'interface et le journal : le message que lit celui qui
+ * Une même clé sert l'interface et le journal : le message que lit celui qui
  * corrige la période doit être celui qu'on retrouve dans la trace technique.
  */
-export const PERIOD_ORDER_ERROR = 'La date de début doit précéder la date de fin.'
-
-/**
- * La fouille borne la fin à `23:59:59`, donc un début et une fin le même jour
- * couvrent bien cette journée-là : seul un début **postérieur** est fautif.
- */
-export function describePeriodError(since: string, until: string): string | null {
-  return since > until ? PERIOD_ORDER_ERROR : null
+export function describePeriodError(since: string, until: string, t: T): string | null {
+  return since > until ? t('period.order') : null
 }

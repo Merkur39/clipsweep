@@ -1,12 +1,6 @@
+import type { T } from '../i18n/translate'
+
 export type AccessKind = 'ok' | 'bad' | ''
-
-/**
- * Le pari optimiste qui se dédit, et le rejet d'un jeton en cours de fouille,
- * disent la même chose : la reconnexion, elle, est portée par le bouton.
- */
-export const TOKEN_EXPIRED = 'Jeton expiré.'
-
-const agree = (count: number, word: string) => `${word}${count > 1 ? 's' : ''}`
 
 /**
  * La durée de vie restante d'un jeton, dans l'unité qui se lit.
@@ -14,18 +8,14 @@ const agree = (count: number, word: string) => `${word}${count > 1 ? 's' : ''}`
  * Un jeton Twitch dure une soixantaine de jours : « 1477 h » est exact, illisible
  * et déborde du panneau sur deux lignes. L'unité suit donc l'ordre de grandeur.
  */
-export function describeTokenLife(expiresInSeconds: number): string {
+export function describeTokenLife(expiresInSeconds: number, t: T): string {
   const minutes = Math.round(expiresInSeconds / 60)
-  if (minutes < 60) {
-    const shown = Math.max(minutes, 1)
-    return `${shown} min ${agree(shown, 'restante')}`
-  }
+  if (minutes < 60) return t('access.life.minutes', { n: Math.max(minutes, 1) })
 
   const hours = Math.round(expiresInSeconds / 3600)
-  if (hours < 48) return `${hours} h ${agree(hours, 'restante')}`
+  if (hours < 48) return t('access.life.hours', { n: hours })
 
-  const days = Math.round(expiresInSeconds / 86_400)
-  return `${days} j ${agree(days, 'restant')}`
+  return t('access.life.days', { n: Math.round(expiresInSeconds / 86_400) })
 }
 
 export interface AccessInput {
@@ -60,17 +50,15 @@ export interface AccessState {
  * Le cas nominal — un jeton encore valide — s'affiche donc juste, et seul le cas
  * dégradé se corrige après coup, en rouge, où la correction se voit.
  */
-export function describeAccess({
-  authError,
-  clientId,
-  hasStoredToken,
-  redirectUri,
-}: AccessInput): AccessState {
+export function describeAccess(
+  { authError, clientId, hasStoredToken, redirectUri }: AccessInput,
+  t: T,
+): AccessState {
   // Un refus tout juste reçu décrit mieux la situation qu'un jeton résiduel :
   // se présumer connecté là-dessus serait un mensonge, pas un pari.
   if (authError) {
     return {
-      message: `Twitch a refusé la connexion : ${authError}`,
+      message: t('access.refused', { error: authError }),
       kind: 'bad',
       presumedConnected: false,
     }
@@ -80,7 +68,7 @@ export function describeAccess({
   // rien faire — autant dire tout de suite quoi renseigner, et où.
   if (!clientId) {
     return {
-      message: `Aucune application configurée. Renseigne VITE_TWITCH_CLIENT_ID dans .env.local, et déclare ${redirectUri} dans les « OAuth Redirect URLs » de ton application Twitch.`,
+      message: t('access.unconfigured', { redirectUri }),
       kind: 'bad',
       presumedConnected: false,
     }
@@ -89,10 +77,10 @@ export function describeAccess({
   // La durée restante manque encore : elle arrive avec la validation, qui
   // ajoute sa mention en gardant ce préfixe intact.
   if (hasStoredToken) {
-    return { message: 'Connecté.', kind: 'ok', presumedConnected: true }
+    return { message: t('access.connected'), kind: 'ok', presumedConnected: true }
   }
 
   // Le bouton juste en dessous porte l'action : le bloc d'état n'énonce que
   // l'état. Lampe éteinte, pas rouge — être déconnecté n'est pas une erreur.
-  return { message: 'Déconnecté de Twitch.', kind: '', presumedConnected: false }
+  return { message: t('access.disconnected'), kind: '', presumedConnected: false }
 }

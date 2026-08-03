@@ -6,6 +6,9 @@ import { TokenRejectedError } from '../twitch/api'
 import type { Session } from '../twitch/auth'
 import type { Clip } from '../twitch/types'
 import { useClipSearch } from './useClipSearch'
+import { makeT } from '../i18n/translate'
+
+const t = makeT('fr')
 
 const fetchUser = vi.fn()
 const fetchGameNames = vi.fn()
@@ -59,7 +62,7 @@ const texteJournal = (entries: { text: string }[]) => entries.map((e) => e.text)
 
 describe('useClipSearch', () => {
   it('n’appelle pas l’API sans session', async () => {
-    const { result } = renderHook(() => useClipSearch(null, vi.fn()))
+    const { result } = renderHook(() => useClipSearch(null, vi.fn(), t))
 
     await act(async () => result.current.start(request))
 
@@ -67,7 +70,7 @@ describe('useClipSearch', () => {
   })
 
   it('refuse un intervalle de dates inversé, sans requête', async () => {
-    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
 
     await act(async () => result.current.start({ ...request, since: '2026-02-01' }))
 
@@ -80,7 +83,7 @@ describe('useClipSearch', () => {
     fetchPage.mockResolvedValue({ clips: [clip('a'), clip('b')] })
     fetchGameNames.mockResolvedValue(new Map([['1', 'Cult of the Lamb']]))
 
-    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
 
     await waitFor(() => expect(result.current.clips).toHaveLength(2))
@@ -93,7 +96,7 @@ describe('useClipSearch', () => {
     fetchPage.mockResolvedValue({ clips: [] })
     fetchGameNames.mockResolvedValue(new Map())
 
-    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
 
     await waitFor(() => expect(result.current.running).toBe(false))
@@ -101,27 +104,27 @@ describe('useClipSearch', () => {
   })
 
   // Les noms de jeux ne servent qu'à étiqueter un filtre : leur échec ne doit
-  // pas faire passer une fouille réussie pour un échec.
+  // pas faire passer un scan réussi pour un échec.
   it('conserve les clips même si les noms de jeux échouent', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [clip('a')] })
     fetchGameNames.mockRejectedValue(new Error('boum'))
 
-    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
 
     await waitFor(() => expect(result.current.clips).toHaveLength(1))
     expect(texteJournal(result.current.logEntries)).toContain('Noms des jeux indisponibles')
   })
 
-  // Le cache n'est alimenté que par une fouille réellement lancée, jamais par
+  // Le cache n'est alimenté que par un scan réellement lancé, jamais par
   // une simple résolution de saisie.
-  it('retient la chaîne fouillée avec sa date de création', async () => {
+  it('retient la chaîne scannée avec sa date de création', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [] })
     fetchGameNames.mockResolvedValue(new Map())
 
-    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
 
     await waitFor(() => expect(remember).toHaveBeenCalledWith('testchannel', '2017-07-10'))
@@ -130,7 +133,7 @@ describe('useClipSearch', () => {
   it('ne retient rien quand la chaîne est introuvable', async () => {
     fetchUser.mockRejectedValue(new Error('Chaîne introuvable'))
 
-    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
 
     await waitFor(() => expect(result.current.running).toBe(false))
@@ -141,18 +144,18 @@ describe('useClipSearch', () => {
     const onTokenRejected = vi.fn()
     fetchUser.mockRejectedValue(new TokenRejectedError())
 
-    const { result } = renderHook(() => useClipSearch(session, onTokenRejected))
+    const { result } = renderHook(() => useClipSearch(session, onTokenRejected, t))
     await act(async () => result.current.start(request))
 
     await waitFor(() => expect(onTokenRejected).toHaveBeenCalled())
   })
 
-  it('repart d’une ardoise vierge à chaque fouille', async () => {
+  it('repart d’une ardoise vierge à chaque scan', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [clip('a')] })
     fetchGameNames.mockResolvedValue(new Map())
 
-    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
     await waitFor(() => expect(result.current.clips).toHaveLength(1))
 

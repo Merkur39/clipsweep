@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 
 import type { LogEntry } from '../domain/log'
-import { formatCount } from '../domain/numbers'
 import { describeSearchStatus } from '../domain/results'
+import { formatCount } from '../i18n/format'
+import { useTranslation } from '../i18n/LocaleProvider'
 import type { WindowReport } from '../twitch/clips'
 import type { Progress } from '../twitch/types'
 import { Frieze, type Span } from './Frieze'
@@ -19,7 +20,7 @@ export interface SearchProgressProps {
 }
 
 /**
- * L'avancement de la fouille. Une ligne d'état suffit à la plupart des
+ * L'avancement du scan. Une ligne d'état suffit à la plupart des
  * visiteurs ; la frise et le journal répondent à « comment l'algorithme a
  * procédé », question qui n'intéresse que si quelque chose cloche — d'où le
  * repli. L'alerte d'exhaustivité reste dehors : ce n'est pas un détail
@@ -34,13 +35,14 @@ export function SearchProgress({
   logEntries,
   running,
 }: SearchProgressProps) {
+  const { locale, t } = useTranslation()
   const logRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
   }, [logEntries])
 
-  const status = describeSearchStatus({ running, progress, clipsFound })
+  const status = describeSearchStatus({ running, progress, clipsFound }, t)
 
   return (
     <section className="progress-block">
@@ -87,13 +89,13 @@ export function SearchProgress({
             <dt>Périodes</dt>
             <dd>
               {progress
-                ? `${formatCount(progress.windowsDone)}/${formatCount(progress.windowsTotal)}`
+                ? `${formatCount(progress.windowsDone, locale)}/${formatCount(progress.windowsTotal, locale)}`
                 : '0'}
             </dd>
           </div>
           <div>
             <dt>Requêtes</dt>
-            <dd>{formatCount(progress?.requests ?? 0)}</dd>
+            <dd>{formatCount(progress?.requests ?? 0, locale)}</dd>
           </div>
         </dl>
 
