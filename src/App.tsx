@@ -70,19 +70,19 @@ function toCsv(clips: Clip[]): string {
 export default function App({ authError }: { authError: string | null }) {
   const { t } = useTranslation()
   const [session, setSession] = useState<Session | null>(null)
-  // Lu une seule fois, avant le premier rendu : c'est ce qui permet d'annoncer
-  // « vérification » plutôt que « aucun jeton » pendant l'aller-retour.
+  // Read once only, before the first render: that is what allows announcing
+  // "checking" rather than "no token" during the round trip.
   const [storedToken] = useState(() => tokenStore.read())
-  // Le jeton est-il censé exister ? La déconnexion et le rejet le démentent,
-  // et c'est la seule chose que l'état retienne — le message, lui, se dérive.
+  // Is the token supposed to exist? Disconnecting and rejection deny it, and
+  // that is the only thing the state holds — the message itself is derived.
   const [hasToken, setHasToken] = useState(() => storedToken !== null)
   /**
-   * Ce que l'application a à dire par-dessus l'état d'accès dérivé : un jeton
-   * qui vient d'être refusé, un scan lancé trop tôt.
+   * What the application has to say on top of the derived access state: a token
+   * just refused, a sweep started too early.
    *
-   * Une **clé**, jamais un texte : un message figé à l'instant où on l'a posé
-   * resterait dans la langue d'alors, et le changement de langue laisserait une
-   * phrase orpheline au milieu d'une interface traduite.
+   * A **key**, never a text: a message frozen at the moment it was set would
+   * stay in the language of that moment, and switching languages would leave an
+   * orphan sentence in the middle of a translated interface.
    */
   const [notice, setNotice] = useState<{ key: MessageKey; kind: AccessKind } | null>(null)
 
@@ -96,35 +96,35 @@ export default function App({ authError }: { authError: string | null }) {
     t,
   )
   const presumedConnected = access.presumedConnected
-  // Une session confirmée prime sur tout avis : c'est elle qui les périme.
+  // A confirmed session outranks any notice: it is what makes them stale.
   const authMessage = session
     ? t('access.connectedFor', { life: describeTokenLife(session.expiresInSeconds, t) })
     : (notice && t(notice.key)) || access.message
   const authKind: AccessKind = session ? 'ok' : (notice?.kind ?? access.kind)
 
-  // Déjà posé sur `<html>` par `main.tsx` avant le premier rendu ; l'effet ne
-  // sert qu'aux changements qui suivent.
+  // Already set on `<html>` by `main.tsx` before the first render; the effect
+  // only serves the changes that follow.
   const [storedTheme, setTheme] = usePersistedState('theme', 'system')
   const theme = parseTheme(storedTheme)
   useEffect(() => applyTheme(document.documentElement, theme), [theme])
 
-  // La cible et la période vivent le temps de l'onglet, contrairement au thème :
-  // ce sont les paramètres d'un scan, pas des préférences. Les retrouver
-  // d'une session à l'autre ferait repartir, au premier clic, une recherche que
-  // personne n'a demandée ici.
+  // The target and the period live for the tab's lifetime, unlike the theme:
+  // they are the parameters of a sweep, not preferences. Finding them again
+  // from one session to the next would restart, on the first click, a search
+  // nobody asked for here.
   const [channel, setChannel] = usePersistedState('channel', '', sessionStorage)
-  // Un mois, et non les origines de Twitch : le scan par défaut doit rester
-  // bon marché, un clic immédiat sur « Lancer » ne devant pas engager sept
-  // fenêtres annuelles avant que la période ait été choisie.
+  // One month, not the dawn of Twitch: the default sweep must stay cheap, an
+  // immediate click on "Start" not being allowed to commit seven yearly windows
+  // before the period has been chosen.
   const [since, setSince] = usePersistedState('since', monthBefore(day(new Date())), sessionStorage)
   const [until, setUntil] = usePersistedState('until', day(new Date()), sessionStorage)
-  // Filtres d'affichage : ils portent sur les clips déjà récupérés, jamais sur
-  // le scan lui-même. Non conservés, contrairement aux champs de recherche —
-  // un seuil oublié d'un écran à l'autre donne une table vide inexpliquée.
+  // Display filters: they bear on the clips already collected, never on the
+  // sweep itself. Not persisted, unlike the search fields — a threshold
+  // forgotten between two screens gives an unexplained empty table.
   const [minViewsInput, setMinViewsInput] = useState('')
   const [maxViewsInput, setMaxViewsInput] = useState('')
-  // La plage d'affichage, distincte de la période scannée : la resserrer ne
-  // relance rien, c'est tout son intérêt.
+  // The display range, distinct from the period swept: narrowing it restarts
+  // nothing, which is the whole point.
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [creators, setCreators] = useState<readonly string[]>([])
@@ -152,9 +152,9 @@ export default function App({ authError }: { authError: string | null }) {
   const search = useClipSearch(session, onTokenRejected, t)
   const { clips, reports, incomplete, progress, span, logEntries, gameNames, running } = search
 
-  // Un scan en cours, ou ses résultats à l'écran, ne vivent que dans la
-  // mémoire de l'application : quitter la page les perd et impose de tout
-  // rescanner, quota Helix compris.
+  // A running sweep, or its results on screen, live in the application's memory
+  // alone: leaving the page loses them and forces a full re-sweep, Helix quota
+  // included.
   useUnloadGuard(running || clips.length > 0)
 
   // The fragment was already consumed in main.tsx; here we only confirm the
@@ -164,7 +164,7 @@ export default function App({ authError }: { authError: string | null }) {
 
     validateToken(storedToken)
       .then(setSession)
-      // Le pari optimiste se dédit ici, et seulement ici.
+      // The optimistic bet takes itself back here, and only here.
       .catch(() => {
         tokenStore.clear()
         setHasToken(false)
@@ -175,12 +175,12 @@ export default function App({ authError }: { authError: string | null }) {
   const connect = () => location.assign(authorizeUrl(BUILD_TIME_CLIENT_ID, redirectUri()))
 
   /**
-   * Oublie le jeton, rien de plus : les clips déjà récupérés restent à l'écran
-   * et restent exportables, puisque rien de tout ça ne redemande le réseau.
+   * Forgets the token, nothing more: the clips already collected stay on screen
+   * and stay exportable, since none of that asks the network again.
    *
-   * L'oubli est local. Le jeton reste valide côté Twitch jusqu'à son échéance —
-   * le révoquer demanderait un appel à `/oauth2/revoke`, hors de ce que fait
-   * l'outil aujourd'hui. Il vit en `sessionStorage`, donc il meurt avec l'onglet.
+   * The forgetting is local. The token stays valid on Twitch's side until it
+   * expires — revoking it would take a call to `/oauth2/revoke`, outside what
+   * the tool does today. It lives in `sessionStorage`, so it dies with the tab.
    */
   const disconnect = () => {
     tokenStore.clear()
@@ -190,16 +190,16 @@ export default function App({ authError }: { authError: string | null }) {
   }
 
   const channelCreatedAt = useChannelLookup(session, channel)
-  // Dérivée, jamais réécrite dans l'état : `since` garde la saisie, qui
-  // redeviendra valable telle quelle si la chaîne visée change pour une plus
-  // ancienne. C'est cette valeur-ci qui s'affiche et qui part au scan.
+  // Derived, never written back into the state: `since` keeps the input, which
+  // becomes valid again as typed if the target channel changes to an older one.
+  // This is the value that displays and that goes to the sweep.
   const effectiveSince = clampSince(since, channelCreatedAt)
-  // Recalculé à chaque rendu : une session laissée ouverte passé minuit UTC
-  // débloque le jour suivant d'elle-même.
+  // Recomputed on every render: a session left open past UTC midnight unlocks
+  // the following day by itself.
   const today = day(new Date())
   const effectiveUntil = clampUntil(until, today)
-  // Les bornes contraignent chaque date séparément, jamais leur ordre : c'est
-  // le seul désordre qui reste possible.
+  // The bounds constrain each date separately, never their order: that is the
+  // only disorder still possible.
   const periodError = describePeriodError(effectiveSince, effectiveUntil, t)
 
   const maxViews = numberOrNull(maxViewsInput)
@@ -212,8 +212,8 @@ export default function App({ authError }: { authError: string | null }) {
   )
   const creatorFacets = useMemo(() => facets(clips, (clip) => clip.creator_name), [clips])
   const gameFacets = useMemo(() => facets(clips, (clip) => clip.game_id), [clips])
-  // Bornes des champs de plage : l'étendue réelle des clips en main, qui grandit
-  // au fil du scan comme les facettes.
+  // Bounds for the range fields: the actual extent of the clips in hand, which
+  // grows along with the sweep, like the facets.
   const dateBounds = useMemo(() => dateExtent(clips), [clips])
   const gameLabel = (id: string) => gameNames.get(id) ?? id
 
@@ -236,9 +236,9 @@ export default function App({ authError }: { authError: string | null }) {
   const selected = useMemo(() => selectedClips(shown, deselected), [shown, deselected])
 
   /**
-   * L'échappatoire d'une table vidée par un filtre : elle rouvre celui que le
-   * message vient de nommer, et suit donc la même préséance — la plage d'abord,
-   * puisque c'est elle que l'utilisateur vient de resserrer à la main.
+   * The escape hatch for a table emptied by a filter: it reopens the one the
+   * message has just named, and therefore follows the same precedence — the
+   * range first, since that is what the user just narrowed by hand.
    */
   const reopenFilter = () => {
     if (clips.length === 0) return null
@@ -253,9 +253,9 @@ export default function App({ authError }: { authError: string | null }) {
       search.stop()
       return
     }
-    // Le pari optimiste ouvre une fenêtre — le temps d'une requête — où l'on
-    // s'affiche connecté sans l'être encore. Elle est trop courte pour qu'on
-    // l'atteigne à la souris, mais pas pour qu'on y mente.
+    // The optimistic bet opens a window — the length of one request — where we
+    // display as connected without being so yet. It is too short to reach with
+    // a mouse, but not too short to lie in.
     if (!session) {
       setNotice(
         presumedConnected
@@ -264,8 +264,8 @@ export default function App({ authError }: { authError: string | null }) {
       )
       return
     }
-    // Un nouveau scan repart d'une sélection et de filtres vierges : garder
-    // un seuil du scan précédent donnerait une table vide inexpliquée.
+    // A new sweep starts from a blank selection and blank filters: keeping a
+    // threshold from the previous sweep would give an unexplained empty table.
     setDeselected(new Set())
     resetFilters()
     void search.start({ channel, since: effectiveSince, until: effectiveUntil })
@@ -283,8 +283,8 @@ export default function App({ authError }: { authError: string | null }) {
           ClipSweep
         </h1>
         <p className="lede">{t('app.tagline')}</p>
-        {/* Deux préférences d'affichage de même statut, donc de même forme,
-            rangées ensemble au bout de la plaque. */}
+        {/* Two display preferences of equal standing, hence of equal shape,
+            filed together at the end of the masthead. */}
         <div className="masthead-prefs">
           <LocaleToggle />
           <ThemeToggle theme={theme} onChange={setTheme} />
@@ -323,10 +323,10 @@ export default function App({ authError }: { authError: string | null }) {
             running={running}
           />
 
-          {/* La remise à zéro d'ensemble vit au bout de l'étiquette, pas dans la
-              rangée : elle y volait une colonne, alors que chaque contrôle porte
-              déjà sa propre remise à zéro. Toujours rendue — son apparition
-              décalerait le filet de l'étiquette. */}
+          {/* The blanket reset lives at the end of the label, not in the row:
+              there it stole a column, while every control already carries its
+              own reset. Always rendered — its appearing would shift the label's
+              rule. */}
           <p className="section-label">
             {t('results.label')}
             <button
@@ -425,8 +425,8 @@ export default function App({ authError }: { authError: string | null }) {
         </main>
       </div>
 
-      {/* Hors de `.layout` : il court sous le rail comme sous la scène, la
-          plaque d'identification lui répondant en haut de page. */}
+      {/* Outside `.layout`: it runs under the rail as under the stage, with the
+          masthead answering it at the top of the page. */}
       <Colophon />
     </div>
   )

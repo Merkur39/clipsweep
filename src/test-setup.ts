@@ -1,10 +1,10 @@
 import '@testing-library/jest-dom/vitest'
 
 /**
- * jsdom n'implémente pas ResizeObserver, dont la table virtualisée se sert pour
- * mesurer sa fenêtre. Un observateur inerte suffit : la hauteur par défaut du
- * composant couvre largement les volumes testés, et l'objectif ici est de
- * vérifier le tri et le défilement, pas la mesure.
+ * jsdom does not implement ResizeObserver, which the virtualized table uses to
+ * measure its viewport. An inert observer is enough: the component's default
+ * height amply covers the volumes tested, and the goal here is to check sorting
+ * and scrolling, not measurement.
  */
 if (!('ResizeObserver' in globalThis)) {
   globalThis.ResizeObserver = class {
@@ -15,11 +15,11 @@ if (!('ResizeObserver' in globalThis)) {
 }
 
 /**
- * La langue du navigateur de test, épinglée.
+ * The test browser's language, pinned.
  *
- * Les attentes des tests sont écrites en français ; les faire dépendre de la
- * locale de la machine — ou de celle que jsdom décide — les rendrait vertes ici
- * et rouges ailleurs. Un test qui vise l'anglais supplante cette valeur.
+ * The tests' expectations are written in French; making them depend on the
+ * machine's locale — or on whatever jsdom decides — would leave them green here
+ * and red elsewhere. A test aiming at English overrides this value.
  */
 if (typeof navigator !== 'undefined') {
   Object.defineProperty(navigator, 'languages', {
@@ -28,7 +28,7 @@ if (typeof navigator !== 'undefined') {
   })
 }
 
-/** Le `Storage` du navigateur, en mémoire et sans persistance. */
+/** The browser's `Storage`, in memory and without persistence. */
 function memoryStorage(): Storage {
   const entries = new Map<string, string>()
 
@@ -45,10 +45,10 @@ function memoryStorage(): Storage {
 }
 
 /**
- * Node 25 définit un `localStorage` global, inerte tant que `--localstorage-file`
- * ne lui donne pas de fichier, et il masque celui de jsdom — `sessionStorage`,
- * lui, arrive intact. Sans ce remplacement, tout test qui touche au stockage
- * mesure un objet dépourvu de méthodes plutôt que le comportement du code.
+ * Node 25 defines a global `localStorage`, inert until `--localstorage-file`
+ * gives it a file, and it shadows jsdom's — `sessionStorage`, for its part,
+ * arrives intact. Without this replacement, any test touching storage measures
+ * an object devoid of methods rather than the behaviour of the code.
  */
 if (typeof globalThis.localStorage?.clear !== 'function') {
   Object.defineProperty(globalThis, 'localStorage', {
