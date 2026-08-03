@@ -1,9 +1,8 @@
-/* ClipTable.tsx — la table de relevé, surface de travail principale : réglures
-   visibles, colonnes chiffrées alignées à droite, une ligne suivie par le
-   curseur.
+/* ClipTable.tsx — the readout table, the main work surface: visible rules,
+   numeric columns right-aligned, one row followed by the cursor.
 
-   Attention : `ROW_HEIGHT` vit dans `ClipTable.tsx` et pilote le virtualiseur.
-   La hauteur d'une ligne se fixe là-bas, pas ici. */
+   Careful: `ROW_HEIGHT` lives in `ClipTable.tsx` and drives the virtualiser.
+   A row's height is set over there, not here. */
 
 .table {
   border: 1px solid var(--rule);
@@ -52,8 +51,8 @@
   font-size: 13px;
 }
 
-/* Toute la ligne coche : voir `rowClick` dans ClipTable.tsx pour les deux
-   cibles qui en sont exclues. */
+/* The whole row ticks the box: see `rowClick` in ClipTable.tsx for the two
+   targets excluded from it. */
 .table-row {
   border-bottom: 1px solid var(--rule);
   font-size: 13px;
@@ -95,7 +94,7 @@
   color: var(--text);
 }
 
-/* Largeur réservée : la flèche apparaît sans décaler le libellé. */
+/* Reserved width: the arrow appears without shifting the label. */
 .col-sort-arrow {
   display: inline-flex;
   width: 9px;
@@ -107,8 +106,8 @@
   color: var(--text);
 }
 
-/* Colonne chiffrée : le libellé doit s'aligner sur ses valeurs, la flèche se
-   range donc à sa gauche plutôt que d'écarter l'en-tête du bord. */
+/* Numeric column: the label must line up with its values, so the arrow files
+   to its left rather than pushing the header away from the edge. */
 .table-head .col-views .col-sort,
 .table-head .col-date .col-sort {
   flex-direction: row-reverse;
@@ -127,7 +126,7 @@
   color: var(--text);
 }
 
-/* Zéro vue : le cas que le scan existe pour exhumer. */
+/* Zero views: the case the sweep exists to unearth. */
 .table-row .col-views.zero {
   color: var(--amber);
 }
@@ -147,8 +146,8 @@
   white-space: nowrap;
 }
 
-/* Toute la colonne est cliquable : le soulignement sur chaque ligne serait du
-   bruit, l'affordance est la colonne elle-même. */
+/* The whole column is clickable: an underline on every row would be noise; the
+   affordance is the column itself. */
 .table-row .col-title a {
   color: var(--text);
   text-decoration: none;

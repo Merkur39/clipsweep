@@ -1,23 +1,23 @@
 /* ============================================================================
-   ClipSweep — « Enregistreur »
-   Le monde d'une station d'enregistrement : châssis à panneaux jointés par
-   filets, façade sérigraphiée, et une bande de papier graduée pour trace.
-   Aucun rayon mou, aucune carte flottante, aucun gris de Twitch.
+   ClipSweep — "Chart recorder"
+   The world of a recording station: a chassis of panels joined by hairlines, a
+   silkscreened facade, and a graduated paper strip for the trace.
+   No soft radii, no floating cards, none of Twitch's greys.
 
-   Les décisions durables sont tenues dans des notes de design gardées hors du
-   dépôt ; ce qui doit se transmettre avec le code vit dans ces commentaires.
+   The lasting decisions are held in design notes kept outside the repository;
+   what must travel with the code lives in these comments.
 
-   ---- Où écrire une règle ----
-   Une classe vit dans le fichier du composant qui la possède. Le vocabulaire
-   partagé par plusieurs composants vit dans `base.css` (éléments nus, jetons)
-   ou `controls.css` (champs, boutons, cases).
+   ---- Where to write a rule ----
+   A class lives in the file of the component that owns it. The vocabulary
+   shared by several components lives in `base.css` (bare elements, tokens) or
+   `controls.css` (fields, buttons, checkboxes).
 
-   ---- Ordre du cascade ----
-   L'ordre ci-dessous est significatif : à spécificité égale, le dernier gagne.
-   Les fichiers de composants viennent après `controls.css` parce qu'ils
-   surchargent le bouton et le champ nus (`.multiselect-button`, `.col-sort`,
-   `.field-clear`). Chaque `@media` reste dans le fichier des règles qu'il
-   surcharge, jamais rassemblé en fin de course.
+   ---- Cascade order ----
+   The order below is significant: at equal specificity, the last one wins.
+   Component files come after `controls.css` because they override the bare
+   button and the bare field (`.multiselect-button`, `.col-sort`,
+   `.field-clear`). Every `@media` stays in the file of the rules it
+   overrides, never gathered at the end.
    ========================================================================= */
 
 @import './base.css';

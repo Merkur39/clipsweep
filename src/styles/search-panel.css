@@ -1,7 +1,7 @@
-/* SearchPanel.tsx — l'état d'accès. */
+/* SearchPanel.tsx — the access state. */
 
-/* Une façade d'instrument signale son état par une lampe, pas par un liseré
-   collé sur la tranche d'un encadré. */
+/* An instrument panel signals its state with a lamp, not with a coloured strip
+   stuck on the edge of a box. */
 .status {
   display: flex;
   align-items: flex-start;
@@ -43,12 +43,12 @@
   box-shadow: 0 0 7px 1px var(--glow-red);
 }
 
-/* Posée sous les champs fautifs : l'erreur se lit là où elle se corrige.
+/* Placed under the offending fields: the error reads where it gets fixed.
 
-   La place est réservée en permanence — `min-height` d'une ligne, reprise de
-   `line-height` — pour que le message apparaisse sans pousser le bouton de
-   scan vers le bas. Le paragraphe est toujours rendu, vide le reste du
-   temps. */
+   The space is permanently reserved — a one-line `min-height`, taken from
+   `line-height` — so the message appears without pushing the sweep button
+   down. The paragraph is always rendered, empty the rest of the time. */
+
 .field-error {
   display: flex;
   align-items: flex-start;
@@ -65,10 +65,10 @@
   color: var(--red);
 }
 
-/* Même réservation que `.field-error`, pour la même raison : le lien apparaît
-   au gré de la chaîne saisie et de la période, il ne doit pousser ni le bouton
-   de scan ni la suite du panneau. Une ligne plus le retrait que le lien
-   porte lui-même. */
+/* Same reservation as `.field-error`, for the same reason: the link appears
+   with whatever channel and period are typed, and must push neither the sweep
+   button nor the rest of the panel. One line plus the indent the link carries
+   itself. */
 .channel-hint {
   display: flex;
   min-height: calc(1.55em + var(--s-3));
@@ -76,9 +76,9 @@
   font-size: 12px;
 }
 
-/* Action rare, donc discrète — mais discrète par la couleur, pas par la taille :
-   le rail aligne des boutons pleine largeur, un gabarit à part y casserait le
-   rythme de la colonne et ferait sauter la mise en page d'un état à l'autre. */
+/* A rare action, so discreet — but discreet in colour, not in size: the rail
+   lines up full-width buttons, and an off-template one would break the column's
+   rhythm and make the layout jump from one state to the next. */
 .disconnect {
   color: var(--text-dim);
   border-color: var(--rule);
