@@ -5,15 +5,14 @@ dist
 *.local
 .DS_Store
 
-# Notes de travail, gardées en local : elles décrivent des intentions et des
-# arbitrages, pas ce que le dépôt livre. Le README reste la documentation
-# publique.
+# Working notes, kept local: they describe intentions and trade-offs, not what
+# the repository ships. The README stays the public documentation.
 DESIGN.md
 PRODUCT.md
 
-# Outillage local, réinstallable, sans rapport avec le produit.
-# La skill Impeccable s'installe en double, une fois par convention d'agent ;
-# `.impeccable/` est son état local — cache du hook et configuration de poste.
+# Local tooling, reinstallable, unrelated to the product.
+# The Impeccable skill installs twice over, once per agent convention;
+# `.impeccable/` is its local state — hook cache and workstation configuration.
 .claude/
 .github/skills/
 .github/hooks/

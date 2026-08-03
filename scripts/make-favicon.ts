@@ -1,37 +1,37 @@
 /**
- * Rastérise la marque en `public/favicon.png`, le repli des navigateurs qui ne
- * lisent pas les favicons SVG — Safari au premier chef.
+ * Rasterises the mark into `public/favicon.png`, the fallback for browsers that
+ * do not read SVG favicons — Safari first among them.
  *
  *     npm run favicon
  *
- * Trois fichiers portent la marque : `src/components/Icon.tsx` (`Mark`), qui
- * fait foi, `public/favicon.svg`, et ce PNG. Les deux premiers s'éditent à la
- * main ; celui-ci se régénère, d'où ce script — sans lui, une retouche du
- * `Mark` laisserait un PNG périmé que personne ne saurait refaire.
+ * Three files carry the mark: `src/components/Icon.tsx` (`Mark`), which is
+ * authoritative, `public/favicon.svg`, and this PNG. The first two are edited by
+ * hand; this one is regenerated, hence this script — without it, a touch-up of
+ * the `Mark` would leave a stale PNG that nobody would know how to redo.
  *
- * Pas de dépendance de conversion : un encodeur PNG tient en quelques dizaines
- * de lignes avec le `zlib` de Node, là où `sharp` ou `resvg` pèseraient des
- * dizaines de mégaoctets dans `devDependencies` pour produire 272 octets.
+ * No conversion dependency: a PNG encoder fits in a few dozen lines with Node's
+ * `zlib`, where `sharp` or `resvg` would weigh tens of megabytes in
+ * `devDependencies` to produce 272 bytes.
  *
- * Node exécute ce `.ts` directement, par effacement des types — d'où
- * `erasableSyntaxOnly` dans `tsconfig.node.json`, qui interdit la syntaxe que
- * l'effacement ne saurait pas rendre (`enum`, `namespace`, propriétés de
- * constructeur). Sans ce garde-fou, une telle syntaxe passerait le typecheck et
- * casserait à l'exécution.
+ * Node runs this `.ts` directly, by erasing the types — hence
+ * `erasableSyntaxOnly` in `tsconfig.node.json`, which forbids the syntax that
+ * erasure would not know how to render (`enum`, `namespace`, constructor
+ * properties). Without that guard, such syntax would pass the typecheck and
+ * break at run time.
  */
 import { writeFileSync } from 'node:fs'
 import { deflateSync } from 'node:zlib'
 
-/** Un rectangle de la marque, dans le repère du `viewBox`. */
+/** One rectangle of the mark, in the frame of the `viewBox`. */
 type Rect = readonly [fill: string, x: number, y: number, width: number, height: number]
 
 /**
- * Les rectangles de `Mark`, dans la **variante claire** de `base.css`.
+ * The rectangles of `Mark`, in the **light variant** of `base.css`.
  *
- * Un PNG ne suit pas le thème de l'onglet : il faut trancher. Le beige de la
- * première barre reste lisible sur un onglet sombre, alors que le `#39415c` de
- * la variante sombre disparaîtrait sur un onglet clair — le choix n'est donc
- * pas symétrique.
+ * A PNG does not follow the tab's theme: a side has to be taken. The beige of
+ * the first bar stays readable on a dark tab, whereas the `#39415c` of the dark
+ * variant would disappear on a light tab — the choice is therefore not
+ * symmetric.
  */
 const RECTS: readonly Rect[] = [
   ['#b6ada0', 1, 2.4, 14, 2.2],
@@ -43,7 +43,7 @@ const RECTS: readonly Rect[] = [
   ['#cf2b2b', 12.2, 11.4, 2.8, 2.2],
 ]
 
-/** `rx` des rects, et côté du `viewBox` : les deux viennent de `Mark`. */
+/** The `rx` of the rects, and the side of the `viewBox`: both come from `Mark`. */
 const RADIUS = 0.6
 const VIEW = 16
 
@@ -54,9 +54,9 @@ const rgb = (hex: string): [number, number, number] => [
 ]
 
 /**
- * Un point tombe-t-il dans un rect à coins arrondis ? Le point est ramené sur
- * le rectangle intérieur (celui que les arrondis n'entament pas), et c'est la
- * distance à ce point-là qui décide.
+ * Does a point fall inside a rect with rounded corners? The point is brought
+ * back onto the inner rectangle (the one the roundings do not bite into), and
+ * it is the distance to that point which decides.
  */
 function inside(px: number, py: number, [, x, y, width, height]: Rect): boolean {
   const cx = Math.min(Math.max(px, x + RADIUS), x + width - RADIUS)
@@ -65,9 +65,10 @@ function inside(px: number, py: number, [, x, y, width, height]: Rect): boolean 
 }
 
 /**
- * Un pixel par échantillonnage d'une grille `samples × samples` : la couverture
- * donne l'alpha, la moyenne des touches donne la couleur. C'est l'anti-aliasing
- * du pauvre, et il suffit — à 32px les bords sont courts et les aplats francs.
+ * One pixel by sampling a `samples × samples` grid: the coverage gives the
+ * alpha, the average of the hits gives the colour. It is the poor man's
+ * anti-aliasing, and it is enough — at 32px the edges are short and the flats
+ * are clean.
  */
 function render(size: number, samples = 8): Buffer {
   const pixels = Buffer.alloc(size * size * 4)
@@ -119,7 +120,7 @@ function crc32(buffer: Buffer): number {
   return (c ^ 0xffffffff) >>> 0
 }
 
-/** Un chunk PNG : longueur, type, données, CRC du type et des données. */
+/** A PNG chunk: length, type, data, CRC of the type and the data. */
 function chunk(type: string, data: Buffer): Buffer {
   const length = Buffer.alloc(4)
   length.writeUInt32BE(data.length)
@@ -135,11 +136,11 @@ function png(size: number): Buffer {
   const ihdr = Buffer.alloc(13)
   ihdr.writeUInt32BE(size, 0)
   ihdr.writeUInt32BE(size, 4)
-  ihdr[8] = 8 // profondeur, bits par canal
-  ihdr[9] = 6 // type couleur : RGBA
+  ihdr[8] = 8 // depth, bits per channel
+  ihdr[9] = 6 // colour type: RGBA
 
-  // Chaque scanline est précédée de son octet de filtre, ici toujours 0 : le
-  // motif est fait d'aplats, un filtre adaptatif ne gagnerait rien sur 32px.
+  // Each scanline is preceded by its filter byte, here always 0: the pattern is
+  // made of flats, an adaptive filter would gain nothing at 32px.
   const stride = size * 4 + 1
   const raw = Buffer.alloc(size * stride)
   for (let row = 0; row < size; row++) {
@@ -154,8 +155,8 @@ function png(size: number): Buffer {
   ])
 }
 
-// 32px et non 16 : c'est ce qu'affiche un onglet sur un écran à densité double,
-// et un navigateur réduit mieux qu'il n'agrandit.
+// 32px and not 16: that is what a tab shows on a double-density screen, and a
+// browser scales down better than it scales up.
 const size = Number(process.argv[2] ?? 32)
 const target = new URL('../public/favicon.png', import.meta.url)
 

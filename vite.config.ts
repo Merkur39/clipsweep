@@ -7,8 +7,8 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   test: {
-    // La logique pure tourne sous node ; les tests de composants demandent le
-    // DOM via un docblock `@vitest-environment jsdom` en tête de fichier.
+    // Pure logic runs under node; component tests ask for the DOM through a
+    // `@vitest-environment jsdom` docblock at the top of the file.
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     setupFiles: ['src/test-setup.ts'],
