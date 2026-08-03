@@ -1,223 +1,217 @@
 # ClipSweep
 
-Énumère **tous** les clips d'une chaîne Twitch — y compris ceux que le site n'affiche plus.
+Lists **every** clip on a Twitch channel — including the ones the site no longer shows you.
 
-> Projet indépendant, **sans lien avec Twitch Interactive, Inc.** « Twitch » est une marque
-> déposée de son propriétaire, citée ici pour désigner le service avec lequel l'outil fonctionne.
+> Independent project, **unaffiliated with Twitch Interactive, Inc.** "Twitch" is a trademark of its
+> owner, used here to name the service the tool works with.
 
-## Pourquoi
+## Why
 
-`GET /helix/clips?broadcaster_id=…` trie par nombre de vues décroissant et **arrête de paginer au-delà
-d'environ 1000 résultats**. C'est la limite qui fait que le « Top / All time » du site web ne charge plus
-rien passé un certain point : les clips à 3 ou 6 vues sont derrière le plafond, inatteignables au scroll.
-L'API a exactement la même limite — l'appeler naïvement ne change rien.
+`GET /helix/clips?broadcaster_id=…` sorts by descending view count and **stops paginating past roughly
+1000 results**. That is the ceiling that makes the website's "Top / All time" go quiet after a certain
+point: clips with 3 or 6 views sit behind it, unreachable by scrolling. The API has exactly the same
+limit — calling it naively changes nothing.
 
-Contournement : découper la période en fenêtres `started_at` / `ended_at` assez fines pour que chaque
-requête reste sous le plafond. Toute fenêtre qui sature quand même (≥ 950 résultats avec un curseur
-restant) est **coupée en deux et rejouée**, en profondeur d'abord, jusqu'à un plancher de 6 h. Les clips
-sont dédoublonnés par `id`.
+The way around it: cut the period into `started_at` / `ended_at` windows fine enough that each request
+stays under the ceiling. Any window that saturates anyway (≥ 950 results with a cursor left) is **split
+in two and replayed**, depth first, down to a 6-hour floor. Clips are deduplicated by `id`.
 
-Une fenêtre encore saturée au plancher signifie que des clips restent hors d'atteinte : elle est comptée
-dans `incomplete`, tracée en rouge sur la frise et signalée par une alerte. **L'outil ne prétend jamais à
-l'exhaustivité sans l'avoir vérifiée.**
+A window still saturated at the floor means clips remain out of reach: it is counted in `incomplete`,
+drawn in red on the frieze, and called out by an alert. **The tool never claims completeness it has not
+verified.**
 
-Les filtres au-dessus de la table sont **optionnels** et purement locaux : par défaut tout est affiché.
+The filters above the table are **optional** and purely local: everything is shown by default.
 
 ## Setup
 
-À faire **une seule fois**, par la personne qui héberge :
+Done **once**, by whoever hosts the app:
 
-1. Créer une application sur [dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps), catégorie
-   « Application Integration ».
-2. Déclarer chaque origine servant l'app dans « OAuth Redirect URLs », à l'identique et **slash final
-   compris** : `http://localhost:5173/` en dev, l'URL de production.
-3. `cp .env.example .env.local`, y coller `VITE_TWITCH_CLIENT_ID`.
+1. Create an application at [dev.twitch.tv/console/apps](https://dev.twitch.tv/console/apps), category
+   "Application Integration".
+2. Declare every origin that serves the app under "OAuth Redirect URLs", verbatim and **trailing slash
+   included**: `http://localhost:5173/` in development, plus the production URL.
+3. `cp .env.example .env.local`, and paste `VITE_TWITCH_CLIENT_ID` into it.
 4. `npm install && npm run dev`.
 
-Ensuite chaque visiteur clique « Se connecter à Twitch » et s'authentifie avec **son propre compte** —
-rien à saisir, aucun formulaire de configuration. Le Client ID identifie l'application, pas la personne :
-ce n'est pas un secret, il transite en clair dans l'URL d'autorisation et dans chaque en-tête `Client-Id`.
+After that every visitor clicks "Connect to Twitch" and authenticates with **their own account** —
+nothing to fill in, no configuration form. The Client ID identifies the application, not the person:
+it is not a secret, it travels in the clear in the authorization URL and in every `Client-Id` header.
 
-**Il n'existe pas de variable pour l'URL de redirection**, et c'est délibéré. `redirectUri()` la dérive à
-l'exécution de `location.origin + location.pathname`, normalisée : elle vaut par construction l'endroit
-exact d'où la page est servie. La configurer permettrait de la faire diverger de la réalité, ce qui
-produit un `redirect_mismatch` difficile à diagnostiquer. Seule la liste côté Twitch se configure, à
-l'étape 2.
+**There is no variable for the redirect URL**, and that is deliberate. `redirectUri()` derives it at
+runtime from `location.origin + location.pathname`, normalized: by construction it is the exact place
+the page is served from. Making it configurable would let it drift from reality, which produces a
+`redirect_mismatch` that is miserable to diagnose. Only the list on Twitch's side is configured, at
+step 2.
 
-Sans `VITE_TWITCH_CLIENT_ID`, l'app ne propose rien à saisir : elle affiche l'URL de redirection à
-déclarer, désactive la connexion, et renvoie vers `.env.local`.
+Without `VITE_TWITCH_CLIENT_ID` the app offers nothing to type: it displays the redirect URL to
+declare, disables the connection, and points at `.env.local`.
 
-Les jetons émis ne portent **aucun scope** ([auth.ts](src/twitch/auth.ts)) : ils ne déverrouillent que
-des données publiques, jamais l'email, la gestion de chaîne ou la modération. C'est ce qui rend le partage
-d'une application sans risque pratique. Ce qui subsiste : le Contrat Développeur Twitch rend le
-propriétaire de l'application comptable de l'activité menée sous son Client ID.
+The tokens it mints carry **no scope** ([auth.ts](src/twitch/auth.ts)): they unlock public data only —
+never the email address, channel management, or moderation. That is what makes sharing one application
+harmless in practice. What remains: the Twitch Developer Agreement holds the application's owner
+accountable for the activity carried out under their Client ID.
 
-Aucun secret nulle part : flux implicite, le jeton revient dans le fragment d'URL et reste en
-`sessionStorage`. Le navigateur parle directement à Helix (CORS autorisé), il n'y a pas de backend — le
-build est déployable en statique.
+No secret anywhere: implicit flow, the token comes back in the URL fragment and stays in
+`sessionStorage`. The browser talks to Helix directly (CORS allows it), there is no backend — the build
+deploys as static files.
 
-## Déploiement
+## Deployment
 
-`npm run build` produit un site **statique** dans `dist/`. Il n'y a pas de backend : le navigateur
-parle directement à Helix, et rien n'a besoin de tourner côté serveur. N'importe quel hébergeur de
-fichiers convient — un nginx sur sa propre machine, GitHub Pages, un seau S3, une plateforme de
-déploiement continu. Une instance publique tourne sur
-[`clipsweep.vercel.app`](https://clipsweep.vercel.app/), mais rien dans le code n'y est lié.
+`npm run build` produces a **static** site in `dist/`. There is no backend: the browser talks to Helix
+directly, and nothing needs to run server-side. Any file host will do — an nginx on your own machine,
+GitHub Pages, an S3 bucket, a continuous-deployment platform. A public instance runs at
+[`clipsweep.vercel.app`](https://clipsweep.vercel.app/), but nothing in the code is tied to it.
 
-Deux réglages, quel que soit l'endroit :
+Two settings, wherever it lands:
 
-1. **`VITE_TWITCH_CLIENT_ID` au moment du build.** Vite l'inline dans le bundle : c'est une variable
-   de _build_, pas d'exécution — la poser sur le serveur qui sert les fichiers n'a aucun effet. Un
-   Client ID n'est pas confidentiel, il finit de toute façon en clair dans le bundle servi. Sans elle,
-   le build part au vert et le site s'affiche, mais refuse toute connexion.
-2. **L'URL publique déclarée dans les « OAuth Redirect URLs »** de l'application Twitch, **slash final
-   compris**. Twitch compare la chaîne à l'octet près ; l'app normalise l'URI (slash final ajouté,
-   `index.html` retiré) pour qu'elle soit stable quel que soit le chemin d'arrivée.
+1. **`VITE_TWITCH_CLIENT_ID` at build time.** Vite inlines it into the bundle: it is a _build_
+   variable, not a runtime one — setting it on the server that serves the files does nothing. A Client
+   ID is not confidential; it ends up in the clear in the served bundle either way. Without it the
+   build goes green and the site renders, but refuses every connection.
+2. **The public URL declared under the Twitch application's "OAuth Redirect URLs"**, **trailing slash
+   included**. Twitch compares the string byte for byte; the app normalizes the URI (trailing slash
+   added, `index.html` stripped) so it is stable whatever path you arrive by.
 
-`base: './'` dans [vite.config.ts](vite.config.ts) rend les chemins d'assets relatifs : le build
-fonctionne aussi bien à la racine d'un domaine que sous un sous-chemin — une page de projet GitHub
-Pages, par exemple.
+`base: './'` in [vite.config.ts](vite.config.ts) makes asset paths relative: the build works at the
+root of a domain as happily as under a sub-path — a GitHub Pages project page, for instance.
 
-[`.github/workflows/ci.yml`](.github/workflows/ci.yml) ne déploie rien — mais rien n'entre dans `main`
-sans lui. Il enchaîne `format:check`, lint, tests et build, et la **protection de branche** en fait la
-condition du merge : un push direct sur `main` est refusé, une PR ne se fusionne que verte.
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) deploys nothing — but nothing enters `main`
+without it. It runs `format:check`, lint, tests, and build, and **branch protection** makes that the
+condition of the merge: a direct push to `main` is refused, and a pull request only merges green.
 
-C'est ce qui tient lieu de barrière, et non un couplage entre les deux chaînes. Un hébergeur branché
-sur le dépôt construit sur le webhook de push, sans jamais lire les résultats d'Actions ; les deux
-partent en parallèle du même commit. Ce qui est gardé, c'est donc l'entrée dans `main` — le seul
-écrivain de la branche de production étant le merge. Les previews de branche, elles, partent quoi
-qu'il arrive : c'est précisément à ça qu'elles servent.
+That is what stands in for a gate, rather than any coupling between the two pipelines. A host wired to
+the repository builds on the push webhook, without ever reading Actions results; both start in
+parallel from the same commit. What is guarded is therefore entry into `main` — the only writer of the
+production branch being the merge. Branch previews, on the other hand, go out regardless: that is
+precisely what they are for.
 
-La mesure d'audience (`@vercel/analytics`) est montée dans [main.tsx](src/main.tsx). Elle charge son
-script depuis `/_vercel/insights/`, chemin que seul un hébergement Vercel sert : **ailleurs la requête
-échoue sans conséquence et rien n'est mesuré**. Là où elle fonctionne, elle ne rapporte que la page
-vue — ni la chaîne scannée, ni les clips, ni le jeton n'y passent.
+Analytics (`@vercel/analytics`) is mounted in [main.tsx](src/main.tsx). It loads its script from
+`/_vercel/insights/`, a path only Vercel hosting serves: **anywhere else the request fails without
+consequence and nothing is measured**. Where it does work, it reports the page view and nothing more —
+neither the channel swept, nor the clips, nor the token go through it.
 
-## Télécharger les vidéos
+## Downloading the videos
 
-L'API Helix ne fournit **aucune URL de média**. La seule URL réelle est une CloudFront signée
-(`?token=…&sig=…`), mintée par un endpoint GQL interne réservé au client web de Twitch. L'astuce
-répandue consistant à suffixer le `thumbnail_url` par `.mp4` ne fonctionne plus : le CDN ignore le
-suffixe et renvoie **la vignette** avec un `200 OK` — un échec silencieux qui produit des fichiers
-`.mp4` de 56 Ko.
+The Helix API exposes **no media URL**. The only real URL is a signed CloudFront one
+(`?token=…&sig=…`), minted by an internal GQL endpoint reserved for Twitch's own web client. The
+widespread trick of appending `.mp4` to `thumbnail_url` no longer works: the CDN ignores the suffix and
+returns **the thumbnail** with a `200 OK` — a silent failure that yields 56 KB `.mp4` files.
 
-Le téléchargement est donc délégué à [yt-dlp](https://github.com/yt-dlp/yt-dlp), qui tourne sur la
-machine de l'utilisateur. Deux exports génèrent un script prêt à lancer :
+Downloading is therefore delegated to [yt-dlp](https://github.com/yt-dlp/yt-dlp), running on the user's
+machine. Two exports generate a ready-to-run script:
 
-| Export | Usage                                            |
-| ------ | ------------------------------------------------ |
-| `.bat` | Windows : placer dans un dossier, double-cliquer |
-| `.sh`  | macOS / Linux : `chmod +x` puis lancer           |
+| Export | Use                                           |
+| ------ | --------------------------------------------- |
+| `.bat` | Windows: drop it in a folder, double-click it |
+| `.sh`  | macOS / Linux: `chmod +x`, then run it        |
 
-Le script écrit la liste d'URLs, appelle yt-dlp avec des noms de fichiers lisibles, et tient un
-`archive.txt` : **relancer reprend là où ça s'est arrêté**. Si yt-dlp est absent, il propose de le
-récupérer — après confirmation, jamais en silence.
+The script writes the URL list, calls yt-dlp with readable filenames, and keeps an `archive.txt`:
+**running it again picks up where it stopped**. If yt-dlp is missing, it offers to fetch it — after
+confirmation, never silently.
 
-Ce yt-dlp-là est **jetable** : téléchargé dans le dossier temporaire du système, jamais à côté du
-script, et effacé en partant — y compris si le script est interrompu. Un binaire laissé sur le
-disque ne serait jamais mis à jour et finirait par ne plus savoir télécharger ; le reprendre à
-chaque fois garantit la version du jour.
+That yt-dlp is **disposable**: downloaded into the system's temporary folder, never next to the script,
+and erased on the way out — including when the script is interrupted. A binary left on disk would never
+be updated and would eventually stop being able to download; fetching it each time guarantees the
+current version.
 
-Un yt-dlp que vous avez **installé vous-même**, dans le `PATH` ou déposé à côté du script, est
-utilisé tel quel et n'est jamais effacé. Le script ne supprime que ce qu'il a lui-même téléchargé.
+A yt-dlp **you installed yourself**, on the `PATH` or dropped next to the script, is used as-is and
+never erased. The script only removes what it downloaded itself.
 
-Ces scripts sont du code exécuté sur la machine de l'utilisateur : les URLs y sont injectées après
-validation par liste blanche ([scripts.ts](src/domain/scripts.ts)), tout ce qui n'est pas une URL de clip
-Twitch est écarté plutôt qu'échappé.
+These scripts are code executed on the user's machine: URLs are injected into them after allowlist
+validation ([scripts.ts](src/domain/scripts.ts)) — anything that is not provably a Twitch clip URL is
+dropped rather than escaped.
 
 ## Architecture
 
-| Fichier                        | Rôle                                                         |
-| ------------------------------ | ------------------------------------------------------------ |
-| `src/twitch/windows.ts`        | découpage et bissection des fenêtres temporelles             |
-| `src/twitch/clips.ts`          | parcours, pagination, dédoublonnage, rapport d'exhaustivité  |
-| `src/twitch/auth.ts`           | flux implicite, validation du jeton                          |
-| `src/twitch/api.ts`            | client Helix : throttle, retry 429/5xx                       |
-| `src/hooks/useClipSearch.ts`   | orchestration du scan, progression, journal                  |
-| `src/domain/filters.ts`        | filtres d'affichage et facettes                              |
-| `src/components/Frieze.tsx`    | frise du découpage temporel                                  |
-| `src/components/ClipTable.tsx` | table virtualisée — affiche tout, sans plafond DOM           |
-| `src/domain/scripts.ts`        | génération des scripts yt-dlp `.bat` / `.sh`                 |
-| `src/i18n/`                    | catalogues français et anglais, détection et choix de langue |
+| File                           | Role                                                      |
+| ------------------------------ | --------------------------------------------------------- |
+| `src/twitch/windows.ts`        | time-window seeding and bisection                         |
+| `src/twitch/clips.ts`          | traversal, pagination, deduplication, completeness report |
+| `src/twitch/auth.ts`           | implicit flow, token validation                           |
+| `src/twitch/api.ts`            | Helix client: throttle, 429/5xx retry                     |
+| `src/hooks/useClipSearch.ts`   | sweep orchestration, progress, log                        |
+| `src/domain/filters.ts`        | display filters and facets                                |
+| `src/components/Frieze.tsx`    | frieze of the time breakdown                              |
+| `src/components/ClipTable.tsx` | virtualized table — shows everything, no DOM ceiling      |
+| `src/domain/scripts.ts`        | `.bat` / `.sh` yt-dlp script generation                   |
+| `src/i18n/`                    | French and English catalogues, detection and choice       |
 
-La logique de collecte, le domaine et les composants sont couverts par des tests — Vitest pour la
-logique, Testing Library pour le rendu.
+The collection logic, the domain, and the components are covered by tests — Vitest for the logic,
+Testing Library for rendering.
 
-## Langues
+## Languages
 
-L'interface existe en **français** et en **anglais**. Au premier passage la langue suit
-`navigator.languages`, en repli sur l'anglais faute de correspondance ; le choix explicite se fait dans
-la plaque d'identification et vit en `localStorage`, comme le thème. « Automatique » n'est pas une
-troisième langue mais l'absence de choix : elle continue de suivre le navigateur.
+The interface exists in **French** and **English**. On a first visit the language follows
+`navigator.languages`, falling back to English when nothing matches; the explicit choice is made in the
+masthead and lives in `localStorage`, like the theme. "Automatic" is not a third language but the
+absence of a choice: it keeps following the browser.
 
-Pas de librairie — deux langues, une centaine de clés, aucun chargement différé à organiser. Le moteur
-tient en un module ([translate.ts](src/i18n/translate.ts)) : substitution de `{marqueurs}` et pluriel
-délégué à `Intl.PluralRules`, le français accordant « 0 clip » au singulier là où l'anglais dit
-« 0 clips ». Les nombres et les dates se formatent par convention de type — un nombre est groupé par
-milliers, un `{ day }` est rendu dans l'ordre de la langue — ce qui dispense la couche domaine de
-connaître la langue servie.
+No library — two languages, about a hundred keys, no lazy loading to organize. The engine fits in one
+module ([translate.ts](src/i18n/translate.ts)): `{marker}` substitution, and plurals delegated to
+`Intl.PluralRules` — French agrees "0 clip" in the singular where English says "0 clips". Numbers and
+dates are formatted by type convention — a number is grouped in thousands, a `{ day }` is rendered in
+the language's order — which spares the domain layer from knowing which language is being served.
 
-`messages.fr.ts` est le catalogue de référence : il définit les clés et leur forme, et `messages.en.ts`
-s'y conforme par le typage, une clé manquante échouant au `typecheck` plutôt qu'à l'exécution. Les
-fonctions de domaine reçoivent `t` en argument, jamais par contexte : elles restent pures et testables
-hors de React.
+`messages.fr.ts` is the reference catalogue: it defines the keys and their shape, and `messages.en.ts`
+conforms to it through the type system, a missing key failing `typecheck` rather than at runtime.
+Domain functions take `t` as an argument, never from context: they stay pure and testable outside
+React.
 
-Les messages des scripts générés suivent eux aussi la langue, mais restent en **ASCII** — la page de
-code de la console n'est pas garantie et un accent y sortirait en charabia. Une confirmation « O » ou
-« Y » est acceptée dans les deux cas.
+The generated scripts' messages follow the language too, but stay **ASCII** — the console's code page
+is not guaranteed and an accent would come out as garbage. Both "O" and "Y" are accepted as
+confirmation, whichever language asked.
 
-Deux choses restent délibérément en `yyyy-mm-dd` : la valeur des champs et le contenu des exports. La
-première est le format pivot des `<input type="date">`, la seconde est relue par des machines. Le
-sélecteur natif, lui, suit la langue du **navigateur** et non celle de la page : un Chrome en français
-affichera `jj/mm/aaaa` dans une interface anglaise, ce qu'aucun attribut HTML ne corrige.
+Two things stay deliberately in `yyyy-mm-dd`: field values and export contents. The first is the pivot
+format of `<input type="date">`, the second is read back by machines. The native picker, for its part,
+follows the **browser's** language rather than the page's: a French Chrome will show `jj/mm/aaaa` in an
+English interface, which no HTML attribute fixes.
 
-## Réglages
+## Tuning
 
-Le scan ne demande que la chaîne et l'intervalle de dates. Le découpage n'est plus un réglage :
-`splitByYear` amorce sur une fenêtre par année civile, et la bissection resserre là où les clips sont
-denses.
+A sweep asks only for the channel and the date range. The window size is no longer a setting:
+`splitByYear` seeds one window per calendar year, and bisection tightens where clips are dense.
 
-Ce choix a un coût mesurable. Une fenêtre saturée dépense dix requêtes avant d'être coupée, et elles
-sont perdues — les moitiés refetchent les mêmes clips. Partir d'une fenêtre unique sur toute la plage
-ferait payer ce péage à chaque nœud interne de l'arbre, soit environ **trois fois** les requêtes d'un
-amorçage bien dimensionné. Les frontières d'année suppriment les niveaux hauts, les plus chers, sans
-rien demander à l'utilisateur ni sonder une densité que l'API ne sait pas rapporter.
+That choice has a measurable cost. A saturated window spends ten requests before being split, and they
+are wasted — the halves refetch the same clips. Starting from a single window over the whole range
+would pay that toll at every internal node of the tree, roughly **three times** the requests of a
+well-sized seeding. Year boundaries remove the top levels, the expensive ones, without asking the user
+anything or probing a density the API cannot report.
 
-La période s'ouvre sur **le mois écoulé**, et non sur toute l'histoire de la chaîne : un clic immédiat
-sur « Lancer » doit rester bon marché plutôt qu'engager sept fenêtres annuelles avant que la période
-ait été choisie. La borne basse est bridée par la date de création de la chaîne, résolue via Helix puis
-gardée dans un cache local ([channelCache.ts](src/domain/channelCache.ts)) plafonné à 50 entrées.
+The period opens on **the past month** rather than the channel's entire history: an immediate click on
+"Start" should stay cheap instead of committing seven yearly windows before the period has been chosen.
+The lower bound is clamped by the channel's creation date, resolved through Helix then kept in a local
+cache ([channelCache.ts](src/domain/channelCache.ts)) capped at 50 entries.
 
-Chaîne et période vivent en `sessionStorage` : elles survivent à un rechargement d'onglet, pas à sa
-fermeture. Ce sont les paramètres d'un scan, pas des préférences — les retrouver d'une session à
-l'autre ferait repartir, au premier clic, une recherche que personne n'a demandée. Seuls le thème et la
-langue sont durables. Les clips, eux, ne vivent qu'en mémoire : tant qu'un scan tourne ou que ses résultats sont
-à l'écran, quitter la page demande confirmation ([useUnloadGuard.ts](src/hooks/useUnloadGuard.ts)).
+Channel and period live in `sessionStorage`: they survive a tab reload, not the tab closing. They are
+the parameters of a sweep, not preferences — carrying them from one session to the next would restart,
+on the first click, a search nobody asked for. Only the theme and the language are durable. The clips
+themselves live in memory alone: while a sweep is running or its results are on screen, leaving the
+page asks for confirmation ([useUnloadGuard.ts](src/hooks/useUnloadGuard.ts)).
 
-Les filtres au-dessus de la table — vues min et max, plage de dates, créateur, jeu — ne portent que sur
-l'affichage et la sélection, jamais sur le scan : resserrer la plage affichée ne relance rien, c'est
-tout son intérêt. Ils ne sont pas persistés, pas même le temps de l'onglet : un seuil oublié d'un écran
-à l'autre donnerait une table vide sans raison apparente.
+The filters above the table — min and max views, date range, creator, game — bear on display and
+selection only, never on the sweep: narrowing the shown range restarts nothing, which is the whole
+point. They are not persisted, not even for the tab's lifetime: a threshold forgotten between two
+screens would produce an empty table for no apparent reason.
 
-Coût : ~1 requête par tranche de 100 clips, plus une par bissection. Quota Helix : 800 points/min, le
-client respecte `Ratelimit-Reset` sur 429 et s'espace de 60 ms entre deux requêtes.
+Cost: ~1 request per 100 clips, plus one per bisection. Helix quota: 800 points/min; the client honors
+`Ratelimit-Reset` on 429 and spaces requests 60 ms apart.
 
 ## Scripts
 
-| Commande               | Effet                       |
-| ---------------------- | --------------------------- |
-| `npm run dev`          | serveur de dev              |
-| `npm run preview`      | sert le build de `dist/`    |
-| `npm test`             | Vitest                      |
-| `npm run test:watch`   | Vitest en continu           |
-| `npm run typecheck`    | `tsc -b`                    |
-| `npm run lint`         | ESLint                      |
-| `npm run format`       | Prettier, écriture          |
-| `npm run format:check` | Prettier, vérification      |
-| `npm run build`        | build statique dans `dist/` |
+| Command                | Effect                    |
+| ---------------------- | ------------------------- |
+| `npm run dev`          | dev server                |
+| `npm run preview`      | serves the `dist/` build  |
+| `npm test`             | Vitest                    |
+| `npm run test:watch`   | Vitest in watch mode      |
+| `npm run typecheck`    | `tsc -b`                  |
+| `npm run lint`         | ESLint                    |
+| `npm run format`       | Prettier, write           |
+| `npm run format:check` | Prettier, check           |
+| `npm run build`        | static build into `dist/` |
 
-Le formatage est figé par [.prettierrc](.prettierrc) : quotes simples, pas de point-virgule, 100
-colonnes. Ces valeurs reprennent le style déjà en place — les défauts de Prettier (guillemets doubles,
-point-virgules, 80 colonnes) auraient réécrit tout le dépôt. `format:check` tourne en CI, et la
-protection de branche en fait la condition du merge : un fichier mal formaté empêche `main` d'avancer,
-donc empêche la mise en ligne.
+Formatting is pinned by [.prettierrc](.prettierrc): single quotes, no semicolons, 100 columns. Those
+values match the style already in place — Prettier's defaults (double quotes, semicolons, 80 columns)
+would have rewritten the whole repository. `format:check` runs in CI, and branch protection makes it
+the condition of the merge: a badly formatted file keeps `main` from moving, and therefore keeps the
+site from going live.
