@@ -1,6 +1,6 @@
-/* FiltersBar.tsx, NumberField.tsx, MultiSelect.tsx — la rangée de filtres.
-   Elle est soudée au haut de la table (bord bas retiré, rayon coupé) : les
-   deux forment un seul panneau, pas deux cartes empilées. */
+/* FiltersBar.tsx, NumberField.tsx, MultiSelect.tsx — the filter row.
+   It is welded to the top of the table (bottom border removed, radius cut):
+   the two form a single panel, not two stacked cards. */
 
 .result-count {
   margin: 0 0 var(--s-3);
@@ -10,13 +10,13 @@
   color: var(--text-dim);
 }
 
-/* Six contrôles tiennent sur une ligne à condition de ne pas leur donner le
-   même gabarit : un champ de vues loge six chiffres, un champ date ne descend
-   pas sous 137px (ses segments, son calendrier et sa croix), et les facettes
-   veulent tout ce qui reste — ce sont elles qui tronquent (« SpiZ, Ori +3 »).
-   Chaque base est donc calibrée sur son contenu, chaque croissance plafonnée :
-   c'est le plafond qui évite qu'un contrôle reporté s'étire seul sur toute la
-   largeur, ce que faisait la rangée avant. */
+/* Six controls hold on one line provided they are not given the same template:
+   a views field houses six digits, a date field does not go below 137px (its
+   segments, its calendar and its cross), and the facets want everything that
+   is left — they are the ones that truncate ("SpiZ, Ori +3"). Each basis is
+   therefore calibrated on its content, each growth capped: it is the cap that
+   keeps a wrapped control from stretching alone across the full width, which
+   is what the row did before. */
 .filters {
   display: flex;
   flex-wrap: wrap;
@@ -40,32 +40,32 @@
   max-width: 130px;
 }
 
-/* `min-width` autant que `flex-basis` : sous 137px les segments de date se
-   feraient rogner par le calendrier natif. */
+/* `min-width` as much as `flex-basis`: below 137px the date segments would get
+   clipped by the native calendar. */
 .filters .field.date {
   flex: 1 1 137px;
   min-width: 137px;
   max-width: 148px;
 }
 
-/* Base basse, plafond haut : une facette n'a besoin que de 73px pour son
-   contenu minimal, et c'est elle qui récupère toute la place disponible. */
+/* Low basis, high cap: a facet needs no more than 73px for its minimal
+   content, and it is the one that takes back all the space available. */
 .filters .multiselect {
   flex: 1 1 110px;
   max-width: 240px;
 }
 
-/* Trois contrôles natifs, trois hauteurs intrinsèques chez Chromium (33px pour
-   un champ nombre, 34 pour le bouton, 35 pour un champ date, qui ne cède ni au
-   `line-height` ni au style de son shadow DOM). Sans hauteur commune, les
-   étiquettes de la rangée ne s'alignent pas. */
+/* Three native controls, three intrinsic heights under Chromium (33px for a
+   number field, 34 for the button, 35 for a date field, which yields neither to
+   `line-height` nor to styling its shadow DOM). Without a common height, the
+   labels of the row do not line up. */
 .filters .field-control input,
 .filters .multiselect-button {
   height: 35px;
 }
 
-/* Le bouton d'effacement est superposé, pas inséré : son apparition ne doit
-   déplacer ni le champ ni ses voisins. */
+/* The clear button is overlaid, not inserted: its appearing must move neither
+   the field nor its neighbours. */
 .field-control {
   position: relative;
   display: block;
@@ -75,9 +75,9 @@
   padding-right: 30px;
 }
 
-/* Un champ date porte déjà son indicateur de calendrier à droite : le bouton
-   d'effacement se range à sa gauche plutôt que par-dessus. Masquer l'indicateur
-   coûterait l'ouverture du sélecteur à la souris, seule voie qui l'ouvre. */
+/* A date field already carries its calendar indicator on the right: the clear
+   button files to its left rather than over it. Hiding the indicator would cost
+   the opening of the picker by mouse, the only route that opens it. */
 .field-control.date input {
   padding-right: 26px;
 }
@@ -86,7 +86,7 @@
   right: 4px;
 }
 
-/* Les flèches natives volent la place du bouton. */
+/* The native arrows steal the button's place. */
 .field-control input::-webkit-outer-spin-button,
 .field-control input::-webkit-inner-spin-button {
   appearance: none;
@@ -117,9 +117,9 @@
   color: var(--text);
 }
 
-/* Posé au bout de l'étiquette « Résultats », après le filet que trace son
-   `::after` — d'où l'`order`, sans quoi le filet passerait à droite du bouton
-   au lieu de le pousser. */
+/* Set at the end of the "Results" label, after the hairline its `::after`
+   draws — hence the `order`, without which the hairline would run to the right
+   of the button instead of pushing it. */
 .section-label .filters-reset {
   order: 1;
   width: auto;
@@ -129,7 +129,7 @@
   text-transform: uppercase;
 }
 
-/* ---- sélection multiple ---- */
+/* ---- multiselect ---- */
 
 .multiselect {
   position: relative;
