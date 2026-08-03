@@ -14,6 +14,20 @@ if (!('ResizeObserver' in globalThis)) {
   } as unknown as typeof ResizeObserver
 }
 
+/**
+ * La langue du navigateur de test, épinglée.
+ *
+ * Les attentes des tests sont écrites en français ; les faire dépendre de la
+ * locale de la machine — ou de celle que jsdom décide — les rendrait vertes ici
+ * et rouges ailleurs. Un test qui vise l'anglais supplante cette valeur.
+ */
+if (typeof navigator !== 'undefined') {
+  Object.defineProperty(navigator, 'languages', {
+    configurable: true,
+    get: () => ['fr-FR', 'fr'],
+  })
+}
+
 /** Le `Storage` du navigateur, en mémoire et sans persistance. */
 function memoryStorage(): Storage {
   const entries = new Map<string, string>()
