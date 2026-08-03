@@ -1,16 +1,16 @@
-/* Le vocabulaire de contrôle partagé : champs, boutons, cases, icônes.
-   Les composants qui le spécialisent (`.multiselect-button`, `.col-sort`,
-   `.field-clear`) sont importés après ce fichier. */
+/* The shared control vocabulary: fields, buttons, checkboxes, icons.
+   The components that specialise it (`.multiselect-button`, `.col-sort`,
+   `.field-clear`) are imported after this file. */
 
 label {
   display: block;
   margin: 0 0 var(--s-3);
 }
 
-/* `.field-control` est aussi un `<span>` enfant direct de son `<label>`, mais
-   c'est un conteneur de contrôle, pas une étiquette : la marge basse d'étiquette
-   lui ajoutait 5px sous son champ, et décalait toute la rangée de filtres par
-   rapport aux contrôles qui n'en ont pas. */
+/* `.field-control` is also a `<span>` that is a direct child of its `<label>`,
+   but it is a control container, not a label: the label bottom margin was
+   adding 5px under its field, and shifting the whole filter row relative to
+   the controls that carry none. */
 .field-label,
 label > span:not(.field-control) {
   display: block;
@@ -51,8 +51,8 @@ input::placeholder {
   color: var(--text-faint);
 }
 
-/* Sans `min-width: 0`, la largeur intrinsèque d'un `input[type=date]` — avec
-   son icône de sélecteur — dépasse sa colonne et pousse la grille. */
+/* Without `min-width: 0`, the intrinsic width of an `input[type=date]` — with
+   its picker icon — overruns its column and pushes the grid. */
 .duo {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -88,8 +88,8 @@ button:hover:not(:disabled) {
   border-color: var(--violet);
 }
 
-/* Enfoncé, donc plus sombre que le survol. En clair, `--surface` est le blanc
-   du relevé : s'en servir ici ferait s'éclaircir un bouton qu'on presse. */
+/* Pressed, therefore darker than hover. In light, `--surface` is the white of
+   the readout: using it here would lighten a button as it is pressed. */
 button:active:not(:disabled) {
   background: var(--surface-sunken);
 }
@@ -106,15 +106,15 @@ button.primary:hover:not(:disabled) {
   border-color: var(--violet-strong);
 }
 
-/* `--violet-fill` est l'aplat qui porte l'encre — pâle sur papier. Un bouton
-   pressé s'enfonce : il lui faut le violet le plus sombre des deux mondes. */
+/* `--violet-fill` is the flat that carries the ink — pale on paper. A pressed
+   button sinks: it needs the darkest violet of the two worlds. */
 button.primary:active:not(:disabled) {
   background: var(--violet-press);
   border-color: var(--violet-press);
   color: var(--on-violet-press);
 }
 
-/* Le liseré violet sur fond violet est invisible : on le décolle. */
+/* The violet ring on a violet background is invisible: it gets lifted off. */
 button.primary:focus-visible {
   outline-color: var(--text);
 }
@@ -146,13 +146,13 @@ button.link:disabled {
   background: none;
 }
 
-/* Écrit en dernier, et il doit le rester : `button:disabled` a exactement la
-   même spécificité que `button.primary` (0,1,1), donc seul l'ordre les
-   départage. Placé avant, la variante primaire gardait son violet plein une
-   fois désactivée — un bouton mort qui a l'air du plus actionnable de la page.
+/* Written last, and it must stay that way: `button:disabled` has exactly the
+   same specificity as `button.primary` (0,1,1), so only the order settles
+   between them. Placed before, the primary variant kept its full violet once
+   disabled — a dead button that looks like the most actionable on the page.
 
-   L'opacité fait passer le libellé sous le seuil de contraste : on éteint
-   explicitement, on ne dilue pas. */
+   Opacity takes the label below the contrast threshold: the switching-off is
+   explicit, it is not a dilution. */
 button:disabled {
   background: transparent;
   border-color: var(--rule);
@@ -165,9 +165,9 @@ button:disabled {
   display: block;
 }
 
-/* ---- cases à cocher ----
-   Tout démarre coché : la case ne doit donc pas être l'encre la plus lourde
-   de la table. Contour au repos, teinte légère une fois cochée. */
+/* ---- checkboxes ----
+   Everything starts ticked: the box must therefore not be the heaviest ink of
+   the table. Outline at rest, light tint once ticked. */
 
 input[type='checkbox'] {
   appearance: none;

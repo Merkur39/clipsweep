@@ -1,61 +1,61 @@
-/* Jetons, remise à zéro, éléments nus. Rien qui appartienne à un composant. */
+/* Tokens, reset, bare elements. Nothing that belongs to a component. */
 
-/* ---- les deux mondes ----
-   Un `light-dark()` par jeton : une seule déclaration, et c'est le CSS lui-même
-   qui résout la préférence système. Le premier paint est donc déjà juste, ce
-   qu'un `data-theme` posé en JavaScript ne peut pas promettre — la feuille est
-   liée dans le `<head>` et peint le corps avant que le module s'exécute.
+/* ---- the two worlds ----
+   One `light-dark()` per token: a single declaration, and it is the CSS itself
+   that resolves the system preference. The first paint is therefore already
+   right, which a `data-theme` set from JavaScript cannot promise — the sheet is
+   linked in the `<head>` and paints the body before the module runs.
 
-   `data-theme` ne fait que restreindre `color-scheme` : tous les jetons suivent
-   d'eux-mêmes, et avec eux les ascenseurs et le sélecteur natif de date, qui
-   resteraient sombres autrement.
+   `data-theme` does nothing more than narrow `color-scheme`: every token
+   follows on its own, and with them the scrollbars and the native date picker,
+   which would stay dark otherwise.
 
-   Nommage : aucun jeton ne porte un mot de luminosité absolue. « bright » et
-   « deep » désignent des sens opposés d'un thème à l'autre — l'insistance est
-   plus claire en sombre, plus foncée en clair. D'où `-strong` (ce qui insiste),
-   `-press` (ce qui est enfoncé) et `-fill` (l'aplat qui porte l'encre). */
+   Naming: no token carries a word of absolute lightness. "bright" and "deep"
+   point opposite ways from one theme to the other — emphasis is lighter in
+   dark, darker in light. Hence `-strong` (what insists), `-press` (what is
+   pushed in) and `-fill` (the flat that carries the ink). */
 
 :root {
   color-scheme: light dark;
 
-  /* Clair : papier chaud, filets graphite. Sombre : graphite froid teinté
-     bleu-violet — le châssis, pas le fond de Twitch.
-     Dans les deux cas la profondeur va du fond de page vers la surface de
-     travail : `--ground` est le plus reculé, `--surface` porte le relevé. */
+  /* Light: warm paper, graphite hairlines. Dark: cold graphite tinted
+     blue-violet — the chassis, not Twitch's background.
+     In both cases depth runs from the page ground towards the work surface:
+     `--ground` is the furthest back, `--surface` carries the readout. */
   --ground: light-dark(#f3f1ed, #090b12);
   --chassis: light-dark(#f9f8f5, #0f121c);
   --surface: light-dark(#ffffff, #141824);
   --surface-raised: light-dark(#ffffff, #1b2030);
   --surface-hover: light-dark(#ebe8e2, #212739);
-  /* Un bouton enfoncé s'enfonce : en clair il ne peut pas le faire en montant
-     vers le blanc, il lui faut son propre cran sous le survol. */
+  /* A pressed button sinks: in light it cannot do so by climbing towards
+     white, it needs its own notch below hover. */
   --surface-sunken: light-dark(#ded9d1, #141824);
 
-  /* Deux niveaux de filet : le trait de séparation et la couture structurelle. */
+  /* Two levels of hairline: the separating stroke and the structural seam. */
   --rule: light-dark(#ddd8d0, #262c3d);
   --rule-strong: light-dark(#b6ada0, #39415c);
 
   --text: light-dark(#1b1d24, #e7e9f1);
   --text-dim: light-dark(#5b6070, #a2a9bd);
-  /* Le tiers le plus éteint doit encore tenir 4.5:1 sur la ligne survolée,
-     pas seulement sur le fond de repos : c'est là qu'on lit une date.
-     C'est cette contrainte-là qui fixe la valeur claire, pas l'inverse. */
+  /* The dimmest of the three must still hold 4.5:1 on the hovered row, not
+     only on the resting background: that is where a date gets read.
+     It is that constraint which fixes the light value, not the reverse. */
   --text-faint: light-dark(#62677a, #8d97b0);
 
-  /* Trois encres, trois sens. Rien d'autre ne prend de couleur.
-     violet = la trace normale · ambre = recoupée · rouge = perdue
+  /* Three inks, three meanings. Nothing else takes colour.
+     violet = the normal trace · amber = split · red = lost
 
-     Les valeurs sombres n'ont pas d'équivalent clair par simple inversion :
-     aucune des trois ne tient 4.5:1 sur du papier (violet 2.9:1, ambre 2.1:1,
-     rouge 3.0:1). Le monde clair a donc ses propres encres, choisies pour tenir
-     ce seuil sur la ligne survolée — pas pour ressembler aux autres. */
+     The dark values have no light equivalent by simple inversion: none of the
+     three holds 4.5:1 on paper (violet 2.9:1, amber 2.1:1, red 3.0:1). The
+     light world therefore has its own inks, chosen to hold that threshold on
+     the hovered row — not to resemble the others. */
   --violet: light-dark(#6b3fd4, #a481ff);
   --violet-strong: light-dark(#4e2ba0, #c3aaff);
   --violet-press: light-dark(#3d2080, #6a45c8);
   --violet-fill: light-dark(#ded0fa, #6a45c8);
-  /* La trace à demi faite, dans `<Mark />` : le cran entre le filet neutre et
-     l'encre pleine. L'aplat de dalle ne peut pas le tenir — pâle sur papier, il
-     s'effacerait de la plaque. */
+  /* The half-drawn trace, in `<Mark />`: the notch between the neutral hairline
+     and the full ink. The slab flat cannot hold it — pale on paper, it would
+     fade off the plate. */
   --violet-half: light-dark(#8f6ae8, #6a45c8);
   --violet-wash: light-dark(rgb(107 63 212 / 10%), rgb(164 129 255 / 14%));
   --amber: light-dark(#925506, #f0a63c);
@@ -65,21 +65,21 @@
   --red-fill: light-dark(#e0a0a0, #6d1f28);
   --red-wash: light-dark(rgb(207 43 43 / 6%), rgb(255 93 93 / 7%));
 
-  /* Le seul texte qui ne soit pas une nuance de `--text` : le libellé posé sur
-     l'aplat violet plein, qui doit s'y détacher. */
+  /* The only text that is not a shade of `--text`: the label set on the full
+     violet flat, which has to stand out against it. */
   --on-violet: light-dark(#f7f4ff, #17102c);
-  /* Pas de `light-dark()`, et c'est le propos : l'aplat enfoncé est sombre dans
-     les deux mondes, donc son libellé est clair dans les deux. */
+  /* No `light-dark()`, and that is the point: the pressed flat is dark in both
+     worlds, so its label is light in both. */
   --on-violet-press: #e7e9f1;
 
-  /* Ce qui n'est ni aplat ni filet : halos de lampe, zébra de la table, ombre
-     du panneau flottant. Chacun tient à un rapport au fond, pas à une teinte —
-     c'est ce qui les rend incapables de traverser un changement de thème sans
-     être nommés.
+  /* What is neither flat nor hairline: lamp glows, the table zebra, the
+     floating panel's shadow. Each of them hangs on a ratio to the background,
+     not on a hue — which is what makes them unable to cross a theme change
+     without being named.
 
-     Le halo garde sa géométrie en clair : une encre saturée qui diffuse dans du
-     papier est de l'encre qui bave, pas une tache. C'est le halo pâle sur fond
-     pâle qui aurait fait de la bouillie. */
+     The glow keeps its geometry in light: a saturated ink diffusing into paper
+     is ink that bleeds, not a blot. It is the pale glow on a pale background
+     that would have turned to mush. */
   --glow-violet: light-dark(rgb(107 63 212 / 45%), rgb(164 129 255 / 55%));
   --glow-red: light-dark(rgb(207 43 43 / 45%), rgb(255 93 93 / 55%));
   --zebra: light-dark(rgb(0 0 0 / 3%), rgb(255 255 255 / 2.2%));
@@ -97,15 +97,15 @@
   --s-6: 32px;
   --s-7: 48px;
 
-  /* Une façade d'instrument n'a pas de coins mous. */
+  /* An instrument facade has no soft corners. */
   --r: 2px;
 
   --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
 }
 
-/* Le choix explicite, posé sur `<html>` par `applyTheme`. Il ne réécrit aucun
-   jeton : il retire l'autre branche de `color-scheme`, et tous les `light-dark()`
-   basculent ensemble. */
+/* The explicit choice, set on `<html>` by `applyTheme`. It rewrites no token:
+   it removes the other branch of `color-scheme`, and every `light-dark()`
+   switches together. */
 :root[data-theme='light'] {
   color-scheme: light;
 }
@@ -146,8 +146,8 @@ a:hover {
   outline-offset: 2px;
 }
 
-/* Un libellé que seuls le clavier et le lecteur d'écran atteignent. Pas
-   `display: none`, qui le retirerait aussi de l'arbre d'accessibilité. */
+/* A label that only the keyboard and the screen reader reach. Not
+   `display: none`, which would also pull it out of the accessibility tree. */
 .visually-hidden {
   position: absolute;
   width: 1px;

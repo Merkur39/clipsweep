@@ -1,11 +1,11 @@
-/* Frieze.tsx — la bande graduée, plus sa légende rendue par SearchProgress.
-   La hauteur d'une dalle est logarithmique : sans décades légendées, deux
-   dalles d'aspect différent peuvent valoir 100 ou 10 000 clips. Le graticule
-   est la moitié de l'information.
+/* Frieze.tsx — the graduated strip, plus its legend rendered by SearchProgress.
+   A slab's height is logarithmic: without labelled decades, two slabs of
+   different aspect can be worth 100 or 10,000 clips. The graticule is half the
+   information.
 
-   Attention : la hauteur du tracé et le pas des décades sont calculés dans
-   `Frieze.tsx` (PLOT_HEIGHT, BASELINE, DECADE). Changer `grid-template-rows`
-   ici sans les suivre là-bas décale les graduations. */
+   Careful: the plot height and the decade step are computed in `Frieze.tsx`
+   (PLOT_HEIGHT, BASELINE, DECADE). Changing `grid-template-rows` here without
+   following them over there shifts the graduations. */
 
 .chart {
   margin: 0;
@@ -84,8 +84,8 @@
   animation: trace 0.28s var(--ease);
 }
 
-/* Chaque état porte une texture en plus de sa teinte : la frise reste lisible
-   en niveaux de gris et en deutéranopie. */
+/* Each state carries a texture on top of its hue: the frieze stays readable in
+   greyscale and in deuteranopia. */
 .slab.done {
   background: var(--violet-fill);
   border-top: 1.5px solid var(--violet);
@@ -97,7 +97,7 @@
   border-top: 1.5px solid var(--amber);
 }
 
-/* La seule vraie lacune : plein rouge, et le tracé s'échappe par le haut. */
+/* The only real gap: full red, and the trace escapes off the top. */
 .slab.lost {
   background: var(--red-fill);
   border-top: 2px solid var(--red);
@@ -119,7 +119,7 @@
   z-index: 2;
 }
 
-/* Le stylet : où l'enregistreur écrit en ce moment. */
+/* The stylus: where the recorder is writing right now. */
 .frieze-pen {
   position: absolute;
   top: 0;
@@ -163,7 +163,7 @@
   white-space: nowrap;
 }
 
-/* La lecture chiffrée d'une fenêtre était enfermée dans un attribut `title`. */
+/* The numeric readout of a window used to be shut inside a `title` attribute. */
 .chart-readout {
   display: flex;
   align-items: center;
@@ -180,8 +180,8 @@
   color: var(--text-faint);
 }
 
-/* Les pastilles reprennent exactement les textures des dalles : une légende
-   qui ne montre que la teinte ment sur ce qu'elle légende. */
+/* The swatches take up the textures of the slabs exactly: a legend that shows
+   only the hue lies about what it captions. */
 .legend {
   display: flex;
   gap: var(--s-4);
@@ -220,8 +220,8 @@
 }
 
 @media (max-width: 960px) {
-  /* La hauteur du tracé est calculée en JS et graduée en décades : la réduire
-     ici couperait la décade 1 k. Seule la gouttière des libellés se resserre. */
+  /* The plot height is computed in JS and graduated in decades: reducing it
+     here would cut off the 1 k decade. Only the label gutter tightens. */
   .frieze {
     grid-template-columns: 34px minmax(0, 1fr);
   }

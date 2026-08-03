@@ -1,5 +1,4 @@
-/* La coquille de App.tsx : plaque d'identification, colonnes du châssis,
-   étiquettes de façade. */
+/* The shell of App.tsx: nameplate, chassis columns, facade labels. */
 
 .page {
   max-width: 1360px;
@@ -7,7 +6,7 @@
   padding: 0 var(--s-5) var(--s-7);
 }
 
-/* ---- plaque d'identification ---- */
+/* ---- nameplate ---- */
 
 .masthead {
   display: flex;
@@ -40,13 +39,13 @@
   color: var(--text-dim);
 }
 
-/* ---- rangées de préférences ----
-   Des préférences d'affichage, pas des actions de la tâche : elles se rangent
-   au bout de la plaque et ne pèsent que leurs pastilles. Le châssis aligne sur
-   la ligne de base, ce qui les coucherait de travers.
+/* ---- preference rows ----
+   Display preferences, not actions of the task: they file at the end of the
+   plate and weigh no more than their pills. The chassis aligns on the
+   baseline, which would lay them askew.
 
-   Les deux rangées partagent la même forme parce qu'elles ont le même statut :
-   un état à trois positions dont le courant se lit sans agir. */
+   The two rows share the same shape because they have the same standing: a
+   three-position state whose current one reads without acting. */
 .masthead-prefs {
   display: flex;
   align-self: center;
@@ -54,8 +53,8 @@
   gap: var(--s-3);
 }
 
-/* Pas d'`overflow: hidden` pour couper les coins : ici il rognerait le liseré
-   de focus, comme il l'a déjà fait au bord du rail. */
+/* No `overflow: hidden` to cut the corners: here it would clip the focus ring,
+   as it already did at the edge of the rail. */
 .segmented {
   display: flex;
   border: 1px solid var(--rule);
@@ -69,9 +68,9 @@
   border-right: 1px solid var(--rule);
   border-radius: 0;
   color: var(--text-faint);
-  /* Les codes de langue tiennent lieu de pastille : au chiffre près la même
-     hauteur de boîte que les icônes de la rangée voisine, sans quoi les deux
-     cadres ne s'aligneraient pas. */
+  /* The language codes stand in for a pill: to the pixel the same box height
+     as the icons of the neighbouring row, without which the two frames would
+     not line up. */
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -82,8 +81,8 @@
   border-right: 0;
 }
 
-/* Le bouton nu vire au violet sur son contour ; ici le contour est une couture
-   partagée entre trois pastilles, il ne suit pas le survol de l'une d'elles. */
+/* The bare button turns violet on its border; here the border is a seam shared
+   between three pills, it does not follow the hover of any one of them. */
 .segmented button:hover:not(:disabled) {
   background: var(--surface-hover);
   border-color: var(--rule);
@@ -95,7 +94,7 @@
   color: var(--violet);
 }
 
-/* ---- châssis ---- */
+/* ---- chassis ---- */
 
 .layout {
   display: grid;
@@ -103,22 +102,22 @@
   align-items: stretch;
 }
 
-/* La couture court sur toute la hauteur : un châssis n'est pas amputé à
-   l'endroit où son panneau gauche cesse d'avoir du contenu. */
+/* The seam runs the full height: a chassis is not cut short at the point where
+   its left panel stops having content. */
 .rail {
   border-right: 1px solid var(--rule-strong);
   padding: var(--s-5) 0 var(--s-6);
 }
 
-/* `overflow-y: auto` fait passer `overflow-x` de `visible` à `auto` : le
-   moindre débordement horizontal — un liseré de focus, la largeur intrinsèque
-   d'un champ date — sort une barre de défilement. Les gouttières sont donc à
-   l'intérieur du conteneur qui défile, pas sur le panneau.
+/* `overflow-y: auto` moves `overflow-x` from `visible` to `auto`: the slightest
+   horizontal overflow — a focus ring, the intrinsic width of a date field —
+   brings out a scrollbar. The gutters are therefore inside the container that
+   scrolls, not on the panel.
 
-   Celle de gauche vaut la portée exacte du liseré de focus, `outline-width`
-   plus `outline-offset` : ce qui dépasse à gauche d'un conteneur défilant est
-   rogné, et non rattrapable au défilement. La marge négative annule le décalage
-   que cette gouttière imposerait au contenu. */
+   The left one is worth the exact reach of the focus ring, `outline-width` plus
+   `outline-offset`: what overflows to the left of a scrolling container is
+   clipped, and not recoverable by scrolling. The negative margin cancels the
+   shift this gutter would impose on the content. */
 .rail-inner {
   position: sticky;
   top: 0;
@@ -135,9 +134,9 @@
   min-width: 0;
 }
 
-/* ---- étiquettes de façade ----
-   Sérigraphie : petites capitales tracées, prolongées par un filet qui court
-   jusqu'au bord du panneau. C'est ce qui organise la surface — pas des cartes. */
+/* ---- facade labels ----
+   Silkscreen: small drawn capitals, extended by a hairline that runs to the
+   edge of the panel. That is what organises the surface — not cards. */
 
 .section-label {
   display: flex;
@@ -163,11 +162,11 @@
   margin-top: 0;
 }
 
-/* ---- pied de page ---- */
+/* ---- footer ---- */
 
-/* Le pendant de la plaque : même filet de couture, en haut plutôt qu'en bas.
-   Les deux ferment la page sur la même ligne, l'une annonce, l'autre rend
-   compte. */
+/* The counterpart of the nameplate: the same seam hairline, above rather than
+   below. Both close the page on the same line, one announces, the other
+   accounts. */
 .colophon {
   margin-top: var(--s-6);
   padding: var(--s-4) 0 var(--s-5);
@@ -181,8 +180,8 @@
   margin: 0 0 var(--s-3);
 }
 
-/* Sérigraphiés comme les étiquettes de section : ce sont des repères, pas des
-   invitations. Le soulignement au survol suffit à dire qu'ils sont vivants. */
+/* Silkscreened like the section labels: they are markers, not invitations. The
+   underline on hover is enough to say they are alive. */
 .colophon-links a {
   font-size: 11px;
   font-weight: 650;
@@ -197,8 +196,8 @@
   text-decoration: underline;
 }
 
-/* Mesure bornée : une mention légale se lit d'un trait, pas en balayant 1600px
-   d'une tempe à l'autre. */
+/* Bounded measure: a legal notice reads in one go, not by sweeping 1600px from
+   one temple to the other. */
 .colophon-note {
   max-width: 78ch;
   margin: 0;
