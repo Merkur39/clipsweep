@@ -3,13 +3,13 @@ import type { MessageKey } from '../i18n/messages.fr'
 import type { T } from '../i18n/translate'
 
 /**
- * Une erreur que l'application sait dire, par opposition à celles qu'elle ne
- * fait que rapporter.
+ * An error the application knows how to say, as opposed to the ones it merely
+ * reports.
  *
- * La couche réseau est loin de l'interface et ne connaît pas la langue servie :
- * elle transporte donc une **clé**, et c'est le journal de scan — le seul
- * endroit où ces erreurs se lisent — qui la rend. Le `message` reste la clé,
- * pour qu'une trace de console ne soit pas vide.
+ * The network layer sits far from the interface and does not know which language
+ * is being served: it therefore carries a **key**, and the sweep log — the only
+ * place these errors are read — renders it. The `message` stays the key, so a
+ * console trace is never empty.
  */
 export class TranslatableError extends Error {
   constructor(
@@ -22,12 +22,12 @@ export class TranslatableError extends Error {
 }
 
 /**
- * Ce qu'il y a à lire d'une erreur.
+ * What there is to read in an error.
  *
- * Celles qui viennent d'ailleurs — le `message` que Twitch renvoie dans sa
- * charge utile, une panne réseau formulée par le navigateur — traversent telles
- * quelles : les traduire supposerait de les reconnaître, ce qui n'est pas
- * faisable sur un texte libre.
+ * The ones that come from elsewhere — the `message` Twitch returns in its
+ * payload, a network failure phrased by the browser — pass through as they are:
+ * translating them would require recognizing them, which is not feasible on
+ * free text.
  */
 export function describeError(error: Error, t: T): string {
   return error instanceof TranslatableError ? t(error.key, error.params) : error.message

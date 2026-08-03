@@ -38,8 +38,8 @@ export interface CollectClipsOptions {
   onProgress?: (progress: Progress) => void
   onWindow?: (report: WindowReport) => void
   /**
-   * Les clips connus après chaque période, déjà dédoublonnés — la table les
-   * affiche au fil de l'eau plutôt que de rester vide pendant tout le scan.
+   * The clips known after each period, already deduplicated — the table fills in
+   * as it goes rather than staying empty for the whole sweep.
    */
   onClips?: (clips: Clip[]) => void
   signal?: AbortSignal
@@ -108,8 +108,8 @@ export async function collectClips({
     onWindow?.(report)
 
     windowsDone += 1
-    // Une période, une livraison : la page serait plus fin, mais ferait rendre
-    // la table à chaque requête pour quelques lignes de plus.
+    // One period, one delivery: per-page would be finer grained, but would make
+    // the table render on every request for a handful of extra rows.
     onClips?.([...byId.values()])
     onProgress?.({ windowsDone, windowsTotal, clipsFound: byId.size, requests })
   }

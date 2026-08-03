@@ -7,31 +7,31 @@ import { makeT } from '../i18n/translate'
 const t = makeT('fr')
 
 describe('describeError', () => {
-  it('rend une erreur connue dans la langue servie', () => {
+  it('renders a known error in the language served', () => {
     const error = new TranslatableError('error.channelNotFound', { login: 'zerator' })
 
     expect(describeError(error, t)).toBe('Chaîne « zerator » introuvable.')
     expect(describeError(error, makeT('en'))).toBe('Channel “zerator” not found.')
   })
 
-  it('couvre le rejet du jeton, qui en est un cas', () => {
+  it('covers the token rejection, which is one of them', () => {
     expect(describeError(new TokenRejectedError(), t)).toBe(
       'Jeton refusé par Twitch. Reconnecte-toi.',
     )
   })
 
   /**
-   * Le `message` que Twitch renvoie dans sa charge utile, comme une panne
-   * réseau formulée par le navigateur, est un texte libre : le traduire
-   * supposerait de le reconnaître, ce qui n'est pas faisable.
+   * The `message` Twitch returns in its payload, like a network failure phrased
+   * by the browser, is free text: translating it would require recognizing it,
+   * which is not feasible.
    */
-  it('reprend telle quelle une erreur venue d’ailleurs', () => {
+  it('passes through an error that came from elsewhere', () => {
     expect(describeError(new Error('Malformed query params.'), t)).toBe('Malformed query params.')
   })
 
-  // Une trace de console ne doit pas être vide sous prétexte que le texte vit
-  // ailleurs : la clé y tient lieu de message.
-  it('garde la clé comme message brut', () => {
+  // A console trace must not be empty on the grounds that the text lives
+  // elsewhere: the key stands in for the message there.
+  it('keeps the key as the raw message', () => {
     expect(new TranslatableError('error.tokenInvalid').message).toBe('error.tokenInvalid')
   })
 })

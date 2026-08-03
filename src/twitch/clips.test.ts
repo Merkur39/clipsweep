@@ -28,10 +28,10 @@ const secondHalf: DateWindow = {
 }
 const oneHour: DateWindow = { startedAt: '2024-01-01T00:00:00Z', endedAt: '2024-01-01T01:00:00Z' }
 
-describe('collectClips, diffusion au fil de l’eau', () => {
-  // Un scan dure de quelques secondes à plusieurs minutes : garder les clips
-  // pour la fin laisse la table vide — donc menteuse — pendant tout ce temps.
-  it('livre les clips après chaque période, sans attendre la fin', async () => {
+describe('collectClips, streaming as it goes', () => {
+  // A sweep runs from a few seconds to several minutes: holding the clips back
+  // until the end leaves the table empty — and therefore lying — all that time.
+  it('delivers the clips after each period, without waiting for the end', async () => {
     const pages: Record<string, ClipPage> = {
       [key(firstHalf)]: { clips: [clip('a'), clip('b')], cursor: undefined },
       [key(secondHalf)]: { clips: [clip('c')], cursor: undefined },
@@ -50,9 +50,10 @@ describe('collectClips, diffusion au fil de l’eau', () => {
     ])
   })
 
-  // Le même clip revient d'une moitié à l'autre après un recoupage : le flux
-  // doit sortir dédoublonné, sinon la table double des lignes puis les retire.
-  it('diffuse déjà dédoublonné', async () => {
+  // The same clip comes back from one half to the other after a split: the
+  // stream must come out deduplicated, otherwise the table doubles rows then
+  // removes them.
+  it('streams already deduplicated', async () => {
     const pages: Record<string, ClipPage> = {
       [key(firstHalf)]: { clips: [clip('a')], cursor: undefined },
       [key(secondHalf)]: { clips: [clip('a'), clip('b')], cursor: undefined },
@@ -68,7 +69,7 @@ describe('collectClips, diffusion au fil de l’eau', () => {
     expect(onClips.mock.lastCall?.[0].map((c: Clip) => c.id)).toEqual(['a', 'b'])
   })
 
-  it('livre le même contenu que le résultat final', async () => {
+  it('delivers the same content as the final result', async () => {
     const pages: Record<string, ClipPage> = {
       [key(firstHalf)]: { clips: [clip('a')], cursor: undefined },
       [key(secondHalf)]: { clips: [clip('b')], cursor: undefined },
