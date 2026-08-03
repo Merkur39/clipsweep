@@ -2,10 +2,10 @@ import { useCallback, useRef, useState } from 'react'
 
 import { channelCache } from '../domain/channelCache'
 import { makeLogAppender, type LogEntry, type LogKind } from '../domain/log'
-import { formatCount } from '../domain/numbers'
 import type { T } from '../i18n/translate'
 import { TokenRejectedError, TwitchApi } from '../twitch/api'
 import type { Session } from '../twitch/auth'
+import { describeError } from '../twitch/errors'
 import { collectClips, type WindowReport } from '../twitch/clips'
 import type { Clip, Progress } from '../twitch/types'
 import { splitByYear } from '../twitch/windows'
@@ -66,8 +66,8 @@ export function useClipSearch(
 
   const stop = useCallback(() => {
     abortRef.current?.abort()
-    log('Arrêt demandé.', 'warn')
-  }, [log])
+    log(t('log.stopRequested'), 'warn')
+  }, [log, t])
 
   const start = useCallback(
     async ({ channel, since, until }: SearchRequest) => {
@@ -96,56 +96,55 @@ export function useClipSearch(
       try {
         const api = new TwitchApi(session, controller.signal)
         const user = await api.fetchUser(channel)
-        // Retenue seulement ici : une chaîne réellement fouillée mérite sa place
+        // Retenue seulement ici : une chaîne réellement scannée mérite sa place
         // en cache, un préfixe croisé au fil de la frappe non.
         channelCache.remember(user.login, user.created_at.slice(0, 10))
         log(
-          `Chaîne : ${user.display_name} (id ${user.id}), créée le ${user.created_at.slice(0, 10)}.`,
+          t('log.channel', {
+            name: user.display_name,
+            id: user.id,
+            date: { day: user.created_at },
+          }),
           'good',
         )
         if (Date.parse(user.created_at) < from.getTime()) {
-          log(
-            `La chaîne est antérieure au ${since} : les clips plus anciens sont hors périmètre.`,
-            'warn',
-          )
+          log(t('log.beforeCreation', { date: { day: since } }), 'warn')
         }
 
         // Yearly seeding; the bisection tightens where clips are dense.
         const windows = splitByYear(from, to)
-        log(`${windows.length} fenêtre(s) annuelle(s) à explorer, resserrées si besoin.`)
+        log(t('log.windows', { n: windows.length }))
 
         const result = await collectClips({
           windows,
           fetchPage: api.clipPageFetcher(user.id),
           signal: controller.signal,
           onProgress: setProgress,
-          // La table se remplit pendant la fouille au lieu d'attendre la fin.
+          // La table se remplit pendant le scan au lieu d'attendre la fin.
           onClips: setClips,
           onWindow: (report) => {
             setReports((previous) => [...previous, report])
-            const label = `${report.window.startedAt.slice(0, 10)} → ${report.window.endedAt.slice(0, 10)}`
-            const pad = '  '.repeat(report.depth)
+            const window = {
+              indent: '  '.repeat(report.depth),
+              from: { day: report.window.startedAt },
+              to: { day: report.window.endedAt },
+              n: report.clipCount,
+            }
             if (report.split) {
-              log(`${pad}${label} saturée (${report.clipCount}), recoupée en deux`, 'warn')
+              log(t('log.windowSplit', window), 'warn')
             } else if (report.saturated) {
-              log(
-                `${pad}${label} : ${report.clipCount} clips — encore saturée au plancher, des clips manquent`,
-                'err',
-              )
+              log(t('log.windowLost', window), 'err')
             } else if (report.clipCount) {
-              log(`${pad}${label} : ${report.clipCount} clips`)
+              log(t('log.window', window))
             }
           },
         })
 
         setClips(result.clips)
         setIncomplete(result.incomplete)
-        log(
-          `${formatCount(result.clips.length)} clips uniques en ${formatCount(result.requests)} requêtes.`,
-          'good',
-        )
+        log(t('log.summary', { clips: result.clips.length, requests: result.requests }), 'good')
         if (controller.signal.aborted) {
-          log('Fouille interrompue : le résultat est partiel.', 'warn')
+          log(t('log.interrupted'), 'warn')
         }
 
         // Helix only returns a game id. Labelling a filter is worth one request,
@@ -153,12 +152,12 @@ export function useClipSearch(
         try {
           setGameNames(await api.fetchGameNames(result.clips.map((clip) => clip.game_id)))
         } catch {
-          log('Noms des jeux indisponibles : le filtre listera les identifiants.', 'warn')
+          log(t('log.gameNames'), 'warn')
         }
       } catch (cause) {
         const error = cause as Error
         if (error.name === 'AbortError') return
-        log(`Échec : ${error.message}`, 'err')
+        log(t('log.failed', { reason: describeError(error, t) }), 'err')
         if (error instanceof TokenRejectedError) onTokenRejected()
       } finally {
         setRunning(false)

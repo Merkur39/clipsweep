@@ -39,7 +39,7 @@ export interface CollectClipsOptions {
   onWindow?: (report: WindowReport) => void
   /**
    * Les clips connus après chaque période, déjà dédoublonnés — la table les
-   * affiche au fil de l'eau plutôt que de rester vide pendant toute la fouille.
+   * affiche au fil de l'eau plutôt que de rester vide pendant tout le scan.
    */
   onClips?: (clips: Clip[]) => void
   signal?: AbortSignal

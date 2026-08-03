@@ -145,7 +145,7 @@ la place des cartes.
 - `--r: 2px`, partout. Une façade d'instrument n'a pas de coins mous.
 - Un seul assouplissement : `--ease: cubic-bezier(0.2, 0.8, 0.3, 1)`, transitions à 120–160 ms.
 - **Un seul moment animé** : la frise qui se trace (`@keyframes trace`, 280 ms) et le stylet
-  (`.frieze-pen`) qui marque où l'enregistreur écrit pendant la fouille. Tout le reste est du
+  (`.frieze-pen`) qui marque où l'enregistreur écrit pendant le scan. Tout le reste est du
   retour d'état immédiat.
 - `prefers-reduced-motion: reduce` coupe animations et transitions.
 
@@ -222,28 +222,28 @@ Soudée au haut de la table (bord bas retiré, rayon coupé) : les deux forment 
   refuse. Un « vérification en cours » de 200 ms ne se lit pas, il ne fait que clignoter — et
   annoncer « aucun jeton » alors qu'on en tient un est simplement faux.
 - **L'emphase suit ce qu'il reste à faire.** Le bouton primaire est « Se connecter » tant qu'on ne
-  l'est pas, « Lancer la fouille » ensuite, et les exports ne deviennent primaires qu'avec une
+  l'est pas, « Lancer le scan » ensuite, et les exports ne deviennent primaires qu'avec une
   sélection non vide. Un bouton désactivé n'est jamais le plus lourd de la page.
 - **Toute borne posée dans le DOM est adossée à un `clamp`.** `min` et `max` grisent l'impossible
   dans le sélecteur de date, mais n'empêchent pas une saisie au clavier : sans validation de
   formulaire, l'attribut seul ne fait que marquer le champ invalide. La valeur affichée et celle
-  envoyée en fouille sont donc la même dérivée bornée (`clampSince`, `clampUntil`), et ne peuvent
+  envoyée au scan sont donc la même dérivée bornée (`clampSince`, `clampUntil`), et ne peuvent
   pas diverger. Une borne sans son `clamp` est un défaut, pas une demi-mesure.
 - **Ces bornes sont dérivées, jamais écrites dans l'état.** La saisie reste intacte en mémoire et
   redevient valable d'elle-même quand elle le peut : une date de début antérieure retrouve son
   sens sur une chaîne plus ancienne, une date de fin trop lointaine le jour venu. Écraser le champ
   ferait perdre une intention encore légitime ailleurs.
 - **Le `clamp` protège d'une dépense, pas d'une saisie.** La règle précédente vaut pour les dates
-  de la fouille, où sortir des bornes coûte des requêtes Helix et des dalles vides. Les dates de
-  la rangée de filtres (« Du » / « Au ») n'ont donc pas de `clamp` : elles ne touchent jamais la
-  fouille, une valeur hors étendue ne dépense rien, et le seul effet — une table vide — est nommé
+  du scan, où sortir des bornes coûte des requêtes Helix et des dalles vides. Les dates de
+  la rangée de filtres (« Du » / « Au ») n'ont donc pas de `clamp` : elles ne touchent jamais le
+  scan, une valeur hors étendue ne dépense rien, et le seul effet — une table vide — est nommé
   par son message, avec l'action qui rouvre la plage. Leurs `min`/`max` viennent des **clips
-  récupérés** (`dateExtent`), pas de la période fouillée : une fouille lancée avant la création de
+  récupérés** (`dateExtent`), pas de la période scannée : un scan lancé avant la création de
   la chaîne offrirait sinon des dates dont aucune ne peut rien rendre, ce que `facets` évite déjà
   en écartant les valeurs vides.
 - **Ce qu'aucune borne ne couvre s'annonce là où ça se corrige.** Les bornes contraignent chaque
   date séparément, jamais leur ordre : un début postérieur à la fin reste possible. Il s'affiche
-  sous les champs fautifs — pas dans le seul journal, replié par défaut — et désactive la fouille
+  sous les champs fautifs — pas dans le seul journal, replié par défaut — et désactive le scan
   en même temps. Un bouton dont le clic n'a aucun effet visible est ce qui rend une erreur
   introuvable.
 - **Un état déjà énoncé ne reprend pas la forme d'un bouton.** La ligne d'état dit « Connecté — 62
@@ -257,12 +257,18 @@ Soudée au haut de la table (bord bas retiré, rayon coupé) : les deux forment 
   (`::before`) avec un halo : éteinte au repos, violette une fois connecté, rouge en défaut. Le
   liseré coloré collé sur la tranche d'un encadré est le tell générique que ce monde refuse ;
   les seuls `border-left`/`border-right` restants sont des filets structurels de 1px.
-- **Un choix à trois états ne se met pas dans un interrupteur qui tourne.** La rangée des thèmes
-  aligne trois boutons : un cycle obligerait à cliquer pour découvrir ce qu'il fera, et ne dirait
-  jamais lequel des trois est le courant. L'état est porté par `aria-pressed`, pas par la seule
-  teinte du bouton — comme la lampe, il doit s'entendre autant qu'il se voit. Les libellés sont
-  masqués visuellement (`.visually-hidden`), pas retirés : une préférence d'affichage ne pèse pas
-  autant que la tâche, mais elle reste nommée pour qui ne voit pas l'icône.
+- **Un choix à trois états ne se met pas dans un interrupteur qui tourne.** Les rangées de thème et
+  de langue alignent chacune trois boutons (`.segmented`) : un cycle obligerait à cliquer pour
+  découvrir ce qu'il fera, et ne dirait jamais lequel des trois est le courant. L'état est porté par
+  `aria-pressed`, pas par la seule teinte du bouton — comme la lampe, il doit s'entendre autant
+  qu'il se voit. Les libellés sont masqués visuellement (`.visually-hidden`), pas retirés : une
+  préférence d'affichage ne pèse pas autant que la tâche, mais elle reste nommée pour qui ne voit
+  pas l'icône. Les deux rangées partagent la même forme parce qu'elles ont le même statut, et se
+  rangent ensemble au bout de la plaque (`.masthead-prefs`).
+- **Une langue se nomme dans sa propre langue.** « Français » et « English » ne sont pas dans le
+  catalogue : celui qui tombe sur une interface qu'il ne lit pas doit pouvoir y reconnaître la
+  sienne, ce que « Anglais » ne dit à aucun anglophone. Seul « Automatique » se traduit — ce n'est
+  pas une langue mais l'absence de choix.
 - **Pas d'opacité pour désactiver** : elle fait passer le libellé sous le seuil de contraste. On
   éteint explicitement (`--text-faint` sur fond transparent, filet `--rule`).
 - **Aucun glyphe Unicode en guise d'icône.** Tout le vocabulaire est dessiné dans

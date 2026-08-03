@@ -11,7 +11,7 @@ const MAX_TICKS = 12
  *
  * L'éclaircissement ne s'applique qu'au-delà de ce que la largeur peut porter.
  * Le pas précédent plafonnait à huit repères et sautait donc une année sur deux
- * dès neuf ans de fouille : les colonnes de bord — souvent des années
+ * dès neuf ans de scan : les colonnes de bord — souvent des années
  * partielles, donc plus étroites que leurs voisines — se retrouvaient sans
  * aucune date en dessous, ce qui les faisait passer pour tronquées alors
  * qu'elles sont exactes.

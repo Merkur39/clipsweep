@@ -79,7 +79,7 @@ fonctionne aussi bien à la racine d'un domaine que sous un sous-chemin.
 
 La mesure d'audience Vercel (`@vercel/analytics`) est montée dans [main.tsx](src/main.tsx). Elle charge
 son script depuis `/_vercel/insights/`, chemin que seul un déploiement Vercel sert — ailleurs la requête
-échoue sans conséquence. Elle ne rapporte que la page vue : ni la chaîne fouillée, ni les clips, ni le
+échoue sans conséquence. Elle ne rapporte que la page vue : ni la chaîne scannée, ni les clips, ni le
 jeton n'y passent.
 
 ## Télécharger les vidéos
@@ -116,24 +116,53 @@ Twitch est écarté plutôt qu'échappé.
 
 ## Architecture
 
-| Fichier                        | Rôle                                                        |
-| ------------------------------ | ----------------------------------------------------------- |
-| `src/twitch/windows.ts`        | découpage et bissection des fenêtres temporelles            |
-| `src/twitch/clips.ts`          | parcours, pagination, dédoublonnage, rapport d'exhaustivité |
-| `src/twitch/auth.ts`           | flux implicite, validation du jeton                         |
-| `src/twitch/api.ts`            | client Helix : throttle, retry 429/5xx                      |
-| `src/hooks/useClipSearch.ts`   | orchestration de la fouille, progression, journal           |
-| `src/domain/filters.ts`        | filtres d'affichage et facettes                             |
-| `src/components/Frieze.tsx`    | frise du découpage temporel                                 |
-| `src/components/ClipTable.tsx` | table virtualisée — affiche tout, sans plafond DOM          |
-| `src/domain/scripts.ts`        | génération des scripts yt-dlp `.bat` / `.sh`                |
+| Fichier                        | Rôle                                                         |
+| ------------------------------ | ------------------------------------------------------------ |
+| `src/twitch/windows.ts`        | découpage et bissection des fenêtres temporelles             |
+| `src/twitch/clips.ts`          | parcours, pagination, dédoublonnage, rapport d'exhaustivité  |
+| `src/twitch/auth.ts`           | flux implicite, validation du jeton                          |
+| `src/twitch/api.ts`            | client Helix : throttle, retry 429/5xx                       |
+| `src/hooks/useClipSearch.ts`   | orchestration du scan, progression, journal                  |
+| `src/domain/filters.ts`        | filtres d'affichage et facettes                              |
+| `src/components/Frieze.tsx`    | frise du découpage temporel                                  |
+| `src/components/ClipTable.tsx` | table virtualisée — affiche tout, sans plafond DOM           |
+| `src/domain/scripts.ts`        | génération des scripts yt-dlp `.bat` / `.sh`                 |
+| `src/i18n/`                    | catalogues français et anglais, détection et choix de langue |
 
 La logique de collecte, le domaine et les composants sont couverts par des tests — Vitest pour la
 logique, Testing Library pour le rendu.
 
+## Langues
+
+L'interface existe en **français** et en **anglais**. Au premier passage la langue suit
+`navigator.languages`, en repli sur l'anglais faute de correspondance ; le choix explicite se fait dans
+la plaque d'identification et vit en `localStorage`, comme le thème. « Automatique » n'est pas une
+troisième langue mais l'absence de choix : elle continue de suivre le navigateur.
+
+Pas de librairie — deux langues, une centaine de clés, aucun chargement différé à organiser. Le moteur
+tient en un module ([translate.ts](src/i18n/translate.ts)) : substitution de `{marqueurs}` et pluriel
+délégué à `Intl.PluralRules`, le français accordant « 0 clip » au singulier là où l'anglais dit
+« 0 clips ». Les nombres et les dates se formatent par convention de type — un nombre est groupé par
+milliers, un `{ day }` est rendu dans l'ordre de la langue — ce qui dispense la couche domaine de
+connaître la langue servie.
+
+`messages.fr.ts` est le catalogue de référence : il définit les clés et leur forme, et `messages.en.ts`
+s'y conforme par le typage, une clé manquante échouant au `typecheck` plutôt qu'à l'exécution. Les
+fonctions de domaine reçoivent `t` en argument, jamais par contexte : elles restent pures et testables
+hors de React.
+
+Les messages des scripts générés suivent eux aussi la langue, mais restent en **ASCII** — la page de
+code de la console n'est pas garantie et un accent y sortirait en charabia. Une confirmation « O » ou
+« Y » est acceptée dans les deux cas.
+
+Deux choses restent délibérément en `yyyy-mm-dd` : la valeur des champs et le contenu des exports. La
+première est le format pivot des `<input type="date">`, la seconde est relue par des machines. Le
+sélecteur natif, lui, suit la langue du **navigateur** et non celle de la page : un Chrome en français
+affichera `jj/mm/aaaa` dans une interface anglaise, ce qu'aucun attribut HTML ne corrige.
+
 ## Réglages
 
-La fouille ne demande que la chaîne et l'intervalle de dates. Le découpage n'est plus un réglage :
+Le scan ne demande que la chaîne et l'intervalle de dates. Le découpage n'est plus un réglage :
 `splitByYear` amorce sur une fenêtre par année civile, et la bissection resserre là où les clips sont
 denses.
 
@@ -149,13 +178,13 @@ ait été choisie. La borne basse est bridée par la date de création de la cha
 gardée dans un cache local ([channelCache.ts](src/domain/channelCache.ts)) plafonné à 50 entrées.
 
 Chaîne et période vivent en `sessionStorage` : elles survivent à un rechargement d'onglet, pas à sa
-fermeture. Ce sont les paramètres d'une fouille, pas des préférences — les retrouver d'une session à
-l'autre ferait repartir, au premier clic, une recherche que personne n'a demandée. Seul le thème est
-durable. Les clips, eux, ne vivent qu'en mémoire : tant qu'une fouille tourne ou que ses résultats sont
+fermeture. Ce sont les paramètres d'un scan, pas des préférences — les retrouver d'une session à
+l'autre ferait repartir, au premier clic, une recherche que personne n'a demandée. Seuls le thème et la
+langue sont durables. Les clips, eux, ne vivent qu'en mémoire : tant qu'un scan tourne ou que ses résultats sont
 à l'écran, quitter la page demande confirmation ([useUnloadGuard.ts](src/hooks/useUnloadGuard.ts)).
 
 Les filtres au-dessus de la table — vues min et max, plage de dates, créateur, jeu — ne portent que sur
-l'affichage et la sélection, jamais sur la fouille : resserrer la plage affichée ne relance rien, c'est
+l'affichage et la sélection, jamais sur le scan : resserrer la plage affichée ne relance rien, c'est
 tout son intérêt. Ils ne sont pas persistés, pas même le temps de l'onglet : un seuil oublié d'un écran
 à l'autre donnerait une table vide sans raison apparente.
 

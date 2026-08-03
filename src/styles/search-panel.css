@@ -47,7 +47,7 @@
 
    La place est réservée en permanence — `min-height` d'une ligne, reprise de
    `line-height` — pour que le message apparaisse sans pousser le bouton de
-   fouille vers le bas. Le paragraphe est toujours rendu, vide le reste du
+   scan vers le bas. Le paragraphe est toujours rendu, vide le reste du
    temps. */
 .field-error {
   display: flex;
@@ -67,7 +67,7 @@
 
 /* Même réservation que `.field-error`, pour la même raison : le lien apparaît
    au gré de la chaîne saisie et de la période, il ne doit pousser ni le bouton
-   de fouille ni la suite du panneau. Une ligne plus le retrait que le lien
+   de scan ni la suite du panneau. Une ligne plus le retrait que le lien
    porte lui-même. */
 .channel-hint {
   display: flex;

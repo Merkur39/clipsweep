@@ -122,7 +122,7 @@ describe('useChannelLookup', () => {
     expect(result.current).toBeNull()
   })
 
-  // Une chaîne déjà fouillée a sa date en cache : la redemander à Helix à
+  // Une chaîne déjà scannée a sa date en cache : la redemander à Helix à
   // chaque rechargement serait une requête pour rien.
   it('rend une date connue sans interroger l’API', async () => {
     cacheRead.mockReturnValue('2017-07-10')

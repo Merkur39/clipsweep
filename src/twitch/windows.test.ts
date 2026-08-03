@@ -5,7 +5,7 @@ import { bisect, splitByYear, windowDurationMs } from './windows'
 const iso = (s: string) => new Date(s)
 
 describe('splitByYear', () => {
-  // Amorçage de la fouille : les frontières d'année coupent les niveaux hauts
+  // Amorçage du scan : les frontières d'année coupent les niveaux hauts
   // de l'arbre de bissection, les plus coûteux, sans rien demander à personne.
   it('coupe sur les frontières d’année civile', () => {
     const windows = splitByYear(iso('2019-06-15T00:00:00Z'), iso('2021-03-10T00:00:00Z'))

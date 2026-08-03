@@ -101,7 +101,7 @@ describe('channelCache', () => {
     expect(channelCache.read('testchannel')).toBeNull()
   })
 
-  // Le cache accompagne les champs de fouille, qui vivent le temps de l'onglet :
+  // Le cache accompagne les champs de scan, qui vivent le temps de l'onglet :
   // le laisser en localStorage y laisserait la trace des chaînes visitées bien
   // après que la session qui les a cherchées se soit terminée.
   it('vit en sessionStorage, sans rien laisser en localStorage', () => {

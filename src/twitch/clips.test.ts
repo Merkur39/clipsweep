@@ -29,7 +29,7 @@ const secondHalf: DateWindow = {
 const oneHour: DateWindow = { startedAt: '2024-01-01T00:00:00Z', endedAt: '2024-01-01T01:00:00Z' }
 
 describe('collectClips, diffusion au fil de l’eau', () => {
-  // Une fouille dure de quelques secondes à plusieurs minutes : garder les clips
+  // Un scan dure de quelques secondes à plusieurs minutes : garder les clips
   // pour la fin laisse la table vide — donc menteuse — pendant tout ce temps.
   it('livre les clips après chaque période, sans attendre la fin', async () => {
     const pages: Record<string, ClipPage> = {

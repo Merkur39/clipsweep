@@ -54,7 +54,7 @@ export interface DateExtent {
 /**
  * L'étendue réelle des clips récupérés, pour borner les champs de plage.
  *
- * Elle vient des clips, pas de la période fouillée : une fouille lancée en 2019
+ * Elle vient des clips, pas de la période scannée : un scan lancé en 2019
  * sur une chaîne créée en 2021 offrirait sinon deux années de dates dont aucune
  * ne peut rien rendre. Même parti que [facets], qui écarte les valeurs vides.
  */

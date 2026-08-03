@@ -42,8 +42,8 @@ describe('usePersistedState', () => {
     expect(sessionStorage.getItem('getclip.theme')).toBeNull()
   })
 
-  // Ce qui vise une fouille — chaîne et période — n'a pas à survivre à l'onglet :
-  // retrouver la cible d'hier ferait repartir une fouille qu'on n'a pas choisie.
+  // Ce qui vise un scan — chaîne et période — n'a pas à survivre à l'onglet :
+  // retrouver la cible d'hier ferait repartir un scan qu'on n'a pas choisi.
   it('écrit dans le stockage qu’on lui donne, sans toucher à l’autre', () => {
     renderHook(() => usePersistedState('channel', 'saisie', sessionStorage))
 

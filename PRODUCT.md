@@ -41,8 +41,8 @@ tue. L'outil ne prétend jamais à l'exhaustivité sans l'avoir vérifiée.
 ## Operating Context
 
 Le visiteur arrive avec un nom de chaîne et une intuition — « il y avait ce clip, je ne le retrouve
-plus » — ou avec un besoin d'inventaire. Il se connecte avec son propre compte Twitch, lance une
-fouille qui dure de quelques secondes à plusieurs minutes selon la taille du catalogue, puis explore
+plus » — ou avec un besoin d'inventaire. Il se connecte avec son propre compte Twitch, lance un
+scan qui dure de quelques secondes à plusieurs minutes selon la taille du catalogue, puis explore
 ou exporte.
 
 Le téléchargement des vidéos, lui, se termine **hors de l'application**, sur la machine de
@@ -50,7 +50,7 @@ l'utilisateur, via yt-dlp lancé par un script que l'outil génère.
 
 ## Capabilities and Constraints
 
-**Fonctionnalités confirmées :** fouille exhaustive sur intervalle de dates ; filtres d'affichage
+**Fonctionnalités confirmées :** scan exhaustif sur intervalle de dates ; filtres d'affichage
 (vues min/max, plage de dates, créateurs, jeux, en sélection multiple) ; tri par colonne ; sélection par clip ;
 exports CSV, JSON et liste d'URLs ; génération de scripts de téléchargement `.bat` et `.sh` pilotant
 yt-dlp.
@@ -92,7 +92,7 @@ risque est connu et accepté faute d'arbitrage contraire.
 Nom : **ClipSweep**. Accroche actuelle : « Tous les clips d'une chaîne. Oui, même celui-là. »
 
 Voix : française, directe, sans jargon dans l'interface — le vocabulaire technique reste dans le
-code, le README et le repli « Détail de la fouille ». Le code, les symboles et les commentaires sont
+code, le README et le repli « Détail du scan ». Le code, les symboles et les commentaires sont
 en anglais.
 
 Licence GPL-3.0.

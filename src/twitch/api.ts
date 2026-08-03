@@ -1,5 +1,6 @@
 import type { Session } from './auth'
 import type { ClipPageFetcher } from './clips'
+import { TranslatableError } from './errors'
 import type { Clip, Game, TwitchUser } from './types'
 
 const HELIX = 'https://api.twitch.tv/helix'
@@ -11,9 +12,9 @@ const MAX_ATTEMPTS = 6
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 /** Raised on 401 so the UI can drop the session and offer to reconnect. */
-export class TokenRejectedError extends Error {
+export class TokenRejectedError extends TranslatableError {
   constructor() {
-    super('Jeton refusé par Twitch. Reconnecte-toi.')
+    super('error.tokenRejected')
     this.name = 'TokenRejectedError'
   }
 }
@@ -61,19 +62,25 @@ export class TwitchApi {
       }
 
       const payload = (await response.json()) as HelixResponse<T>
-      if (!response.ok) throw new Error(payload.message ?? `Twitch répond ${response.status}`)
+      // Le `message` de Twitch est un texte libre, en anglais : on le reprend
+      // tel quel plutôt que de tenter de le reconnaître.
+      if (!response.ok) {
+        throw payload.message
+          ? new Error(payload.message)
+          : new TranslatableError('error.helixStatus', { status: String(response.status) })
+      }
 
       await sleep(THROTTLE_MS)
       return payload
     }
 
-    throw new Error(`${MAX_ATTEMPTS} tentatives infructueuses sur /${path}.`)
+    throw new TranslatableError('error.attemptsExhausted', { n: MAX_ATTEMPTS, path })
   }
 
   async fetchUser(login: string): Promise<TwitchUser> {
     const { data } = await this.get<TwitchUser>('users', { login: login.trim().toLowerCase() })
     const user = data[0]
-    if (!user) throw new Error(`Chaîne « ${login} » introuvable.`)
+    if (!user) throw new TranslatableError('error.channelNotFound', { login })
     return user
   }
 
