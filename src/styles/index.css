@@ -4,7 +4,8 @@
    filets, façade sérigraphiée, et une bande de papier graduée pour trace.
    Aucun rayon mou, aucune carte flottante, aucun gris de Twitch.
 
-   Voir DESIGN.md pour les décisions durables.
+   Les décisions durables sont tenues dans des notes de design gardées hors du
+   dépôt ; ce qui doit se transmettre avec le code vit dans ces commentaires.
 
    ---- Où écrire une règle ----
    Une classe vit dans le fichier du composant qui la possède. Le vocabulaire

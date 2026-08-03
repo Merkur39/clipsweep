@@ -5,6 +5,12 @@ dist
 *.local
 .DS_Store
 
+# Notes de travail, gardées en local : elles décrivent des intentions et des
+# arbitrages, pas ce que le dépôt livre. Le README reste la documentation
+# publique.
+DESIGN.md
+PRODUCT.md
+
 # Outillage local, réinstallable, sans rapport avec le produit.
 # La skill Impeccable s'installe en double, une fois par convention d'agent ;
 # `.impeccable/` est son état local — cache du hook et configuration de poste.
