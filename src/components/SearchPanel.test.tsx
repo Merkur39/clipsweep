@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, screen } from '@testing-library/react'
+import { render } from '../test-render'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { SearchPanel, type SearchPanelProps } from './SearchPanel'
@@ -80,25 +81,25 @@ describe('SearchPanel, accès', () => {
     )
   })
 
-  it('interdit la fouille tant que la période est incohérente', () => {
+  it('interdit le scan tant que la période est incohérente', () => {
     setup({ connected: true, periodError: 'peu importe' })
 
-    expect(screen.getByRole('button', { name: 'Lancer la fouille' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Lancer le scan' })).toBeDisabled()
   })
 
   // La région reste dans le document, vide : sa place est réservée pour que le
   // message n'écarte rien en apparaissant, et un lecteur d'écran annonce plus
   // fiablement un contenu injecté dans une région vive déjà là.
-  it('laisse fouiller quand la période est cohérente, la région restant vide', () => {
+  it('laisse lancer le scan quand la période est cohérente, la région restant vide', () => {
     setup({ connected: true })
 
-    expect(screen.getByRole('button', { name: 'Lancer la fouille' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Lancer le scan' })).toBeEnabled()
     expect(screen.getByRole('alert')).toBeEmptyDOMElement()
   })
 
-  it('lance la fouille, puis propose de l’arrêter', () => {
+  it('lance le scan, puis propose de l’arrêter', () => {
     setup({ connected: true, running: true })
 
-    expect(screen.getByRole('button', { name: 'Arrêter la fouille' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Arrêter le scan' })).toBeInTheDocument()
   })
 })

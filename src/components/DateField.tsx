@@ -1,3 +1,4 @@
+import { useTranslation } from '../i18n/LocaleProvider'
 import { CloseIcon } from './Icon'
 
 export interface DateFieldProps {
@@ -16,11 +17,14 @@ export interface DateFieldProps {
  * sélectionner chaque segment.
  *
  * Les bornes grisent l'impossible dans le sélecteur, rien de plus : elles
- * n'appellent pas de `clamp`, contrairement à celles de la fouille. Une date
+ * n'appellent pas de `clamp`, contrairement à celles du scan. Une date
  * tapée hors étendue ne dépense aucune requête — elle vide la table, cas que le
  * message de table vide nomme.
  */
 export function DateField({ label, value, onChange, min, max }: DateFieldProps) {
+  const { t } = useTranslation()
+  const clear = t('filters.clearField', { label })
+
   return (
     <label className="field date">
       <span className="field-label">{label}</span>
@@ -37,8 +41,8 @@ export function DateField({ label, value, onChange, min, max }: DateFieldProps) 
             type="button"
             className="field-clear"
             onClick={() => onChange('')}
-            aria-label={`Effacer ${label}`}
-            title={`Effacer ${label}`}
+            aria-label={clear}
+            title={clear}
           >
             <CloseIcon />
           </button>

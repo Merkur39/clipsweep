@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
-import { formatCount } from '../domain/numbers'
+import { formatDay } from '../i18n/format'
+import { useTranslation } from '../i18n/LocaleProvider'
+import type { MessageKey } from '../i18n/messages.fr'
 import type { WindowReport } from '../twitch/clips'
 import { axisTicks } from './axis'
 
@@ -43,16 +45,14 @@ const DECADES = [
 
 type Kind = 'done' | 'split' | 'lost'
 
-const KIND_LABEL: Record<Kind, string> = {
-  done: 'complète',
-  split: 'saturée, recoupée',
-  lost: 'saturée au plancher — clips manquants',
+const KIND_LABEL: Record<Kind, MessageKey> = {
+  done: 'frieze.kind.done',
+  split: 'frieze.kind.split',
+  lost: 'frieze.kind.lost',
 }
 
 const kindOf = (report: WindowReport): Kind =>
   report.saturated ? (report.split ? 'split' : 'lost') : 'done'
-
-const day = (iso: string) => iso.slice(0, 10)
 
 export function Frieze({
   reports,
@@ -63,6 +63,7 @@ export function Frieze({
   span: Span | null
   running?: boolean
 }) {
+  const { locale, t } = useTranslation()
   // Presentational only: which slab the pointer is over, so its numbers land in
   // the readout instead of staying locked inside a `title` attribute.
   const [hovered, setHovered] = useState<WindowReport | null>(null)
@@ -71,9 +72,7 @@ export function Frieze({
     return (
       <figure className="chart">
         <div className="frieze">
-          <p className="frieze-empty">
-            Chaque période explorée apparaîtra ici, sa hauteur donnant le nombre de clips.
-          </p>
+          <p className="frieze-empty">{t('frieze.empty')}</p>
         </div>
       </figure>
     )
@@ -104,7 +103,11 @@ export function Frieze({
           className="frieze-plot"
           onPointerLeave={() => setHovered(null)}
           role="img"
-          aria-label={`Découpage du temps : ${reports.length} période(s) explorée(s) entre ${day(new Date(span.from).toISOString())} et ${day(new Date(span.to).toISOString())}.`}
+          aria-label={t('frieze.plot', {
+            n: reports.length,
+            from: { day: new Date(span.from).toISOString() },
+            to: { day: new Date(span.to).toISOString() },
+          })}
         >
           {DECADES.map((decade) => (
             <div
@@ -128,7 +131,7 @@ export function Frieze({
              * Le navigateur résout chaque pourcentage séparément et arrondit au
              * 1/64 de pixel : `left + width` peut retomber un cran avant le
              * `left` du voisin, et ce cheveu d'écart laisse voir le fond entre
-             * deux périodes contiguës. Mesuré sur une fouille de neuf ans :
+             * deux périodes contiguës. Mesuré sur un scan de neuf ans :
              * trois joints sur huit s'ouvraient ainsi. Exprimé par `right`, le
              * bord partagé vient du même pourcentage des deux côtés.
              *
@@ -166,26 +169,26 @@ export function Frieze({
         {hovered ? (
           <>
             <span>
-              {day(hovered.window.startedAt)} → {day(hovered.window.endedAt)}
+              {formatDay(hovered.window.startedAt, locale)} →{' '}
+              {formatDay(hovered.window.endedAt, locale)}
             </span>
             <span className="muted">·</span>
-            <span>{formatCount(hovered.clipCount)} clips</span>
+            <span>{t('frieze.clips', { n: hovered.clipCount })}</span>
             <span className="muted">·</span>
-            <span className="muted">{KIND_LABEL[kindOf(hovered)]}</span>
+            <span className="muted">{t(KIND_LABEL[kindOf(hovered)])}</span>
           </>
         ) : (
           // La période est énoncée ici, et non aux bouts de l'axe où son
           // étiquette chevaucherait le 1er janvier voisin. C'est aussi ce qui
-          // explique les colonnes de bord plus étroites : la fouille commence
+          // explique les colonnes de bord plus étroites : le scan commence
           // et finit rarement un 1er janvier.
           <>
             <span>
-              {day(new Date(span.from).toISOString())} → {day(new Date(span.to).toISOString())}
+              {formatDay(new Date(span.from).toISOString(), locale)} →{' '}
+              {formatDay(new Date(span.to).toISOString(), locale)}
             </span>
             <span className="muted">·</span>
-            <span className="muted">
-              {reports.length} période(s) · survole pour le détail · hauteur logarithmique
-            </span>
+            <span className="muted">{t('frieze.hint', { n: reports.length })}</span>
           </>
         )}
       </figcaption>

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 
-import { formatCount } from '../domain/numbers'
 import { selectionState } from '../domain/selection'
 import type { ClipSort, SortKey } from '../domain/sort'
+import { formatCount, formatDay } from '../i18n/format'
+import { useTranslation } from '../i18n/LocaleProvider'
+import type { MessageKey } from '../i18n/messages.fr'
 import type { Clip } from '../twitch/types'
 import { CaretIcon } from './Icon'
 import { visibleRange } from './virtual'
@@ -10,11 +12,11 @@ import { visibleRange } from './virtual'
 const ROW_HEIGHT = 34
 const OVERSCAN = 8
 
-const COLUMNS: { key: SortKey; label: string; className: string }[] = [
-  { key: 'views', label: 'Vues', className: 'col-views' },
-  { key: 'date', label: 'Date', className: 'col-date' },
-  { key: 'title', label: 'Titre', className: 'col-title' },
-  { key: 'creator', label: 'Créateur', className: 'col-author' },
+const COLUMNS: { key: SortKey; label: MessageKey; className: string }[] = [
+  { key: 'views', label: 'table.views', className: 'col-views' },
+  { key: 'date', label: 'table.date', className: 'col-date' },
+  { key: 'title', label: 'table.title', className: 'col-title' },
+  { key: 'creator', label: 'table.creator', className: 'col-author' },
 ]
 
 /**
@@ -45,6 +47,7 @@ export function ClipTable({
   sort,
   onSortChange,
 }: ClipTableProps) {
+  const { locale, t } = useTranslation()
   const state = selectionState(clips, deselected)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
@@ -119,7 +122,7 @@ export function ClipTable({
             }}
             disabled={clips.length === 0}
             onChange={onToggleAll}
-            aria-label={state === 'all' ? 'Tout décocher' : 'Tout cocher'}
+            aria-label={state === 'all' ? t('table.uncheckAll') : t('table.checkAll')}
           />
         </span>
         {COLUMNS.map((column) => (
@@ -135,7 +138,7 @@ export function ClipTable({
             }
           >
             <button type="button" className="col-sort" onClick={() => onSortChange(column.key)}>
-              {column.label}
+              {t(column.label)}
               <span aria-hidden="true" className="col-sort-arrow">
                 {sort.key === column.key && <CaretIcon turn={sort.direction === 'asc' ? 0 : 180} />}
               </span>
@@ -173,16 +176,16 @@ export function ClipTable({
                     type="checkbox"
                     checked={!deselected.has(clip.id)}
                     onChange={() => onToggle(clip.id)}
-                    aria-label={clip.title || 'Clip sans titre'}
+                    aria-label={clip.title || t('table.untitledClip')}
                   />
                 </span>
                 <span className={clip.view_count === 0 ? 'col-views zero' : 'col-views'}>
-                  {formatCount(clip.view_count)}
+                  {formatCount(clip.view_count, locale)}
                 </span>
-                <span className="col-date">{clip.created_at.slice(0, 10)}</span>
+                <span className="col-date">{formatDay(clip.created_at, locale)}</span>
                 <span className="col-title">
                   <a href={clip.url} target="_blank" rel="noreferrer" title={clip.title}>
-                    {clip.title || '(sans titre)'}
+                    {clip.title || t('table.untitled')}
                   </a>
                 </span>
                 <span className="col-author">{clip.creator_name || '—'}</span>

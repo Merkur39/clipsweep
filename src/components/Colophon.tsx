@@ -1,3 +1,5 @@
+import { useTranslation } from '../i18n/LocaleProvider'
+
 const REPOSITORY = 'https://github.com/Merkur39/clipsweep'
 
 /**
@@ -20,26 +22,28 @@ const REPOSITORY = 'https://github.com/Merkur39/clipsweep'
  * qu'il faut aller chercher est une mention qu'on ne lit pas.
  */
 export function Colophon() {
+  const { t } = useTranslation()
+
   return (
     <footer className="colophon">
       <p className="colophon-links">
-        {/* Nouvel onglet, comme partout ailleurs : quitter la page perdrait la
-          fouille en cours et les clips récupérés, qui ne vivent que dans la
+        {/* Nouvel onglet, comme partout ailleurs : quitter la page perdrait le
+          scan en cours et les clips récupérés, qui ne vivent que dans la
           mémoire de l'application. */}
         <a href={REPOSITORY} target="_blank" rel="noreferrer">
-          Code source — GPL-3.0
+          {t('colophon.source')}
         </a>
         <a href="https://github.com/yt-dlp/yt-dlp#readme" target="_blank" rel="noreferrer">
           yt-dlp
         </a>
         <a href="https://dev.twitch.tv/docs/api/" target="_blank" rel="noreferrer">
-          API Twitch
+          {t('colophon.twitchApi')}
         </a>
       </p>
       <p className="colophon-note">
-        Projet indépendant, sans lien avec Twitch Interactive, Inc. <br />
-        Les clips restent la propriété de leurs auteurs : ce que tu en fais te regarde. <br />
-        Mesure d'audience anonyme, sans cookie.
+        {t('colophon.independent')} <br />
+        {t('colophon.ownership')} <br />
+        {t('colophon.analytics')}
       </p>
     </footer>
   )

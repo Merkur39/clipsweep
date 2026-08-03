@@ -328,14 +328,14 @@ export default function App({ authError }: { authError: string | null }) {
               déjà sa propre remise à zéro. Toujours rendue — son apparition
               décalerait le filet de l'étiquette. */}
           <p className="section-label">
-            Résultats
+            {t('results.label')}
             <button
               type="button"
               className="link filters-reset"
               onClick={resetFilters}
               disabled={!filtersActive}
             >
-              Réinitialiser
+              {t('results.reset')}
             </button>
           </p>
           {clips.length > 0 && (
@@ -386,7 +386,9 @@ export default function App({ authError }: { authError: string | null }) {
               t,
             )}
             emptyAction={
-              reopen ? { label: `Voir les ${clips.length}`, onClick: reopen } : undefined
+              reopen
+                ? { label: t('results.showAll', { n: clips.length }), onClick: reopen }
+                : undefined
             }
             sort={sort}
             onSortChange={(key) => setSort((current) => nextSort(current, key))}
@@ -403,6 +405,7 @@ export default function App({ authError }: { authError: string | null }) {
                   target,
                   channel,
                   selected.map((clip) => clip.url),
+                  t,
                 ),
                 'text/plain',
               )

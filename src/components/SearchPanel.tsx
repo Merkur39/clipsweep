@@ -1,3 +1,5 @@
+import { formatDay } from '../i18n/format'
+import { useTranslation } from '../i18n/LocaleProvider'
 import { AlertIcon, LogoutIcon } from './Icon'
 
 export interface SearchPanelProps {
@@ -46,10 +48,12 @@ export function SearchPanel({
   running,
   onRun,
 }: SearchPanelProps) {
+  const { locale, t } = useTranslation()
+
   return (
     <aside className="rail">
       <div className="rail-inner">
-        <p className="section-label">Accès</p>
+        <p className="section-label">{t('panel.access')}</p>
         <div className={`status ${authKind}`}>{authMessage}</div>
         {/* L'emphase suit ce qu'il reste à faire. Une fois connecté, l'état est
           déjà dit — avec la durée restante — par la ligne au-dessus : garder un
@@ -58,17 +62,17 @@ export function SearchPanel({
         {connected ? (
           <button type="button" className="disconnect wide" onClick={onDisconnect}>
             <LogoutIcon />
-            Se déconnecter
+            {t('panel.disconnect')}
           </button>
         ) : (
           <button type="button" className="primary wide" onClick={onConnect} disabled={!canConnect}>
-            Se connecter à Twitch
+            {t('panel.connect')}
           </button>
         )}
 
-        <p className="section-label">Cible</p>
+        <p className="section-label">{t('panel.target')}</p>
         <label>
-          <span>Chaîne</span>
+          <span>{t('panel.channel')}</span>
           <input
             value={channel}
             onChange={(event) => onChannelChange(event.target.value)}
@@ -77,7 +81,7 @@ export function SearchPanel({
         </label>
         <div className="duo">
           <label>
-            <span>Depuis</span>
+            <span>{t('panel.since')}</span>
             {/* Le sélecteur grise ce qui précède la création de la chaîne ; la
               valeur, elle, est déjà bornée en amont — `min` seul n'empêche pas
               une saisie au clavier. */}
@@ -89,7 +93,7 @@ export function SearchPanel({
             />
           </label>
           <label>
-            <span>Jusqu'au</span>
+            <span>{t('panel.until')}</span>
             {/* Chaque borne posée ici est adossée à un `clamp` côté App : une
               borne seule marque le champ invalide sans rien empêcher. */}
             <input
@@ -102,12 +106,12 @@ export function SearchPanel({
         </div>
 
         {/* Annoncé sous les champs fautifs, et non dans le seul journal — qui
-          est replié par défaut. Le bouton de fouille est désactivé en même
+          est replié par défaut. Le bouton de scan est désactivé en même
           temps : un clic sans effet visible est ce qui rendait l'erreur
           introuvable.
 
           Toujours rendu, sa hauteur réservée en CSS : l'apparition du message
-          ne doit décaler ni le bouton de fouille ni la suite du panneau. La
+          ne doit décaler ni le bouton de scan ni la suite du panneau. La
           région vive persistante est aussi ce qui fait annoncer le message par
           les lecteurs d'écran — un `role="alert"` inséré au moment de l'erreur
           passe souvent inaperçu. */}
@@ -122,7 +126,7 @@ export function SearchPanel({
 
         {/* Proposé seulement s'il élargit vraiment la période demandée. Sa place
           reste tenue le reste du temps : il paraît et disparaît au gré de la
-          chaîne saisie, sans quoi il pousserait le bouton de fouille à chaque
+          chaîne saisie, sans quoi il pousserait le bouton de scan à chaque
           frappe.
 
           « de la chaîne » est sous-entendu par le champ juste au-dessus et par
@@ -132,7 +136,7 @@ export function SearchPanel({
         <p className="channel-hint">
           {channelCreatedAt && channelCreatedAt < since && (
             <button type="button" className="link" onClick={() => onSinceChange(channelCreatedAt)}>
-              Remonter à la création ({channelCreatedAt})
+              {t('panel.backToCreation', { date: formatDay(channelCreatedAt, locale) })}
             </button>
           )}
         </p>
@@ -143,7 +147,7 @@ export function SearchPanel({
           onClick={onRun}
           disabled={periodError !== null}
         >
-          {running ? 'Arrêter la fouille' : 'Lancer la fouille'}
+          {running ? t('panel.stop') : t('panel.run')}
         </button>
       </div>
     </aside>

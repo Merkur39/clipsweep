@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, screen } from '@testing-library/react'
+import { render } from '../test-render'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { Colophon } from './Colophon'
@@ -37,7 +38,7 @@ describe('Colophon', () => {
     expect(screen.getByRole('contentinfo')).toHaveTextContent(/auteurs/i)
   })
 
-  // Un lien qui remplace la page perdrait la fouille en cours et les clips
+  // Un lien qui remplace la page perdrait le scan en cours et les clips
   // récupérés, qui ne vivent que dans la mémoire de l'application.
   it('ouvre chaque lien dans un nouvel onglet', () => {
     render(<Colophon />)

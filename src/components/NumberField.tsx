@@ -1,3 +1,4 @@
+import { useTranslation } from '../i18n/LocaleProvider'
 import { CloseIcon } from './Icon'
 
 export interface NumberFieldProps {
@@ -13,6 +14,9 @@ export interface NumberFieldProps {
  * which is exactly what a conditionally rendered sibling would do.
  */
 export function NumberField({ label, value, onChange, placeholder }: NumberFieldProps) {
+  const { t } = useTranslation()
+  const clear = t('filters.clearField', { label })
+
   return (
     <label className="field">
       <span className="field-label">{label}</span>
@@ -30,8 +34,8 @@ export function NumberField({ label, value, onChange, placeholder }: NumberField
             type="button"
             className="field-clear"
             onClick={() => onChange('')}
-            aria-label={`Effacer ${label}`}
-            title={`Effacer ${label}`}
+            aria-label={clear}
+            title={clear}
           >
             <CloseIcon />
           </button>
