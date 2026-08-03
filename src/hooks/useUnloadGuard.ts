@@ -1,18 +1,17 @@
 import { useEffect } from 'react'
 
 /**
- * Demande confirmation avant de quitter la page tant qu'il y a un scan à
- * perdre.
+ * Asks for confirmation before leaving the page as long as there is a sweep to
+ * lose.
  *
- * Un scan dure de quelques secondes à plusieurs minutes et ne vit que dans
- * la mémoire de l'application : un F5 malencontreux le fait recommencer, quota
- * Helix compris. Retenir les clips d'une session à l'autre demanderait un
- * stockage que `sessionStorage` ne peut pas porter — un scan de 20 000
- * clips pèse près de 11 Mo contre 5 de quota — donc on empêche la perte au lieu
- * de la réparer.
+ * A sweep runs from a few seconds to several minutes and lives in the
+ * application's memory alone: an unlucky F5 makes it start over, Helix quota
+ * included. Holding the clips from one session to the next would require storage
+ * `sessionStorage` cannot carry — a 20,000-clip sweep weighs close to 11 MB
+ * against a 5 MB quota — so we prevent the loss instead of repairing it.
  *
- * Le texte n'est pas personnalisable : tous les navigateurs affichent leur
- * propre message, et n'obéissent que si le visiteur a interagi avec la page.
+ * The text is not customizable: every browser shows its own message, and only
+ * obeys if the visitor has interacted with the page.
  */
 export function useUnloadGuard(active: boolean): void {
   useEffect(() => {
@@ -20,7 +19,7 @@ export function useUnloadGuard(active: boolean): void {
 
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault()
-      // Toujours requis par Chrome et Edge antérieurs à 119.
+      // Still required by Chrome and Edge older than 119.
       event.returnValue = true
     }
 

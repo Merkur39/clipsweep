@@ -11,47 +11,47 @@ afterEach(() => {
 })
 
 describe('usePersistedState', () => {
-  it('part de la valeur initiale faute d’entrée enregistrée', () => {
-    const { result } = renderHook(() => usePersistedState('channel', 'defaut'))
+  it('starts from the initial value with no stored entry', () => {
+    const { result } = renderHook(() => usePersistedState('channel', 'fallback'))
 
-    expect(result.current[0]).toBe('defaut')
+    expect(result.current[0]).toBe('fallback')
   })
 
-  it('reprend la valeur enregistrée sous la clé préfixée', () => {
-    localStorage.setItem('getclip.channel', 'gardee')
+  it('picks up the value stored under the prefixed key', () => {
+    localStorage.setItem('getclip.channel', 'kept')
 
-    const { result } = renderHook(() => usePersistedState('channel', 'defaut'))
+    const { result } = renderHook(() => usePersistedState('channel', 'fallback'))
 
-    expect(result.current[0]).toBe('gardee')
+    expect(result.current[0]).toBe('kept')
   })
 
-  it('enregistre chaque nouvelle valeur', () => {
-    const { result } = renderHook(() => usePersistedState('channel', 'defaut'))
+  it('stores every new value', () => {
+    const { result } = renderHook(() => usePersistedState('channel', 'fallback'))
 
-    act(() => result.current[1]('saisie'))
+    act(() => result.current[1]('typed'))
 
-    expect(localStorage.getItem('getclip.channel')).toBe('saisie')
+    expect(localStorage.getItem('getclip.channel')).toBe('typed')
   })
 
-  // Le thème est une préférence durable : elle doit survivre à la fermeture de
-  // l'onglet, et `main.tsx` la relit sous cette même clé avant le premier rendu.
-  it('écrit en localStorage par défaut', () => {
+  // The theme is a durable preference: it must outlive the tab's closing, and
+  // `main.tsx` reads it back under that same key before the first render.
+  it('writes to localStorage by default', () => {
     renderHook(() => usePersistedState('theme', 'dark'))
 
     expect(localStorage.getItem('getclip.theme')).toBe('dark')
     expect(sessionStorage.getItem('getclip.theme')).toBeNull()
   })
 
-  // Ce qui vise un scan — chaîne et période — n'a pas à survivre à l'onglet :
-  // retrouver la cible d'hier ferait repartir un scan qu'on n'a pas choisi.
-  it('écrit dans le stockage qu’on lui donne, sans toucher à l’autre', () => {
-    renderHook(() => usePersistedState('channel', 'saisie', sessionStorage))
+  // What targets a sweep — channel and period — has no business outliving the
+  // tab: finding yesterday's target again would restart a sweep nobody chose.
+  it('writes to the store it is given, without touching the other', () => {
+    renderHook(() => usePersistedState('channel', 'typed', sessionStorage))
 
-    expect(sessionStorage.getItem('getclip.channel')).toBe('saisie')
+    expect(sessionStorage.getItem('getclip.channel')).toBe('typed')
     expect(localStorage.getItem('getclip.channel')).toBeNull()
   })
 
-  it('relit le stockage qu’on lui donne', () => {
+  it('reads back the store it is given', () => {
     sessionStorage.setItem('getclip.since', '2026-07-02')
 
     const { result } = renderHook(() => usePersistedState('since', '2019-01-01', sessionStorage))
@@ -59,27 +59,27 @@ describe('usePersistedState', () => {
     expect(result.current[0]).toBe('2026-07-02')
   })
 
-  it('préfixe les clés pour ne pas piétiner le reste du domaine', () => {
+  it('prefixes keys so it does not trample the rest of the origin', () => {
     expect(persistedKey('channel')).toBe('getclip.channel')
   })
 })
 
-// Ces clés ont vécu en localStorage jusqu'au 2026-08-02. Les cesser de les lire
-// ne les efface pas : sans cette purge, la chaîne visitée et la période d'alors
-// resteraient sur la machine du visiteur, indéfiniment et sans plus servir à
-// rien — l'inverse de ce que le passage en sessionStorage cherche.
+// These keys lived in localStorage until 2026-08-02. Ceasing to read them does
+// not erase them: without this purge, the channel visited and the period
+// searched back then would stay on the visitor's machine indefinitely, serving
+// nothing — the opposite of what moving to sessionStorage was after.
 describe('forgetSessionScopedKeys', () => {
-  it('efface les clés qui ne relèvent plus du stockage durable', () => {
-    const orphelines = ['getclip.channel', 'getclip.channels', 'getclip.since', 'getclip.until']
-    for (const key of orphelines) localStorage.setItem(key, 'reliquat')
+  it('erases the keys that no longer belong in durable storage', () => {
+    const orphans = ['getclip.channel', 'getclip.channels', 'getclip.since', 'getclip.until']
+    for (const key of orphans) localStorage.setItem(key, 'leftover')
 
     forgetSessionScopedKeys(localStorage)
 
-    expect(orphelines.map((key) => localStorage.getItem(key))).toEqual([null, null, null, null])
+    expect(orphans.map((key) => localStorage.getItem(key))).toEqual([null, null, null, null])
     expect(localStorage.length).toBe(0)
   })
 
-  it('ne touche pas au thème, qui est une préférence durable', () => {
+  it('leaves the theme alone, which is a durable preference', () => {
     localStorage.setItem('getclip.theme', 'dark')
 
     forgetSessionScopedKeys(localStorage)
@@ -87,11 +87,11 @@ describe('forgetSessionScopedKeys', () => {
     expect(localStorage.getItem('getclip.theme')).toBe('dark')
   })
 
-  it('laisse intact ce qui n’appartient pas à l’application', () => {
-    localStorage.setItem('channel', 'à quelqu’un d’autre')
+  it('leaves intact what does not belong to the application', () => {
+    localStorage.setItem('channel', 'someone else’s')
 
     forgetSessionScopedKeys(localStorage)
 
-    expect(localStorage.getItem('channel')).toBe('à quelqu’un d’autre')
+    expect(localStorage.getItem('channel')).toBe('someone else’s')
   })
 })

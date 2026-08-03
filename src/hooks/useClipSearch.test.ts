@@ -58,10 +58,10 @@ const channelFound = () =>
     created_at: '2017-07-10T00:00:00Z',
   })
 
-const texteJournal = (entries: { text: string }[]) => entries.map((e) => e.text).join('\n')
+const logText = (entries: { text: string }[]) => entries.map((e) => e.text).join('\n')
 
 describe('useClipSearch', () => {
-  it('n’appelle pas l’API sans session', async () => {
+  it('does not call the API without a session', async () => {
     const { result } = renderHook(() => useClipSearch(null, vi.fn(), t))
 
     await act(async () => result.current.start(request))
@@ -69,16 +69,16 @@ describe('useClipSearch', () => {
     expect(fetchUser).not.toHaveBeenCalled()
   })
 
-  it('refuse un intervalle de dates inversé, sans requête', async () => {
+  it('refuses an inverted date range, without a request', async () => {
     const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
 
     await act(async () => result.current.start({ ...request, since: '2026-02-01' }))
 
     expect(fetchUser).not.toHaveBeenCalled()
-    expect(texteJournal(result.current.logEntries)).toContain('date de début')
+    expect(logText(result.current.logEntries)).toContain('date de début')
   })
 
-  it('collecte les clips et résout les noms de jeux', async () => {
+  it('collects the clips and resolves the game names', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [clip('a'), clip('b')] })
     fetchGameNames.mockResolvedValue(new Map([['1', 'Cult of the Lamb']]))
@@ -91,7 +91,7 @@ describe('useClipSearch', () => {
     expect(result.current.running).toBe(false)
   })
 
-  it('prévient quand la chaîne est antérieure à la période demandée', async () => {
+  it('warns when the channel predates the period asked for', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [] })
     fetchGameNames.mockResolvedValue(new Map())
@@ -100,26 +100,26 @@ describe('useClipSearch', () => {
     await act(async () => result.current.start(request))
 
     await waitFor(() => expect(result.current.running).toBe(false))
-    expect(texteJournal(result.current.logEntries)).toContain('hors périmètre')
+    expect(logText(result.current.logEntries)).toContain('hors périmètre')
   })
 
-  // Les noms de jeux ne servent qu'à étiqueter un filtre : leur échec ne doit
-  // pas faire passer un scan réussi pour un échec.
-  it('conserve les clips même si les noms de jeux échouent', async () => {
+  // Game names only serve to label a filter: their failure must not make a
+  // successful sweep look like a failed one.
+  it('keeps the clips even when the game names fail', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [clip('a')] })
-    fetchGameNames.mockRejectedValue(new Error('boum'))
+    fetchGameNames.mockRejectedValue(new Error('boom'))
 
     const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
 
     await waitFor(() => expect(result.current.clips).toHaveLength(1))
-    expect(texteJournal(result.current.logEntries)).toContain('Noms des jeux indisponibles')
+    expect(logText(result.current.logEntries)).toContain('Noms des jeux indisponibles')
   })
 
-  // Le cache n'est alimenté que par un scan réellement lancé, jamais par
-  // une simple résolution de saisie.
-  it('retient la chaîne scannée avec sa date de création', async () => {
+  // The cache is fed only by a sweep actually started, never by a plain
+  // resolution of what is being typed.
+  it('remembers the swept channel with its creation date', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [] })
     fetchGameNames.mockResolvedValue(new Map())
@@ -130,8 +130,8 @@ describe('useClipSearch', () => {
     await waitFor(() => expect(remember).toHaveBeenCalledWith('testchannel', '2017-07-10'))
   })
 
-  it('ne retient rien quand la chaîne est introuvable', async () => {
-    fetchUser.mockRejectedValue(new Error('Chaîne introuvable'))
+  it('remembers nothing when the channel cannot be found', async () => {
+    fetchUser.mockRejectedValue(new Error('Channel not found'))
 
     const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
@@ -140,7 +140,7 @@ describe('useClipSearch', () => {
     expect(remember).not.toHaveBeenCalled()
   })
 
-  it('signale un jeton refusé à l’appelant', async () => {
+  it('reports a refused token to the caller', async () => {
     const onTokenRejected = vi.fn()
     fetchUser.mockRejectedValue(new TokenRejectedError())
 
@@ -150,7 +150,7 @@ describe('useClipSearch', () => {
     await waitFor(() => expect(onTokenRejected).toHaveBeenCalled())
   })
 
-  it('repart d’une ardoise vierge à chaque scan', async () => {
+  it('starts from a clean slate on every sweep', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [clip('a')] })
     fetchGameNames.mockResolvedValue(new Map())
