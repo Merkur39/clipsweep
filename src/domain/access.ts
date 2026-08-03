@@ -3,10 +3,10 @@ import type { T } from '../i18n/translate'
 export type AccessKind = 'ok' | 'bad' | ''
 
 /**
- * La durée de vie restante d'un jeton, dans l'unité qui se lit.
+ * A token's remaining life, in whichever unit actually reads.
  *
- * Un jeton Twitch dure une soixantaine de jours : « 1477 h » est exact, illisible
- * et déborde du panneau sur deux lignes. L'unité suit donc l'ordre de grandeur.
+ * A Twitch token lasts some sixty days: "1477 h" is exact, unreadable, and spills
+ * out of the panel onto two lines. The unit therefore follows the magnitude.
  */
 export function describeTokenLife(expiresInSeconds: number, t: T): string {
   const minutes = Math.round(expiresInSeconds / 60)
@@ -19,12 +19,12 @@ export function describeTokenLife(expiresInSeconds: number, t: T): string {
 }
 
 export interface AccessInput {
-  /** Le refus que Twitch vient de renvoyer sur la redirection, s'il y en a un. */
+  /** The refusal Twitch just returned on the redirect, if there is one. */
   authError: string | null
   clientId: string
-  /** Un jeton dort déjà en `sessionStorage` — sa validité reste à confirmer. */
+  /** A token already sits in `sessionStorage` — its validity is unconfirmed. */
   hasStoredToken: boolean
-  /** L'URL à déclarer côté Twitch, citée quand l'application n'est pas configurée. */
+  /** The URL to declare on Twitch's side, quoted when the app is unconfigured. */
   redirectUri: string
 }
 
@@ -32,30 +32,30 @@ export interface AccessState {
   message: string
   kind: AccessKind
   /**
-   * On se dit connecté sur la foi du jeton stocké, avant toute confirmation.
-   * L'appelant se dédit si `/oauth2/validate` le contredit.
+   * We call ourselves connected on the strength of the stored token, before any
+   * confirmation. The caller takes it back if `/oauth2/validate` disagrees.
    */
   presumedConnected: boolean
 }
 
 /**
- * L'état d'accès tel qu'il est connaissable **sans attendre le réseau**.
+ * The access state as it is knowable **without waiting on the network**.
  *
- * `tokenStore.read()` est synchrone : au premier rendu on sait déjà si un jeton
- * existe. Annoncer « Aucun jeton » le temps de l'aller-retour vers
- * `/oauth2/validate` est faux, et fait clignoter le bloc à chaque rechargement.
+ * `tokenStore.read()` is synchronous: on the first render we already know
+ * whether a token exists. Announcing "no token" for the duration of the round
+ * trip to `/oauth2/validate` is false, and makes the block blink on every reload.
  *
- * Le pari est optimiste plutôt que prudent : un état d'attente ne dure qu'une
- * requête, personne n'a le temps de le lire, il ne produit qu'un scintillement.
- * Le cas nominal — un jeton encore valide — s'affiche donc juste, et seul le cas
- * dégradé se corrige après coup, en rouge, où la correction se voit.
+ * The bet is optimistic rather than cautious: a waiting state lasts one request,
+ * nobody has time to read it, it only produces a flicker. The nominal case — a
+ * still-valid token — therefore displays correctly, and only the degraded case
+ * corrects itself afterwards, in red, where the correction is visible.
  */
 export function describeAccess(
   { authError, clientId, hasStoredToken, redirectUri }: AccessInput,
   t: T,
 ): AccessState {
-  // Un refus tout juste reçu décrit mieux la situation qu'un jeton résiduel :
-  // se présumer connecté là-dessus serait un mensonge, pas un pari.
+  // A refusal just received describes the situation better than a leftover
+  // token: presuming a connection on top of it would be a lie, not a bet.
   if (authError) {
     return {
       message: t('access.refused', { error: authError }),
@@ -64,8 +64,8 @@ export function describeAccess(
     }
   }
 
-  // Auto-hébergement mal configuré : sans identifiant, aucun bouton ne peut
-  // rien faire — autant dire tout de suite quoi renseigner, et où.
+  // Misconfigured self-hosting: without an id no button can do anything — so say
+  // right away what to fill in, and where.
   if (!clientId) {
     return {
       message: t('access.unconfigured', { redirectUri }),
@@ -74,13 +74,13 @@ export function describeAccess(
     }
   }
 
-  // La durée restante manque encore : elle arrive avec la validation, qui
-  // ajoute sa mention en gardant ce préfixe intact.
+  // The remaining life is still missing: it arrives with validation, which adds
+  // its mention while keeping this prefix intact.
   if (hasStoredToken) {
     return { message: t('access.connected'), kind: 'ok', presumedConnected: true }
   }
 
-  // Le bouton juste en dessous porte l'action : le bloc d'état n'énonce que
-  // l'état. Lampe éteinte, pas rouge — être déconnecté n'est pas une erreur.
+  // The button just below carries the action: the status block only states the
+  // state. Lamp off, not red — being disconnected is not an error.
   return { message: t('access.disconnected'), kind: '', presumedConnected: false }
 }

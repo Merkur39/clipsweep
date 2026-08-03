@@ -6,41 +6,41 @@ import { applyTheme, parseTheme, THEMES } from './theme'
 const root = () => document.documentElement
 
 describe('parseTheme', () => {
-  it('rend les trois choix tels quels', () => {
+  it('returns the three choices as they are', () => {
     for (const theme of THEMES) {
       expect(parseTheme(theme)).toBe(theme)
     }
   })
 
-  it('retombe sur le suivi du système sans préférence enregistrée', () => {
+  it('falls back to following the system with no stored preference', () => {
     expect(parseTheme(null)).toBe('system')
   })
 
-  // La préférence vit en localStorage : elle peut avoir été triturée à la main.
-  it('retombe sur le suivi du système plutôt que d’appliquer n’importe quoi', () => {
-    for (const corrompu of ['', 'clair', 'LIGHT', '{}', 'null']) {
-      expect(parseTheme(corrompu)).toBe('system')
+  // The preference lives in localStorage: it may have been tampered with by hand.
+  it('falls back to the system rather than applying anything at all', () => {
+    for (const corrupt of ['', 'clair', 'LIGHT', '{}', 'null']) {
+      expect(parseTheme(corrupt)).toBe('system')
     }
   })
 })
 
 describe('applyTheme', () => {
-  it('marque le choix explicite sur la racine', () => {
+  it('marks the explicit choice on the root', () => {
     applyTheme(root(), 'light')
 
     expect(root().getAttribute('data-theme')).toBe('light')
   })
 
-  it('remplace un choix précédent au lieu de s’y ajouter', () => {
+  it('replaces a previous choice instead of adding to it', () => {
     applyTheme(root(), 'light')
     applyTheme(root(), 'dark')
 
     expect(root().getAttribute('data-theme')).toBe('dark')
   })
 
-  // Suivre le système, c'est ne rien affirmer : l'attribut doit disparaître,
-  // sans quoi `color-scheme` resterait restreint à la branche précédente.
-  it('efface toute marque quand on revient au système', () => {
+  // Following the system means asserting nothing: the attribute must disappear,
+  // otherwise `color-scheme` would stay restricted to the previous branch.
+  it('clears every mark when going back to the system', () => {
     applyTheme(root(), 'dark')
     applyTheme(root(), 'system')
 

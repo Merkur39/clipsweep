@@ -8,67 +8,65 @@ afterEach(() => {
   sessionStorage.clear()
 })
 
-const cacheDe = (...entrees: [string, string][]) =>
-  JSON.stringify(entrees.map(([login, createdAt]) => ({ login, createdAt })))
+const cacheOf = (...entries: [string, string][]) =>
+  JSON.stringify(entries.map(([login, createdAt]) => ({ login, createdAt })))
 
-const logins = (raw: string) =>
-  (JSON.parse(raw) as { login: string }[]).map((entree) => entree.login)
+const logins = (raw: string) => (JSON.parse(raw) as { login: string }[]).map((entry) => entry.login)
 
 describe('lookupChannel', () => {
-  it('ne trouve rien dans un cache absent', () => {
+  it('finds nothing in a missing cache', () => {
     expect(lookupChannel(null, 'testchannel')).toBeNull()
   })
 
-  it('rend la date d’une chaîne connue', () => {
-    expect(lookupChannel(cacheDe(['testchannel', '2017-07-10']), 'testchannel')).toBe('2017-07-10')
+  it('returns the date of a known channel', () => {
+    expect(lookupChannel(cacheOf(['testchannel', '2017-07-10']), 'testchannel')).toBe('2017-07-10')
   })
 
-  it('ne rend rien pour une chaîne inconnue', () => {
-    expect(lookupChannel(cacheDe(['testchannel', '2017-07-10']), 'autre')).toBeNull()
+  it('returns nothing for an unknown channel', () => {
+    expect(lookupChannel(cacheOf(['testchannel', '2017-07-10']), 'other')).toBeNull()
   })
 
-  it('ignore la casse et les espaces de la saisie', () => {
-    expect(lookupChannel(cacheDe(['testchannel', '2017-07-10']), '  TestChannel ')).toBe(
+  it('ignores case and whitespace in the input', () => {
+    expect(lookupChannel(cacheOf(['testchannel', '2017-07-10']), '  TestChannel ')).toBe(
       '2017-07-10',
     )
   })
 
-  // Le cache vit dans le stockage du navigateur : il peut avoir été trituré à
-  // la main.
-  it('survit à un contenu corrompu plutôt que de lever', () => {
-    for (const corrompu of ['pas du json', '{}', '[1,2,3]', '[{"login":"a"}]', '']) {
-      expect(lookupChannel(corrompu, 'a')).toBeNull()
+  // The cache lives in browser storage: it may have been tampered with by hand.
+  it('survives corrupt content rather than throwing', () => {
+    for (const corrupt of ['not json', '{}', '[1,2,3]', '[{"login":"a"}]', '']) {
+      expect(lookupChannel(corrupt, 'a')).toBeNull()
     }
   })
 })
 
 describe('rememberChannel', () => {
-  it('crée le cache à la première chaîne', () => {
+  it('creates the cache on the first channel', () => {
     const raw = rememberChannel(null, 'testchannel', '2017-07-10')
 
     expect(lookupChannel(raw, 'testchannel')).toBe('2017-07-10')
   })
 
-  it('conserve les chaînes déjà connues', () => {
-    const raw = rememberChannel(cacheDe(['ancienne', '2015-01-01']), 'testchannel', '2017-07-10')
+  it('keeps the channels already known', () => {
+    const raw = rememberChannel(cacheOf(['older', '2015-01-01']), 'testchannel', '2017-07-10')
 
-    expect(lookupChannel(raw, 'ancienne')).toBe('2015-01-01')
+    expect(lookupChannel(raw, 'older')).toBe('2015-01-01')
     expect(lookupChannel(raw, 'testchannel')).toBe('2017-07-10')
   })
 
-  it('ne duplique pas une chaîne déjà présente', () => {
-    const raw = rememberChannel(cacheDe(['testchannel', '2017-07-10']), 'testchannel', '2017-07-10')
+  it('does not duplicate a channel already present', () => {
+    const raw = rememberChannel(cacheOf(['testchannel', '2017-07-10']), 'testchannel', '2017-07-10')
 
     expect(logins(raw)).toEqual(['testchannel'])
   })
 
-  it('normalise le login enregistré', () => {
+  it('normalizes the stored login', () => {
     const raw = rememberChannel(null, '  TestChannel ', '2017-07-10')
 
     expect(logins(raw)).toEqual(['testchannel'])
   })
 
-  it('repousse la chaîne réutilisée en fin de file', () => {
+  it('pushes the reused channel to the back of the queue', () => {
     let raw = rememberChannel(null, 'a', '2015-01-01')
     raw = rememberChannel(raw, 'b', '2016-01-01')
     raw = rememberChannel(raw, 'a', '2015-01-01')
@@ -76,35 +74,35 @@ describe('rememberChannel', () => {
     expect(logins(raw)).toEqual(['b', 'a'])
   })
 
-  it('plafonne le cache en oubliant les plus anciennes', () => {
+  it('caps the cache by forgetting the oldest entries', () => {
     let raw: string | null = null
-    for (const nom of ['a', 'b', 'c']) raw = rememberChannel(raw, nom, '2015-01-01', 2)
+    for (const name of ['a', 'b', 'c']) raw = rememberChannel(raw, name, '2015-01-01', 2)
 
     expect(logins(raw!)).toEqual(['b', 'c'])
   })
 
-  it('repart d’un cache sain même si l’ancien était corrompu', () => {
-    const raw = rememberChannel('pas du json', 'testchannel', '2017-07-10')
+  it('starts from a sound cache even when the old one was corrupt', () => {
+    const raw = rememberChannel('not json', 'testchannel', '2017-07-10')
 
     expect(lookupChannel(raw, 'testchannel')).toBe('2017-07-10')
   })
 })
 
 describe('channelCache', () => {
-  it('relit ce qu’il vient d’enregistrer', () => {
+  it('reads back what it just stored', () => {
     channelCache.remember('testchannel', '2017-07-10')
 
     expect(channelCache.read('testchannel')).toBe('2017-07-10')
   })
 
-  it('ne connaît pas une chaîne jamais enregistrée', () => {
+  it('does not know a channel never stored', () => {
     expect(channelCache.read('testchannel')).toBeNull()
   })
 
-  // Le cache accompagne les champs de scan, qui vivent le temps de l'onglet :
-  // le laisser en localStorage y laisserait la trace des chaînes visitées bien
-  // après que la session qui les a cherchées se soit terminée.
-  it('vit en sessionStorage, sans rien laisser en localStorage', () => {
+  // The cache travels with the sweep fields, which live for the tab's lifetime:
+  // leaving it in localStorage would leave the trace of visited channels there
+  // long after the session that searched for them has ended.
+  it('lives in sessionStorage, leaving nothing in localStorage', () => {
     channelCache.remember('testchannel', '2017-07-10')
 
     expect(sessionStorage.getItem('getclip.channels')).toContain('testchannel')

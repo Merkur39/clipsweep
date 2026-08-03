@@ -57,8 +57,8 @@ function batScript(channel: string, urls: string[], t: T): string {
     `echo ${t('script.header', { count: String(urls.length), channel: slug(channel) })}`,
     'echo.',
     '',
-    'rem Un yt-dlp que le visiteur a installe lui-meme, dans ce dossier ou dans',
-    'rem le PATH, est utilise tel quel et jamais efface.',
+    'rem A yt-dlp the visitor installed themselves, in this folder or on the',
+    'rem PATH, is used as-is and never erased.',
     'set "YTDLP=yt-dlp.exe"',
     'set "GETCLIP_TEMP_YTDLP="',
     '',
@@ -66,8 +66,8 @@ function batScript(channel: string, urls: string[], t: T): string {
     'where yt-dlp.exe >nul 2>&1 && goto :ready',
     `echo ${t('script.missingBat')}`,
     `set /p GETCLIP_FETCH="${t('script.askFetch')} "`,
-    // Les deux lettres sont acceptees quelle que soit la langue de l'invite :
-    // celui qui repond « Y » a une question francaise ne doit pas etre bloque.
+    // Both letters are accepted whatever language asked: someone answering "Y"
+    // to a French prompt must not be turned away.
     'if /i "%GETCLIP_FETCH%"=="O" goto :fetch',
     'if /i "%GETCLIP_FETCH%"=="Y" goto :fetch',
     `echo ${t('script.abortBat')}`,
@@ -75,8 +75,8 @@ function batScript(channel: string, urls: string[], t: T): string {
     'exit /b 1',
     '',
     ':fetch',
-    'rem Dans le dossier temporaire, jamais a cote du script : le binaire est',
-    'rem efface en partant, pour que la version soit toujours celle du jour.',
+    'rem Into the temporary folder, never next to the script: the binary is',
+    'rem erased on the way out, so the version is always the current one.',
     'set "GETCLIP_TEMP_YTDLP=%TEMP%\\getclip-yt-dlp-%RANDOM%.exe"',
     'set "YTDLP=%GETCLIP_TEMP_YTDLP%"',
     `echo ${t('script.fetching')}`,
@@ -95,8 +95,8 @@ function batScript(channel: string, urls: string[], t: T): string {
     '',
     `"%YTDLP%" -a "%GETCLIP_LIST%" -P "${folder}" -o "%%(title)s [%%(id)s].%%(ext)s" --download-archive "${folder}\\archive.txt" --no-overwrites --sleep-requests 1`,
     'del "%GETCLIP_LIST%" >nul 2>&1',
-    'rem Efface le binaire telecharge, jamais celui du visiteur : la variable',
-    'rem n est posee que par la branche de telechargement.',
+    'rem Erases the downloaded binary, never the visitor s own: the variable',
+    'rem is only set by the download branch.',
     'if defined GETCLIP_TEMP_YTDLP del "%GETCLIP_TEMP_YTDLP%" >nul 2>&1',
     '',
     'echo.',
@@ -115,9 +115,9 @@ function shScript(channel: string, urls: string[], t: T): string {
     '',
     `echo "${t('script.header', { count: String(urls.length), channel: slug(channel) })}"`,
     '',
-    '# Arme avant le moindre telechargement : une interruption ne doit rien',
-    '# laisser derriere elle. Les deux variables sont vides tant que rien n a ete',
-    '# cree, et `set -u` exige qu elles existent.',
+    '# Armed before any download: an interruption must leave nothing behind.',
+    '# Both variables stay empty until something has been created, and `set -u`',
+    '# requires them to exist.',
     'LIST=""',
     'YTDLP_TMPDIR=""',
     'cleanup() {',
@@ -126,8 +126,8 @@ function shScript(channel: string, urls: string[], t: T): string {
     '}',
     'trap cleanup EXIT INT TERM',
     '',
-    '# Un yt-dlp que le visiteur a installe lui-meme, par son gestionnaire de',
-    '# paquets ou depose ici, est utilise tel quel et jamais efface.',
+    '# A yt-dlp the visitor installed themselves, through their package manager',
+    '# or dropped here, is used as-is and never erased.',
     'if command -v yt-dlp >/dev/null 2>&1; then',
     '  YTDLP=yt-dlp',
     'elif [ -x ./yt-dlp ]; then',
@@ -135,10 +135,10 @@ function shScript(channel: string, urls: string[], t: T): string {
     'else',
     `  echo "${t('script.missingSh')}"`,
     `  read -r -p "${t('script.askFetch')} " reply`,
-    // Les deux lettres sont acceptees quelle que soit la langue de l'invite.
+    // Both letters are accepted whatever language asked.
     `  case "$reply" in [oOyY]) ;; *) echo "${t('script.abortSh')}"; exit 1 ;; esac`,
-    '  # Dans un dossier temporaire, jamais a cote du script : le binaire est',
-    '  # efface en partant, pour que la version soit toujours celle du jour.',
+    '  # Into a temporary folder, never next to the script: the binary is',
+    '  # erased on the way out, so the version is always the current one.',
     '  YTDLP_TMPDIR="$(mktemp -d)"',
     '  YTDLP="$YTDLP_TMPDIR/yt-dlp"',
     `  curl -L --fail -o "$YTDLP" ${YTDLP_RELEASE}/yt-dlp`,
@@ -161,9 +161,9 @@ function shScript(channel: string, urls: string[], t: T): string {
 }
 
 /**
- * Les messages du script suivent la langue de l'interface, mais restent en
- * ASCII : la page de code de la console n'est pas garantie, et un accent y sort
- * en charabia. Un test le vérifie sur toutes les clés `script.`.
+ * The script's messages follow the interface language, but stay ASCII: the
+ * console's code page is not guaranteed, and an accent comes out as garbage
+ * there. A test checks this across every `script.` key.
  */
 export function buildDownloadScript(
   flavor: ScriptFlavor,

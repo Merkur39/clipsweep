@@ -9,7 +9,7 @@ export interface EmptyResultsInput {
   /** Clips collected before the view filter is applied. */
   clipsFound: number
   maxViews: number | null
-  /** Plage d'affichage, en `yyyy-mm-dd`. Deux bornes nulles : pas de plage. */
+  /** Display range, in `yyyy-mm-dd`. Two null bounds mean no range. */
   period?: { from: string | null; to: string | null }
 }
 
@@ -20,9 +20,9 @@ export interface SearchStatusInput {
 }
 
 /**
- * Une ligne d'état lisible sans rien connaître de l'algorithme. Elle remplace,
- * pour l'essentiel des visiteurs, la frise et les compteurs techniques : ceux-ci
- * répondent à « comment », celle-ci à « où ça en est ».
+ * A status line readable without knowing anything about the algorithm. For most
+ * visitors it stands in for the frieze and the technical counters: those answer
+ * "how", this one answers "where it stands".
  */
 export function describeSearchStatus(
   { running, progress, clipsFound }: SearchStatusInput,
@@ -42,19 +42,19 @@ export function describeSearchStatus(
 }
 
 export interface ResultCountInput {
-  /** Avant tout filtre. */
+  /** Before any filter. */
   found: number
-  /** Après les filtres d'affichage. */
+  /** After the display filters. */
   shown: number
   selected: number
 }
 
 /**
- * Les trois nombres qui comptent, toujours dans le même ordre.
+ * The three numbers that matter, always in the same order.
  *
- * Trois segments joints, et non une phrase : chaque nombre s'accorde sur
- * lui-même, ce qu'aucune forme unique ne saurait faire. Le séparateur est
- * neutre, donc il n'appartient à aucune des deux langues.
+ * Three joined segments rather than one sentence: each number agrees with
+ * itself, which no single form could manage. The separator is neutral, so it
+ * belongs to neither language.
  */
 export function describeResultCount({ found, shown, selected }: ResultCountInput, t: T): string {
   if (found === 0) return ''
@@ -66,7 +66,7 @@ export function describeResultCount({ found, shown, selected }: ResultCountInput
   ].join(' · ')
 }
 
-/** La plage telle qu'on la lit, selon les bornes réellement posées. */
+/** The range as it reads, according to which bounds are actually set. */
 function describeRange(from: string | null, to: string | null, t: T): string | null {
   if (from && to) return t('results.range.between', { from: { day: from }, to: { day: to } })
   if (from) return t('results.range.from', { from: { day: from } })
@@ -84,16 +84,16 @@ export function describeEmptyResults(
 ): string {
   if (!searched) return t('results.empty.notSearched')
 
-  // Un scan dure de quelques secondes à plusieurs minutes. Conclure à
-  // l'absence de clips avant que la première période ait rendu est faux — et le
-  // conseil qui suit (« élargis l'intervalle ») ferait recommencer pour rien.
+  // A sweep runs from a few seconds to several minutes. Concluding that there
+  // are no clips before the first period has returned is false — and the advice
+  // that follows ("widen the range") would restart it all for nothing.
   if (running && clipsFound === 0) return t('results.empty.running')
 
   if (clipsFound === 0) return t('results.empty.nothing')
 
-  // Nommée avant le seuil de vues quand les deux sont actifs : la plage est ce
-  // que l'utilisateur vient de resserrer à la main, et c'est elle que l'action
-  // de la table vide propose de rouvrir.
+  // Named before the view threshold when both are active: the range is what the
+  // user just narrowed by hand, and it is the one the empty table's action
+  // offers to reopen.
   const range = describeRange(period?.from ?? null, period?.to ?? null, t)
   if (range !== null) return t('results.empty.outOfRange', { n: clipsFound, range })
 

@@ -55,10 +55,10 @@ export function rememberChannel(
 const STORAGE_KEY = 'getclip.channels'
 
 /**
- * Le cache accompagne les champs de scan : il vit donc en `sessionStorage`,
- * comme eux. Une date de création ne périme jamais, mais garder la liste des
- * chaînes visitées après la fermeture de l'onglet laisserait une trace des
- * recherches passées bien au-delà de la session qui les a faites.
+ * The cache travels with the sweep fields, so it lives in `sessionStorage` like
+ * they do. A creation date never goes stale, but keeping the list of visited
+ * channels past the tab's closing would leave a trace of past searches well
+ * beyond the session that made them.
  */
 export const channelCache = {
   read: (login: string) => lookupChannel(sessionStorage.getItem(STORAGE_KEY), login),
