@@ -8,7 +8,7 @@ import { persistedKey } from '../hooks/usePersistedState'
 afterEach(cleanup)
 beforeEach(() => localStorage.clear())
 
-/** Le navigateur du test : `navigator.languages` est en lecture seule. */
+/** The test's browser: `navigator.languages` is read-only. */
 const speaks = (...languages: string[]) =>
   vi.spyOn(navigator, 'languages', 'get').mockReturnValue(languages)
 
@@ -22,7 +22,7 @@ function Probe() {
       </p>
       <p>{t('access.disconnected')}</p>
       <button type="button" onClick={() => setChoice('fr')}>
-        français
+        french
       </button>
       <button type="button" onClick={() => setChoice('auto')}>
         auto
@@ -41,7 +41,7 @@ const mount = () =>
 const click = (name: string) => fireEvent.click(screen.getByRole('button', { name }))
 
 describe('LocaleProvider', () => {
-  it('suit le navigateur quand rien n’a été choisi', () => {
+  it('follows the browser when nothing has been chosen', () => {
     speaks('fr-FR', 'fr')
     mount()
 
@@ -49,7 +49,7 @@ describe('LocaleProvider', () => {
     expect(screen.getByText('Déconnecté de Twitch.')).toBeInTheDocument()
   })
 
-  it('sert l’anglais à un navigateur non traduit', () => {
+  it('serves English to an untranslated browser', () => {
     speaks('de-DE')
     mount()
 
@@ -57,7 +57,7 @@ describe('LocaleProvider', () => {
     expect(screen.getByText('Disconnected from Twitch.')).toBeInTheDocument()
   })
 
-  it('relit un choix enregistré, contre le navigateur', () => {
+  it('reads back a stored choice, against the browser', () => {
     speaks('fr-FR')
     localStorage.setItem(persistedKey('locale'), 'en')
     mount()
@@ -65,19 +65,19 @@ describe('LocaleProvider', () => {
     expect(screen.getByText('en / en')).toBeInTheDocument()
   })
 
-  it('bascule et enregistre le choix', () => {
+  it('switches and stores the choice', () => {
     speaks('en-US')
     mount()
 
-    click('français')
+    click('french')
 
     expect(screen.getByText('fr / fr')).toBeInTheDocument()
     expect(localStorage.getItem(persistedKey('locale'))).toBe('fr')
   })
 
-  // Le retour à l'automatique doit rendre la main au navigateur, et non figer
-  // la langue sur celle qui était servie au moment du clic.
-  it('rend la main au navigateur en repassant en automatique', () => {
+  // Going back to automatic must hand control back to the browser, not freeze
+  // the language on whichever was being served at the moment of the click.
+  it('hands control back to the browser when returning to automatic', () => {
     speaks('en-US')
     localStorage.setItem(persistedKey('locale'), 'fr')
     mount()
@@ -87,7 +87,7 @@ describe('LocaleProvider', () => {
     expect(screen.getByText('en / auto')).toBeInTheDocument()
   })
 
-  it('pose la langue servie sur la racine du document', () => {
+  it('puts the language served on the document root', () => {
     speaks('en-US')
     localStorage.setItem(persistedKey('locale'), 'fr')
     mount()

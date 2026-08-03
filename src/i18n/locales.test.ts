@@ -4,41 +4,41 @@ import { describe, expect, it } from 'vitest'
 import { applyLocale, detectLocale, parseLocaleChoice, resolveLocale } from './locales'
 
 describe('detectLocale', () => {
-  it('retient la première langue du navigateur qui est traduite', () => {
+  it('keeps the first browser language that is translated', () => {
     expect(detectLocale(['fr-FR', 'fr', 'en-US'])).toBe('fr')
     expect(detectLocale(['en-GB', 'fr'])).toBe('en')
   })
 
-  // Le sous-tag régional ne nous concerne pas : on ne traduit ni le québécois
-  // ni l'australien séparément.
-  it('ignore la région', () => {
+  // The regional subtag is none of our business: we translate neither Québécois
+  // nor Australian separately.
+  it('ignores the region', () => {
     expect(detectLocale(['fr-CA'])).toBe('fr')
     expect(detectLocale(['EN-au'])).toBe('en')
   })
 
-  // Une langue non traduite ne doit pas court-circuiter celle qui suit : un
-  // visiteur allemand qui lit aussi le français préfère le français à l'anglais.
-  it('passe les langues non traduites', () => {
+  // An untranslated language must not short-circuit the one that follows: a
+  // German visitor who also reads French prefers French to English.
+  it('skips the untranslated languages', () => {
     expect(detectLocale(['de-DE', 'fr-FR', 'en'])).toBe('fr')
   })
 
-  it('retombe sur l’anglais quand rien ne correspond', () => {
+  it('falls back to English when nothing matches', () => {
     expect(detectLocale(['de', 'es'])).toBe('en')
     expect(detectLocale([])).toBe('en')
   })
 })
 
 describe('parseLocaleChoice', () => {
-  it('reconnaît les trois choix', () => {
+  it('recognizes the three choices', () => {
     expect(parseLocaleChoice('auto')).toBe('auto')
     expect(parseLocaleChoice('fr')).toBe('fr')
     expect(parseLocaleChoice('en')).toBe('en')
   })
 
-  // Même règle que le thème : la préférence vit en localStorage, donc elle est
-  // modifiable à la main et peut dater d'une version qui nommait les langues
-  // autrement. Tout ce qui n'est pas un choix reconnu revient à la détection.
-  it('revient à la détection sur une valeur inconnue', () => {
+  // Same rule as the theme: the preference lives in localStorage, so it is
+  // hand-editable and may date from a version that named the languages
+  // differently. Anything that is not a recognized choice returns to detection.
+  it('returns to detection on an unknown value', () => {
     expect(parseLocaleChoice('de')).toBe('auto')
     expect(parseLocaleChoice('')).toBe('auto')
     expect(parseLocaleChoice(null)).toBe('auto')
@@ -46,21 +46,21 @@ describe('parseLocaleChoice', () => {
 })
 
 describe('resolveLocale', () => {
-  it('honore un choix explicite contre le navigateur', () => {
+  it('honours an explicit choice against the browser', () => {
     expect(resolveLocale('en', ['fr-FR'])).toBe('en')
     expect(resolveLocale('fr', ['en-US'])).toBe('fr')
   })
 
-  it('suit le navigateur en automatique', () => {
+  it('follows the browser on automatic', () => {
     expect(resolveLocale('auto', ['fr-FR'])).toBe('fr')
     expect(resolveLocale('auto', ['de'])).toBe('en')
   })
 })
 
 describe('applyLocale', () => {
-  // L'attribut pilote la prononciation des lecteurs d'écran et la césure ; le
-  // `lang="fr"` codé en dur dans index.html ne peut pas suivre le choix.
-  it('pose la langue sur la racine du document', () => {
+  // The attribute drives screen-reader pronunciation and hyphenation; the
+  // `lang="fr"` hard-coded in index.html cannot follow the choice.
+  it('puts the language on the document root', () => {
     const root = document.createElement('html')
 
     applyLocale(root, 'en')

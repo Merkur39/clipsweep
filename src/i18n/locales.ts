@@ -1,37 +1,37 @@
-/** Les langues traduites. La première n'a pas de préséance : voir `FALLBACK_LOCALE`. */
+/** The translated languages. The first has no precedence: see `FALLBACK_LOCALE`. */
 export const LOCALES = ['fr', 'en'] as const
 
 export type Locale = (typeof LOCALES)[number]
 
 /**
- * Ce que le visiteur peut choisir, et donc ce qui s'enregistre.
+ * What the visitor can choose, and therefore what gets stored.
  *
- * `auto` n'est pas une troisième langue : c'est le fait de ne rien affirmer, et
- * de laisser le navigateur trancher. Sans ce sentinelle, un visiteur français
- * ayant cliqué « FR » resterait en français après avoir passé son système en
- * anglais — exactement ce que le choix n'exprimait pas.
+ * `auto` is not a third language: it is the act of asserting nothing, and
+ * letting the browser decide. Without that sentinel, a French visitor who had
+ * clicked "FR" would stay in French after switching their system to English —
+ * exactly what the choice did not express.
  */
 export const LOCALE_CHOICES = ['auto', ...LOCALES] as const
 
 export type LocaleChoice = (typeof LOCALE_CHOICES)[number]
 
 /**
- * La langue d'un visiteur dont aucune n'est traduite.
+ * The language for a visitor none of whose languages are translated.
  *
- * L'anglais plutôt que le français : l'outil est écrit en français, mais ce
- * repli-ci ne concerne justement que ceux qui ne le lisent pas.
+ * English rather than French: the tool is written in French, but this fallback
+ * concerns precisely those who do not read it.
  */
 export const FALLBACK_LOCALE: Locale = 'en'
 
 const isLocale = (value: string): value is Locale => (LOCALES as readonly string[]).includes(value)
 
 /**
- * La langue à servir d'après `navigator.languages`, prise dans l'ordre de
- * préférence déclaré.
+ * The language to serve according to `navigator.languages`, taken in the order
+ * of preference declared.
  *
- * La région est ignorée — on ne traduit ni le québécois ni l'australien à part.
- * Une langue non traduite est passée plutôt que de déclencher le repli : un
- * visiteur allemand qui lit aussi le français préfère le français à l'anglais.
+ * The region is ignored — we translate neither Québécois nor Australian apart.
+ * A language that is not translated is skipped rather than triggering the
+ * fallback: a German visitor who also reads French prefers French to English.
  */
 export function detectLocale(languages: readonly string[]): Locale {
   for (const tag of languages) {
@@ -42,9 +42,9 @@ export function detectLocale(languages: readonly string[]): Locale {
 }
 
 /**
- * La préférence vit en localStorage, donc elle est modifiable à la main et peut
- * dater d'une version qui nommait les langues autrement. Tout ce qui n'est pas
- * un choix reconnu revient à la détection, qui est toujours un état valable.
+ * The preference lives in localStorage, so it is hand-editable and may date from
+ * a version that named the languages differently. Anything that is not a
+ * recognized choice falls back to detection, which is always a valid state.
  */
 export function parseLocaleChoice(stored: string | null): LocaleChoice {
   return stored !== null && (LOCALE_CHOICES as readonly string[]).includes(stored)
@@ -52,17 +52,17 @@ export function parseLocaleChoice(stored: string | null): LocaleChoice {
     : 'auto'
 }
 
-/** Le choix confronté au navigateur : un choix explicite l'emporte toujours. */
+/** The choice weighed against the browser: an explicit choice always wins. */
 export function resolveLocale(choice: LocaleChoice, languages: readonly string[]): Locale {
   return choice === 'auto' ? detectLocale(languages) : choice
 }
 
 /**
- * Pose la langue sur `<html>`.
+ * Puts the language on `<html>`.
  *
- * L'attribut n'est pas décoratif : il pilote la prononciation des lecteurs
- * d'écran et la césure. `index.html` le code en dur à `fr`, valeur qui ne peut
- * pas suivre le choix — c'est ici qu'il devient vrai.
+ * The attribute is not decorative: it drives screen-reader pronunciation and
+ * hyphenation. `index.html` hard-codes it to `fr`, a value that cannot follow
+ * the choice — this is where it becomes true.
  */
 export function applyLocale(root: HTMLElement, locale: Locale): void {
   root.setAttribute('lang', locale)

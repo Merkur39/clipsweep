@@ -3,35 +3,35 @@ import { describe, expect, it } from 'vitest'
 import { formatCount, formatDay } from './format'
 
 describe('formatCount', () => {
-  it('laisse les petits nombres intacts', () => {
+  it('leaves small numbers untouched', () => {
     expect(formatCount(0, 'fr')).toBe('0')
     expect(formatCount(999, 'en')).toBe('999')
   })
 
-  it('groupe les milliers selon la langue', () => {
+  it('groups thousands according to the language', () => {
     expect(formatCount(1234567, 'en')).toBe('1,234,567')
     expect(formatCount(412, 'fr')).toBe('412')
   })
 
-  it('groupe chaque tranche', () => {
+  it('groups every slice', () => {
     const nbsp = String.fromCharCode(0x00a0)
 
     expect(formatCount(1000, 'fr')).toBe(`1${nbsp}000`)
     expect(formatCount(20000, 'fr')).toBe(`20${nbsp}000`)
   })
 
-  // Une espace sécable romprait la colonne en fin de ligne.
-  it('n’emploie aucune espace sécable', () => {
+  // A breaking space would split the column at the end of a line.
+  it('uses no breaking space', () => {
     expect(formatCount(1234567, 'fr')).not.toContain(' ')
   })
 
   /**
-   * `Intl` sépare les tranches par une espace **fine** insécable en fr-FR, que
-   * plusieurs polices monospace n'ont pas : elle se replie alors sur un glyphe
-   * de largeur différente et désaligne la colonne des vues, que `tabular-nums`
-   * venait justement de rendre comparable.
+   * `Intl` separates the groups with a **narrow** no-break space in fr-FR, which
+   * several monospace fonts lack: it then falls back to a glyph of a different
+   * width and knocks the views column out of alignment, the very thing
+   * `tabular-nums` had just made comparable.
    */
-  it('normalise l’espace fine française en insécable ordinaire', () => {
+  it('normalizes the French narrow space into an ordinary no-break space', () => {
     const formatted = formatCount(1234567, 'fr')
 
     expect(formatted).toBe(`1${String.fromCharCode(0x00a0)}234${String.fromCharCode(0x00a0)}567`)
@@ -40,31 +40,31 @@ describe('formatCount', () => {
 })
 
 describe('formatDay', () => {
-  it('rend le quantième dans l’ordre de la langue', () => {
+  it('renders the day in the language’s order', () => {
     expect(formatDay('2026-08-03', 'fr')).toBe('03/08/2026')
     expect(formatDay('2026-08-03', 'en')).toBe('08/03/2026')
   })
 
-  // Les bornes de scan, `created_at` et les fenêtres arrivent tantôt en jour
-  // seul, tantôt en horodatage complet.
-  it('accepte un horodatage complet comme un jour seul', () => {
+  // The sweep bounds, `created_at` and the windows arrive sometimes as a bare
+  // day, sometimes as a full timestamp.
+  it('accepts a full timestamp like a bare day', () => {
     expect(formatDay('2026-08-03T22:41:07Z', 'fr')).toBe('03/08/2026')
   })
 
   /**
-   * Tout le reste de l'outil raisonne en UTC — les bornes envoyées à Helix, la
-   * valeur par défaut des champs, le découpage des fenêtres. Un formatage en
-   * heure locale décalerait l'affichage d'un jour à l'ouest de Greenwich, et le
-   * jour affiché ne serait plus celui sur lequel les filtres comparent.
+   * Everything else in the tool reasons in UTC — the bounds sent to Helix, the
+   * fields' default value, the window seeding. Formatting in local time would
+   * shift the display by one day west of Greenwich, and the day displayed would
+   * no longer be the one the filters compare against.
    */
-  it('reste en UTC quel que soit le fuseau de la machine', () => {
-    // Minuit UTC : c'est la veille au soir sur tout le continent américain.
+  it('stays in UTC whatever the machine’s timezone', () => {
+    // Midnight UTC: that is the previous evening across the Americas.
     expect(formatDay('2026-08-03T00:00:00Z', 'fr')).toBe('03/08/2026')
   })
 
-  // Largeur fixe dans les deux langues : la colonne des dates est alignée en
-  // `tabular-nums`, et un `8/3/26` la ferait respirer d'une ligne à l'autre.
-  it('donne la même largeur dans les deux langues', () => {
+  // Fixed width in both languages: the date column is aligned with
+  // `tabular-nums`, and an `8/3/26` would make it breathe from row to row.
+  it('gives the same width in both languages', () => {
     expect(formatDay('2026-08-03', 'en')).toHaveLength(formatDay('2026-08-03', 'fr').length)
   })
 })
