@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
 
 /**
- * Demande confirmation avant de quitter la page tant qu'il y a une fouille à
+ * Demande confirmation avant de quitter la page tant qu'il y a un scan à
  * perdre.
  *
- * Une fouille dure de quelques secondes à plusieurs minutes et ne vit que dans
- * la mémoire de l'application : un F5 malencontreux la fait recommencer, quota
+ * Un scan dure de quelques secondes à plusieurs minutes et ne vit que dans
+ * la mémoire de l'application : un F5 malencontreux le fait recommencer, quota
  * Helix compris. Retenir les clips d'une session à l'autre demanderait un
- * stockage que `sessionStorage` ne peut pas porter — une fouille de 20 000
+ * stockage que `sessionStorage` ne peut pas porter — un scan de 20 000
  * clips pèse près de 11 Mo contre 5 de quota — donc on empêche la perte au lieu
  * de la réparer.
  *

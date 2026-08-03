@@ -127,7 +127,7 @@
   color: var(--text);
 }
 
-/* Zéro vue : le cas que la fouille existe pour exhumer. */
+/* Zéro vue : le cas que le scan existe pour exhumer. */
 .table-row .col-views.zero {
   color: var(--amber);
 }

@@ -25,7 +25,7 @@ const clips = [
 ]
 
 // Dates volontairement désordonnées : rien dans le domaine ne suppose un
-// tableau trié, et la fouille rend les fenêtres dans l'ordre où elles finissent.
+// tableau trié, et le scan rend les fenêtres dans l'ordre où elles finissent.
 const dated = [
   clip({ id: 'w', created_at: '2020-06-30T23:30:00Z' }),
   clip({ id: 'x', created_at: '2019-03-04T08:00:00Z' }),

@@ -55,7 +55,7 @@ export function rememberChannel(
 const STORAGE_KEY = 'getclip.channels'
 
 /**
- * Le cache accompagne les champs de fouille : il vit donc en `sessionStorage`,
+ * Le cache accompagne les champs de scan : il vit donc en `sessionStorage`,
  * comme eux. Une date de création ne périme jamais, mais garder la liste des
  * chaînes visitées après la fermeture de l'onglet laisserait une trace des
  * recherches passées bien au-delà de la session qui les a faites.

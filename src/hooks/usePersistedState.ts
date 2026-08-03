@@ -8,8 +8,8 @@ export const persistedKey = (key: string) => `getclip.${key}`
  *
  * Le stockage se choisit à l'appel, et ce choix est celui de la durée de vie :
  * `localStorage` pour une préférence qui doit survivre à l'onglet — le thème —,
- * `sessionStorage` pour ce qui ne vise qu'une fouille. Retrouver la chaîne et la
- * période d'une session close ferait repartir, au premier clic, une fouille que
+ * `sessionStorage` pour ce qui ne vise qu'un scan. Retrouver la chaîne et la
+ * période d'une session close ferait repartir, au premier clic, un scan que
  * personne n'a demandée dans cet onglet-ci.
  */
 export function usePersistedState(key: string, initial: string, store: Storage = localStorage) {

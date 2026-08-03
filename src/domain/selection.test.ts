@@ -7,7 +7,7 @@ const none = new Set<string>()
 
 describe('selectedClips', () => {
   // Ce sont les exclusions qui sont stockées, pas les sélections : un clip qui
-  // apparaît (seuil relevé, nouvelle fouille) est donc coché d’office.
+  // apparaît (seuil relevé, nouveau scan) est donc coché d’office.
   it('retient tout tant que rien n’est décoché', () => {
     expect(selectedClips(clips, none).map((c) => c.id)).toEqual(['a', 'b', 'c'])
   })

@@ -1,3 +1,5 @@
+import { TranslatableError } from './errors'
+
 const AUTHORIZE_URL = 'https://id.twitch.tv/oauth2/authorize'
 const VALIDATE_URL = 'https://id.twitch.tv/oauth2/validate'
 
@@ -41,7 +43,7 @@ export interface Session {
 /** Confirms the token is still live and recovers the client id it was issued for. */
 export async function validateToken(accessToken: string): Promise<Session> {
   const response = await fetch(VALIDATE_URL, { headers: { Authorization: `OAuth ${accessToken}` } })
-  if (!response.ok) throw new Error('Jeton expiré ou révoqué.')
+  if (!response.ok) throw new TranslatableError('error.tokenInvalid')
 
   const payload = (await response.json()) as { client_id: string; expires_in: number }
   return { clientId: payload.client_id, accessToken, expiresInSeconds: payload.expires_in }
