@@ -62,8 +62,8 @@ export class TwitchApi {
       }
 
       const payload = (await response.json()) as HelixResponse<T>
-      // Le `message` de Twitch est un texte libre, en anglais : on le reprend
-      // tel quel plutôt que de tenter de le reconnaître.
+      // Twitch's `message` is free text, in English: we take it as-is rather
+      // than trying to recognize it.
       if (!response.ok) {
         throw payload.message
           ? new Error(payload.message)

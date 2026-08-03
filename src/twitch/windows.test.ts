@@ -5,9 +5,9 @@ import { bisect, splitByYear, windowDurationMs } from './windows'
 const iso = (s: string) => new Date(s)
 
 describe('splitByYear', () => {
-  // Amorçage du scan : les frontières d'année coupent les niveaux hauts
-  // de l'arbre de bissection, les plus coûteux, sans rien demander à personne.
-  it('coupe sur les frontières d’année civile', () => {
+  // Sweep seeding: year boundaries remove the top levels of the bisection tree,
+  // the most expensive ones, without asking anyone for anything.
+  it('cuts on calendar-year boundaries', () => {
     const windows = splitByYear(iso('2019-06-15T00:00:00Z'), iso('2021-03-10T00:00:00Z'))
 
     expect(windows).toEqual([
@@ -17,20 +17,20 @@ describe('splitByYear', () => {
     ])
   })
 
-  it('rend une seule fenêtre pour une plage tenant dans une année', () => {
+  it('returns a single window for a range fitting inside one year', () => {
     expect(splitByYear(iso('2019-06-15T00:00:00Z'), iso('2019-08-01T00:00:00Z'))).toEqual([
       { startedAt: '2019-06-15T00:00:00Z', endedAt: '2019-08-01T00:00:00Z' },
     ])
   })
 
-  it('n’ajoute pas de fenêtre vide quand la fin tombe pile sur un 1er janvier', () => {
+  it('adds no empty window when the end lands exactly on a 1 January', () => {
     const windows = splitByYear(iso('2019-06-15T00:00:00Z'), iso('2021-01-01T00:00:00Z'))
 
     expect(windows).toHaveLength(2)
     expect(windows[1].endedAt).toBe('2021-01-01T00:00:00Z')
   })
 
-  it('ne rend rien pour une plage vide ou inversée', () => {
+  it('returns nothing for an empty or inverted range', () => {
     expect(splitByYear(iso('2020-01-01T00:00:00Z'), iso('2020-01-01T00:00:00Z'))).toEqual([])
     expect(splitByYear(iso('2021-01-01T00:00:00Z'), iso('2020-01-01T00:00:00Z'))).toEqual([])
   })
