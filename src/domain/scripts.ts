@@ -1,3 +1,5 @@
+import type { T } from '../i18n/translate'
+
 export type ScriptFlavor = 'bat' | 'sh'
 
 export interface PlatformHints {
@@ -45,16 +47,14 @@ function slug(channel: string): string {
   return channel.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 64) || 'clips'
 }
 
-function batScript(channel: string, urls: string[]): string {
+function batScript(channel: string, urls: string[], t: T): string {
   const folder = `clips_${slug(channel)}`
-  // Messages stay ASCII: accented output depends on the console code page, and a
-  // mangled prompt is worse than a plain one.
   const lines = [
     '@echo off',
     'chcp 65001 >nul',
     'cd /d "%~dp0"',
     '',
-    `echo ClipSweep - ${urls.length} clip(s) de ${slug(channel)}`,
+    `echo ${t('script.header', { count: String(urls.length), channel: slug(channel) })}`,
     'echo.',
     '',
     'rem Un yt-dlp que le visiteur a installe lui-meme, dans ce dossier ou dans',
@@ -64,10 +64,13 @@ function batScript(channel: string, urls: string[]): string {
     '',
     'if exist yt-dlp.exe goto :ready',
     'where yt-dlp.exe >nul 2>&1 && goto :ready',
-    'echo yt-dlp.exe est introuvable dans ce dossier.',
-    'set /p GETCLIP_FETCH="Le telecharger depuis GitHub ? [O/N] "',
+    `echo ${t('script.missingBat')}`,
+    `set /p GETCLIP_FETCH="${t('script.askFetch')} "`,
+    // Les deux lettres sont acceptees quelle que soit la langue de l'invite :
+    // celui qui repond « Y » a une question francaise ne doit pas etre bloque.
     'if /i "%GETCLIP_FETCH%"=="O" goto :fetch',
-    'echo Abandon. Placez yt-dlp.exe a cote de ce script, puis relancez.',
+    'if /i "%GETCLIP_FETCH%"=="Y" goto :fetch',
+    `echo ${t('script.abortBat')}`,
     'pause',
     'exit /b 1',
     '',
@@ -76,10 +79,10 @@ function batScript(channel: string, urls: string[]): string {
     'rem efface en partant, pour que la version soit toujours celle du jour.',
     'set "GETCLIP_TEMP_YTDLP=%TEMP%\\getclip-yt-dlp-%RANDOM%.exe"',
     'set "YTDLP=%GETCLIP_TEMP_YTDLP%"',
-    'echo Telechargement de yt-dlp...',
+    `echo ${t('script.fetching')}`,
     `curl -L --fail -o "%GETCLIP_TEMP_YTDLP%" ${YTDLP_RELEASE}/yt-dlp.exe`,
     'if errorlevel 1 (',
-    '  echo Echec du telechargement de yt-dlp.',
+    `  echo ${t('script.fetchFailed')}`,
     '  del "%GETCLIP_TEMP_YTDLP%" >nul 2>&1',
     '  pause',
     '  exit /b 1',
@@ -97,20 +100,20 @@ function batScript(channel: string, urls: string[]): string {
     'if defined GETCLIP_TEMP_YTDLP del "%GETCLIP_TEMP_YTDLP%" >nul 2>&1',
     '',
     'echo.',
-    `echo Termine. Les clips sont dans le dossier ${folder}.`,
+    `echo ${t('script.done', { folder })}`,
     'pause',
   ]
   return lines.join('\r\n')
 }
 
-function shScript(channel: string, urls: string[]): string {
+function shScript(channel: string, urls: string[], t: T): string {
   const folder = `clips_${slug(channel)}`
   const lines = [
     '#!/usr/bin/env bash',
     'set -euo pipefail',
     'cd "$(dirname "$0")"',
     '',
-    `echo "ClipSweep - ${urls.length} clip(s) de ${slug(channel)}"`,
+    `echo "${t('script.header', { count: String(urls.length), channel: slug(channel) })}"`,
     '',
     '# Arme avant le moindre telechargement : une interruption ne doit rien',
     '# laisser derriere elle. Les deux variables sont vides tant que rien n a ete',
@@ -130,9 +133,10 @@ function shScript(channel: string, urls: string[]): string {
     'elif [ -x ./yt-dlp ]; then',
     '  YTDLP=./yt-dlp',
     'else',
-    '  echo "yt-dlp est introuvable."',
-    '  read -r -p "Le telecharger depuis GitHub ? [o/N] " reply',
-    '  [ "$reply" = "o" ] || { echo "Abandon."; exit 1; }',
+    `  echo "${t('script.missingSh')}"`,
+    `  read -r -p "${t('script.askFetch')} " reply`,
+    // Les deux lettres sont acceptees quelle que soit la langue de l'invite.
+    `  case "$reply" in [oOyY]) ;; *) echo "${t('script.abortSh')}"; exit 1 ;; esac`,
     '  # Dans un dossier temporaire, jamais a cote du script : le binaire est',
     '  # efface en partant, pour que la version soit toujours celle du jour.',
     '  YTDLP_TMPDIR="$(mktemp -d)"',
@@ -150,13 +154,23 @@ function shScript(channel: string, urls: string[]): string {
     '',
     `"$YTDLP" -a "$LIST" -P "${folder}" -o "%(title)s [%(id)s].%(ext)s" --download-archive "${folder}/archive.txt" --no-overwrites --sleep-requests 1`,
     '',
-    `echo "Termine. Les clips sont dans le dossier ${folder}."`,
+    `echo "${t('script.done', { folder })}"`,
     '',
   ]
   return lines.join('\n')
 }
 
-export function buildDownloadScript(flavor: ScriptFlavor, channel: string, urls: string[]): string {
+/**
+ * Les messages du script suivent la langue de l'interface, mais restent en
+ * ASCII : la page de code de la console n'est pas garantie, et un accent y sort
+ * en charabia. Un test le vérifie sur toutes les clés `script.`.
+ */
+export function buildDownloadScript(
+  flavor: ScriptFlavor,
+  channel: string,
+  urls: string[],
+  t: T,
+): string {
   const safe = keepClipUrls(urls)
-  return flavor === 'bat' ? batScript(channel, safe) : shScript(channel, safe)
+  return flavor === 'bat' ? batScript(channel, safe, t) : shScript(channel, safe, t)
 }

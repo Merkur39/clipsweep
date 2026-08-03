@@ -51,10 +51,7 @@ export function SearchProgress({
       {incomplete.length > 0 && (
         <p className="alert">
           <AlertIcon />
-          <span>
-            {incomplete.length} période(s) n'ont pas pu être explorées entièrement : il manque des
-            clips sur celles-ci. Resserre l'intervalle de dates.
-          </span>
+          <span>{t('progress.incomplete', { n: incomplete.length })}</span>
         </p>
       )}
 
@@ -63,30 +60,30 @@ export function SearchProgress({
       <details className="technical">
         <summary>
           <CaretIcon />
-          Détail de la fouille
-          <span className="summary-aside">frise, compteurs, journal</span>
+          {t('progress.details')}
+          <span className="summary-aside">{t('progress.detailsAside')}</span>
         </summary>
 
-        <p className="section-label">Découpage du temps</p>
+        <p className="section-label">{t('progress.timeSplit')}</p>
         <Frieze reports={reports} span={span} running={running} />
         <div className="legend">
           <span>
             <b className="done" />
-            période complète
+            {t('progress.legend.done')}
           </span>
           <span>
             <b className="split" />
-            saturée, recoupée
+            {t('progress.legend.split')}
           </span>
           <span>
             <b className="lost" />
-            saturée au plancher — clips manquants
+            {t('progress.legend.lost')}
           </span>
         </div>
 
         <dl className="tally">
           <div>
-            <dt>Périodes</dt>
+            <dt>{t('progress.periods')}</dt>
             <dd>
               {progress
                 ? `${formatCount(progress.windowsDone, locale)}/${formatCount(progress.windowsTotal, locale)}`
@@ -94,15 +91,15 @@ export function SearchProgress({
             </dd>
           </div>
           <div>
-            <dt>Requêtes</dt>
+            <dt>{t('progress.requests')}</dt>
             <dd>{formatCount(progress?.requests ?? 0, locale)}</dd>
           </div>
         </dl>
 
-        <p className="section-label">Journal</p>
+        <p className="section-label">{t('progress.log')}</p>
         <div className="log" ref={logRef}>
           {logEntries.length === 0 ? (
-            <p>En attente.</p>
+            <p>{t('progress.logEmpty')}</p>
           ) : (
             logEntries.map((entry) => (
               <p key={entry.id} className={entry.kind}>

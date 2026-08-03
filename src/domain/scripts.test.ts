@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildDownloadScript, detectScriptFlavor } from './scripts'
+import { makeT } from '../i18n/translate'
+
+const t = makeT('fr')
 
 const URLS = [
   'https://www.twitch.tv/testchannel/clip/SpotlessVenomousPterodactylMikeHogu-RzvnjSqiUhzTIIdE',
   'https://clips.twitch.tv/SpicyLittleDragonSSSsss-L5iMcsYB7AxMN_Vt',
 ]
 
-const bat = (urls = URLS, channel = 'testchannel') => buildDownloadScript('bat', channel, urls)
-const sh = (urls = URLS, channel = 'testchannel') => buildDownloadScript('sh', channel, urls)
+const bat = (urls = URLS, channel = 'testchannel') => buildDownloadScript('bat', channel, urls, t)
+const sh = (urls = URLS, channel = 'testchannel') => buildDownloadScript('sh', channel, urls, t)
 
 describe('detectScriptFlavor', () => {
   const ua = (userAgent: string, platform?: string) => detectScriptFlavor({ userAgent, platform })
@@ -72,10 +75,25 @@ describe('buildDownloadScript, quelle que soit la variante', () => {
 
   it('demande confirmation avant d’aller chercher yt-dlp', () => {
     expect(bat()).toMatch(/set \/p .*\[O\/N\]/)
-    expect(sh()).toMatch(/read -r -p .*\[o\/N\]/)
+    expect(sh()).toMatch(/read -r -p .*\[O\/N\]/)
     for (const script of [bat(), sh()]) {
       expect(script).toContain('github.com/yt-dlp/yt-dlp/releases/latest/download')
     }
+  })
+
+  /**
+   * La lettre de confirmation suit la langue de l'invite — « O » pour oui,
+   * « Y » pour yes — mais le script accepte les deux quoi qu'il arrive : celui
+   * qui répond par réflexe dans l'autre langue ne doit pas voir son
+   * téléchargement abandonné sans raison lisible.
+   */
+  it('accepte la confirmation dans les deux langues', () => {
+    const anglais = buildDownloadScript('bat', 'testchannel', URLS, makeT('en'))
+
+    expect(anglais).toMatch(/read|set \/p/)
+    expect(anglais).toContain('[Y/N]')
+    for (const lettre of ['"O"', '"Y"']) expect(anglais).toContain(lettre)
+    expect(buildDownloadScript('sh', 'testchannel', URLS, makeT('en'))).toContain('[oOyY]')
   })
 })
 
@@ -102,7 +120,7 @@ describe('buildDownloadScript, yt-dlp jetable', () => {
     expect(sh()).not.toMatch(/rm\s+(?:-\S+\s+)*"?\.?\/?yt-dlp"?\s*$/m)
   })
 
-  // Un binaire à moitié écrit, ou une fouille interrompue, ne doivent pas
+  // Un binaire à moitié écrit, ou un scan interrompu, ne doivent pas
   // laisser derrière eux le fichier périmé que tout ceci cherche à éviter.
   it('nettoie aussi quand ça tourne mal', () => {
     // .bat : le téléchargement raté efface sa propre trace avant de sortir.

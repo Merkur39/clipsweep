@@ -79,7 +79,7 @@ export function MultiSelect({
         <div className="multiselect-panel" id={panelId} role="group" aria-label={label}>
           {selected.length > 0 && (
             <button type="button" className="link" onClick={() => onChange([])}>
-              Tout décocher
+              {t('filters.uncheckAll')}
             </button>
           )}
           {options.map((option) => (

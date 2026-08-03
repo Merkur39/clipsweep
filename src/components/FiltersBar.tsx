@@ -1,4 +1,5 @@
 import type { DateExtent, Facet } from '../domain/filters'
+import { useTranslation } from '../i18n/LocaleProvider'
 import { DateField } from './DateField'
 import { MultiSelect } from './MultiSelect'
 import { NumberField } from './NumberField'
@@ -53,45 +54,47 @@ export function FiltersBar({
   onGameIdsChange,
   gameLabel,
 }: FiltersBarProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="filters">
       <NumberField
-        label="Vues min"
-        placeholder="aucune"
+        label={t('filters.minViews')}
+        placeholder={t('filters.noThreshold')}
         value={minViews}
         onChange={onMinViewsChange}
       />
       <NumberField
-        label="Vues max"
-        placeholder="aucune"
+        label={t('filters.maxViews')}
+        placeholder={t('filters.noThreshold')}
         value={maxViews}
         onChange={onMaxViewsChange}
       />
-      {/* Les bornes viennent des clips récupérés, pas de la période fouillée :
-          une fouille lancée avant la création de la chaîne offrirait sinon des
+      {/* Les bornes viennent des clips récupérés, pas de la période scannée :
+          un scan lancé avant la création de la chaîne offrirait sinon des
           dates dont aucune ne peut rien rendre. */}
       <DateField
-        label="Du"
+        label={t('filters.from')}
         value={from}
         onChange={onFromChange}
         min={dateBounds?.first}
         max={dateBounds?.last}
       />
       <DateField
-        label="Au"
+        label={t('filters.to')}
         value={to}
         onChange={onToChange}
         min={dateBounds?.first}
         max={dateBounds?.last}
       />
       <MultiSelect
-        label="Créateurs"
+        label={t('filters.creators')}
         options={creatorFacets}
         selected={creators}
         onChange={onCreatorsChange}
       />
       <MultiSelect
-        label="Jeux"
+        label={t('filters.games')}
         options={gameFacets}
         selected={gameIds}
         onChange={onGameIdsChange}
