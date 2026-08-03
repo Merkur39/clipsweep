@@ -1,5 +1,5 @@
-/* SearchProgress.tsx — ligne d'état, alerte d'exhaustivité, repli technique,
-   compteurs et journal. La frise elle-même vit dans `chart.css`. */
+/* SearchProgress.tsx — status line, completeness alert, technical fold,
+   counters and log. The frieze itself lives in `chart.css`. */
 
 .progress-block {
   margin-bottom: var(--s-2);
