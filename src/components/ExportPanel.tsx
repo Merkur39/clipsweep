@@ -25,7 +25,7 @@ export function ExportPanel({
   const { t } = useTranslation()
   const empty = selected.length === 0
   const downloadLabel = empty
-    ? t('export.download.all')
+    ? t('export.download.none')
     : t('export.download.some', { n: selected.length })
 
   return (

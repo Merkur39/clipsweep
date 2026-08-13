@@ -30,7 +30,7 @@ export interface ClipTableProps {
   clips: Clip[]
   emptyMessage: string
   emptyAction?: { label: string; onClick: () => void }
-  deselected: ReadonlySet<string>
+  selected: ReadonlySet<string>
   onToggle: (id: string) => void
   onToggleAll: () => void
   sort: ClipSort
@@ -41,14 +41,14 @@ export function ClipTable({
   clips,
   emptyMessage,
   emptyAction,
-  deselected,
+  selected,
   onToggle,
   onToggleAll,
   sort,
   onSortChange,
 }: ClipTableProps) {
   const { locale, t } = useTranslation()
-  const state = selectionState(clips, deselected)
+  const state = selectionState(clips, selected)
   const scrollerRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportHeight, setViewportHeight] = useState(560)
@@ -122,7 +122,7 @@ export function ClipTable({
             }}
             disabled={clips.length === 0}
             onChange={onToggleAll}
-            aria-label={state === 'all' ? t('table.uncheckAll') : t('table.checkAll')}
+            aria-label={state === 'all' ? t('results.deselectAll') : t('results.selectAll')}
           />
         </span>
         {COLUMNS.map((column) => (
@@ -174,7 +174,7 @@ export function ClipTable({
                 <span className="col-pick">
                   <input
                     type="checkbox"
-                    checked={!deselected.has(clip.id)}
+                    checked={selected.has(clip.id)}
                     onChange={() => onToggle(clip.id)}
                     aria-label={clip.title || t('table.untitledClip')}
                   />

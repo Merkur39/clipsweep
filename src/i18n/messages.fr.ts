@@ -74,6 +74,13 @@ export const fr = {
   // itself, which a single sentence could not manage.
   'results.label': 'Résultats',
   'results.reset': 'Réinitialiser',
+  /**
+   * The blanket check, worded once for the two controls that carry it: the link
+   * on the count line and the table's head checkbox. Two verbs for one action
+   * would read as two actions.
+   */
+  'results.selectAll': 'Tout sélectionner',
+  'results.deselectAll': 'Tout désélectionner',
   'results.showAll': 'Voir les {n}',
   'results.count.found': { one: '{n} clip récupéré', other: '{n} clips récupérés' },
   'results.count.shown': { one: '{n} affiché', other: '{n} affichés' },
@@ -126,8 +133,6 @@ export const fr = {
   'table.date': 'Date',
   'table.title': 'Titre',
   'table.creator': 'Créateur',
-  'table.checkAll': 'Tout cocher',
-  'table.uncheckAll': 'Tout décocher',
   'table.untitledClip': 'Clip sans titre',
   'table.untitled': '(sans titre)',
 
@@ -170,7 +175,12 @@ export const fr = {
   // together, and the space between them lives in the JSX.
   'export.download.ledeBefore': 'Un script à lancer sur ta machine : il récupère',
   'export.download.ledeAfter': 'au besoin sans rien installer, puis télécharge les clips.',
-  'export.download.all': 'Télécharger les clips',
+  /**
+   * On the disabled button, and it says why it is disabled: nothing is checked
+   * by default any more, so this is the state a sweep ends in. "Download the
+   * clips" read as "download them all" — an offer the button was refusing.
+   */
+  'export.download.none': 'Aucun clip sélectionné',
   'export.download.some': {
     one: 'Télécharger le clip',
     other: 'Télécharger les {n} clips',
