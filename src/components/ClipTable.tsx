@@ -4,20 +4,22 @@ import { selectionState } from '../domain/selection'
 import type { ClipSort, SortKey } from '../domain/sort'
 import { formatCount, formatDay } from '../i18n/format'
 import { useTranslation } from '../i18n/LocaleProvider'
-import type { MessageKey } from '../i18n/messages.fr'
 import type { Clip } from '../twitch/types'
 import { CaretIcon, PlayIcon } from './Icon'
+import { ResultsEmpty } from './ResultsEmpty'
+import { SORT_COLUMNS } from './sortColumns'
 import { visibleRange } from './virtual'
 
 const ROW_HEIGHT = 34
 const OVERSCAN = 8
 
-const COLUMNS: { key: SortKey; label: MessageKey; className: string }[] = [
-  { key: 'views', label: 'table.views', className: 'col-views' },
-  { key: 'date', label: 'table.date', className: 'col-date' },
-  { key: 'title', label: 'table.title', className: 'col-title' },
-  { key: 'creator', label: 'table.creator', className: 'col-author' },
-]
+/** Which column each sortable key heads, the offer itself being shared. */
+const COLUMN_CLASS: Record<SortKey, string> = {
+  views: 'col-views',
+  date: 'col-date',
+  title: 'col-title',
+  creator: 'col-author',
+}
 
 /**
  * Windowed rendering: the whole point of the tool is to surface tens of
@@ -128,10 +130,10 @@ export function ClipTable({
             aria-label={state === 'all' ? t('results.deselectAll') : t('results.selectAll')}
           />
         </span>
-        {COLUMNS.map((column) => (
+        {SORT_COLUMNS.map((column) => (
           <span
             key={column.key}
-            className={column.className}
+            className={COLUMN_CLASS[column.key]}
             aria-sort={
               sort.key !== column.key
                 ? 'none'
@@ -140,9 +142,9 @@ export function ClipTable({
                   : 'descending'
             }
           >
-            <button type="button" className="col-sort" onClick={() => onSortChange(column.key)}>
+            <button type="button" className="sort-key" onClick={() => onSortChange(column.key)}>
               {t(column.label)}
-              <span aria-hidden="true" className="col-sort-arrow">
+              <span aria-hidden="true" className="sort-key-arrow">
                 {sort.key === column.key && <CaretIcon turn={sort.direction === 'asc' ? 0 : 180} />}
               </span>
             </button>
@@ -154,19 +156,7 @@ export function ClipTable({
       </div>
 
       <div className="table-body" ref={scrollerRef} onScroll={onScroll} role="rowgroup">
-        {clips.length === 0 && (
-          <p className="table-empty">
-            {emptyMessage}
-            {emptyAction && (
-              <>
-                {' '}
-                <button type="button" className="link" onClick={emptyAction.onClick}>
-                  {emptyAction.label}
-                </button>
-              </>
-            )}
-          </p>
-        )}
+        {clips.length === 0 && <ResultsEmpty message={emptyMessage} action={emptyAction} />}
         <div style={{ height: clips.length * ROW_HEIGHT, position: 'relative' }}>
           <div style={{ position: 'absolute', top: firstIndex * ROW_HEIGHT, left: 0, right: 0 }}>
             {slice.map((clip) => (

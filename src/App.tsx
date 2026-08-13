@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { ClipGrid } from './components/ClipGrid'
 import { ClipPlayer } from './components/ClipPlayer'
 import { ClipTable } from './components/ClipTable'
 import { Colophon } from './components/Colophon'
@@ -10,14 +11,16 @@ import { Mark } from './components/Icon'
 import { LocaleToggle } from './components/LocaleToggle'
 import { SearchProgress } from './components/SearchProgress'
 import { ThemeToggle } from './components/ThemeToggle'
+import { ViewToggle } from './components/ViewToggle'
 import { applyTheme, parseTheme } from './domain/theme'
+import { parseView } from './domain/view'
 import { describeAccess, describeTokenLife } from './domain/access'
 import { applyFilters, dateExtent, facets } from './domain/filters'
 import { clampSince, clampUntil, describePeriodError, monthBefore } from './domain/period'
 import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
 import { selectedClips, toggle, toggleAll } from './domain/selection'
-import { DEFAULT_SORT, nextSort, sortClips, type ClipSort } from './domain/sort'
+import { DEFAULT_SORT, nextSort, sortClips, type ClipSort, type SortKey } from './domain/sort'
 import { useTranslation } from './i18n/LocaleProvider'
 import { useChannelLookup } from './hooks/useChannelLookup'
 import { useClipSearch } from './hooks/useClipSearch'
@@ -108,6 +111,12 @@ export default function App({ authError }: { authError: string | null }) {
   const [storedTheme, setTheme] = usePersistedState('theme', 'system')
   const theme = parseTheme(storedTheme)
   useEffect(() => applyTheme(document.documentElement, theme), [theme])
+
+  // Which readout is on screen. A display preference, like the theme, and it
+  // outlives the tab for the same reason: it says how one likes to read the
+  // clips, not which clips were being read.
+  const [storedView, setView] = usePersistedState('view', 'table')
+  const view = parseView(storedView)
 
   // The target and the period live for the tab's lifetime, unlike the theme:
   // they are the parameters of a sweep, not preferences. Finding them again
@@ -259,6 +268,23 @@ export default function App({ authError }: { authError: string | null }) {
   }
   const reopen = reopenFilter()
 
+  // Computed once for the two readouts: they go empty for the same reasons, and
+  // must say so in the same words.
+  const emptyMessage = describeEmptyResults(
+    {
+      searched: progress !== null,
+      running,
+      clipsFound: clips.length,
+      maxViews,
+      period: { from, to },
+    },
+    t,
+  )
+  const emptyAction = reopen
+    ? { label: t('results.showAll', { n: clips.length }), onClick: reopen }
+    : undefined
+  const changeSort = (key: SortKey) => setSort((current) => nextSort(current, key))
+
   const run = () => {
     if (running) {
       search.stop()
@@ -348,6 +374,7 @@ export default function App({ authError }: { authError: string | null }) {
             >
               {t('results.reset')}
             </button>
+            <ViewToggle view={view} onChange={setView} />
           </p>
           {clips.length > 0 && (
             <p className="result-count">
@@ -393,30 +420,33 @@ export default function App({ authError }: { authError: string | null }) {
             gameLabel={gameLabel}
           />
 
-          <ClipTable
-            clips={shown}
-            selected={selectedIds}
-            onToggle={toggleClip}
-            onToggleAll={checkAll}
-            onPlay={setPlayingId}
-            emptyMessage={describeEmptyResults(
-              {
-                searched: progress !== null,
-                running,
-                clipsFound: clips.length,
-                maxViews,
-                period: { from, to },
-              },
-              t,
-            )}
-            emptyAction={
-              reopen
-                ? { label: t('results.showAll', { n: clips.length }), onClick: reopen }
-                : undefined
-            }
-            sort={sort}
-            onSortChange={(key) => setSort((current) => nextSort(current, key))}
-          />
+          {/* One readout at a time: the same clips shown twice would cost two
+              virtualisers and a page twice as long, the selection being shared
+              anyway. */}
+          {view === 'table' ? (
+            <ClipTable
+              clips={shown}
+              selected={selectedIds}
+              onToggle={toggleClip}
+              onToggleAll={checkAll}
+              onPlay={setPlayingId}
+              emptyMessage={emptyMessage}
+              emptyAction={emptyAction}
+              sort={sort}
+              onSortChange={changeSort}
+            />
+          ) : (
+            <ClipGrid
+              clips={shown}
+              selected={selectedIds}
+              onToggle={toggleClip}
+              onPlay={setPlayingId}
+              emptyMessage={emptyMessage}
+              emptyAction={emptyAction}
+              sort={sort}
+              onSortChange={changeSort}
+            />
+          )}
 
           <ExportPanel
             selected={selected}

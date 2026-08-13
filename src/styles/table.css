@@ -38,20 +38,7 @@
   scrollbar-color: var(--rule-strong) transparent;
 }
 
-.table-empty {
-  margin: 0;
-  padding: 26px var(--s-4);
-  font-size: 13px;
-  color: var(--text-dim);
-}
-
-.table-empty .link {
-  padding: 0;
-  width: auto;
-  font-size: 13px;
-}
-
-/* The whole row ticks the box: see `rowClick` in ClipTable.tsx for the two
+/* The whole row ticks the box: see `rowClick` in ClipTable.tsx for the three
    targets excluded from it. */
 .table-row {
   border-bottom: 1px solid var(--rule);
@@ -72,35 +59,6 @@
   align-items: center;
 }
 
-.col-sort {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  width: 100%;
-  padding: 0;
-  background: none;
-  border: none;
-  color: inherit;
-  font: inherit;
-  font-weight: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
-  cursor: pointer;
-}
-
-.col-sort:hover:not(:disabled) {
-  background: none;
-  border-color: transparent;
-  color: var(--text);
-}
-
-/* Reserved width: the arrow appears without shifting the label. */
-.col-sort-arrow {
-  display: inline-flex;
-  width: 9px;
-  color: var(--violet);
-}
-
 .table-head [aria-sort='ascending'],
 .table-head [aria-sort='descending'] {
   color: var(--text);
@@ -108,8 +66,8 @@
 
 /* Numeric column: the label must line up with its values, so the arrow files
    to its left rather than pushing the header away from the edge. */
-.table-head .col-views .col-sort,
-.table-head .col-date .col-sort {
+.table-head .col-views .sort-key,
+.table-head .col-date .sort-key {
   flex-direction: row-reverse;
   justify-content: flex-start;
 }

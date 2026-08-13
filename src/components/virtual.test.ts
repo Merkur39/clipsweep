@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { visibleRange } from './virtual'
+import { gridMetrics, gridRange, visibleRange } from './virtual'
 
 const base = { rowHeight: 10, viewportHeight: 100, overscan: 2, count: 1000 }
 
@@ -33,5 +33,74 @@ describe('visibleRange', () => {
       firstIndex: 0,
       endIndex: 0,
     })
+  })
+})
+
+/**
+ * The grid measures what the table declares. A tile stretches to fill the width,
+ * so its height is not a constant to write down but a consequence of the column
+ * it lands in — and the virtualiser needs that height exactly, since it places
+ * rows by multiplying it.
+ */
+describe('gridMetrics', () => {
+  const tile = { tileMin: 230, gap: 12, metaHeight: 58 }
+
+  it('fits as many columns as the width takes, gaps included', () => {
+    // 958 = 4 x 230 + 3 x 12 + 34 left over: not enough for a fifth.
+    expect(gridMetrics({ ...tile, width: 958 }).perRow).toBe(4)
+    // A fifth column costs 5 x 230 + 4 x 12 = 1198, and not one pixel less.
+    expect(gridMetrics({ ...tile, width: 1197 }).perRow).toBe(4)
+    expect(gridMetrics({ ...tile, width: 1198 }).perRow).toBe(5)
+  })
+
+  it('never drops below one column', () => {
+    expect(gridMetrics({ ...tile, width: 100 }).perRow).toBe(1)
+    // Before the first measurement, and it must still yield a usable row.
+    expect(gridMetrics({ ...tile, width: 0 }).perRow).toBe(1)
+  })
+
+  /**
+   * 16:9 on the column actually granted, plus the fixed block and the gap. The
+   * thumbnail's height comes back out to be applied: leaving it to an
+   * `aspect-ratio` would have the browser round a slightly different box, and
+   * the half-pixel between the two becomes a visible step down a slice.
+   */
+  it('derives the row height from the column it computed', () => {
+    const { thumbHeight, rowHeight } = gridMetrics({ ...tile, width: 958 })
+
+    // (958 - 3 x 12) / 4 = 230.5 wide, so 130 high.
+    expect(thumbHeight).toBe(130)
+    expect(rowHeight).toBe(130 + 58 + 12)
+  })
+})
+
+describe('gridRange', () => {
+  const base = { rowHeight: 100, viewportHeight: 400, overscan: 1, perRow: 4, count: 100 }
+
+  it('slices whole rows', () => {
+    // Row 5 at the top edge, one row of overscan above: item 16 opens the slice.
+    expect(gridRange({ ...base, scrollTop: 500 })).toMatchObject({
+      firstIndex: 16,
+      endIndex: 40,
+    })
+  })
+
+  it('places the slice where its first row starts', () => {
+    expect(gridRange({ ...base, scrollTop: 500 }).offsetTop).toBe(400)
+  })
+
+  it('never runs past the end of the list', () => {
+    // 25 rows of 100 under a 400 viewport: the scroll stops at 2100, where the
+    // window would otherwise ask for 26 rows, hence 104 tiles.
+    expect(gridRange({ ...base, scrollTop: 2100 })).toMatchObject({
+      firstIndex: 80,
+      endIndex: 100,
+    })
+  })
+
+  /** A last row that is not full still takes a whole row of height. */
+  it('reserves the height of every row, the partial one included', () => {
+    expect(gridRange({ ...base, scrollTop: 0, count: 9 }).totalHeight).toBe(300)
+    expect(gridRange({ ...base, scrollTop: 0, count: 0 }).totalHeight).toBe(0)
   })
 })
