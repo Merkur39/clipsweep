@@ -5,48 +5,48 @@ export interface Identified {
 export type SelectionState = 'all' | 'none' | 'some'
 
 /**
- * Exclusions are stored rather than selections: everything is checked by
- * default, so a clip that appears — a raised threshold, a fresh search — comes
- * in already selected, and the common case costs an empty set.
+ * Selections are stored rather than exclusions: nothing is checked by default,
+ * so a clip that appears — a raised threshold, a fresh sweep — comes in
+ * unchecked, and no export ever carries a clip the user never pointed at.
  */
 export function selectedClips<T extends Identified>(
   clips: T[],
-  deselected: ReadonlySet<string>,
+  selected: ReadonlySet<string>,
 ): T[] {
-  return deselected.size === 0 ? clips : clips.filter((clip) => !deselected.has(clip.id))
+  return selected.size === 0 ? [] : clips.filter((clip) => selected.has(clip.id))
 }
 
-export function toggle(deselected: ReadonlySet<string>, id: string): Set<string> {
-  const next = new Set(deselected)
+export function toggle(selected: ReadonlySet<string>, id: string): Set<string> {
+  const next = new Set(selected)
   if (!next.delete(id)) next.add(id)
   return next
 }
 
 export function selectionState(
   clips: readonly Identified[],
-  deselected: ReadonlySet<string>,
+  selected: ReadonlySet<string>,
 ): SelectionState {
   if (clips.length === 0) return 'none'
 
-  const kept = selectedClips([...clips], deselected).length
+  const kept = selectedClips([...clips], selected).length
   if (kept === clips.length) return 'all'
   return kept === 0 ? 'none' : 'some'
 }
 
-/** Clears the selection when everything is checked, restores it otherwise. */
+/** Checks every displayed clip, or clears them when they were all checked. */
 export function toggleAll(
   clips: readonly Identified[],
-  deselected: ReadonlySet<string>,
+  selected: ReadonlySet<string>,
 ): Set<string> {
-  const next = new Set(deselected)
+  const next = new Set(selected)
 
-  if (selectionState(clips, deselected) === 'all') {
-    for (const clip of clips) next.add(clip.id)
+  if (selectionState(clips, selected) === 'all') {
+    for (const clip of clips) next.delete(clip.id)
     return next
   }
 
-  // Only the visible clips are restored: a clip hidden by the filter keeps
+  // Only the visible clips are checked: a clip hidden by the filter keeps
   // whatever state the user last gave it.
-  for (const clip of clips) next.delete(clip.id)
+  for (const clip of clips) next.add(clip.id)
   return next
 }

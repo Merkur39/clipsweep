@@ -6,26 +6,26 @@ const clips = [{ id: 'a' }, { id: 'b' }, { id: 'c' }]
 const none = new Set<string>()
 
 describe('selectedClips', () => {
-  // Exclusions are what gets stored, not selections: a clip that appears — a
-  // raised threshold, a fresh sweep — therefore comes in already checked.
-  it('keeps everything as long as nothing is unchecked', () => {
-    expect(selectedClips(clips, none).map((c) => c.id)).toEqual(['a', 'b', 'c'])
+  // Selections are what gets stored, not exclusions: a clip that appears — a
+  // raised threshold, a fresh sweep — therefore comes in unchecked.
+  it('keeps nothing as long as nothing is checked', () => {
+    expect(selectedClips(clips, none)).toEqual([])
   })
 
-  it('drops the unchecked clips', () => {
-    expect(selectedClips(clips, new Set(['b'])).map((c) => c.id)).toEqual(['a', 'c'])
+  it('keeps the checked clips, in display order', () => {
+    expect(selectedClips(clips, new Set(['c', 'a'])).map((c) => c.id)).toEqual(['a', 'c'])
   })
 
-  it('ignores an exclusion that matches no displayed clip', () => {
-    expect(selectedClips(clips, new Set(['zzz'])).map((c) => c.id)).toEqual(['a', 'b', 'c'])
+  it('ignores a selection that matches no displayed clip', () => {
+    expect(selectedClips(clips, new Set(['zzz'])).map((c) => c.id)).toEqual([])
   })
 })
 
 describe('toggle', () => {
-  it('unchecks then rechecks a clip', () => {
-    const off = toggle(none, 'b')
-    expect([...off]).toEqual(['b'])
-    expect([...toggle(off, 'b')]).toEqual([])
+  it('checks then unchecks a clip', () => {
+    const on = toggle(none, 'b')
+    expect([...on]).toEqual(['b'])
+    expect([...toggle(on, 'b')]).toEqual([])
   })
 
   it('does not mutate the set it receives', () => {
@@ -36,8 +36,8 @@ describe('toggle', () => {
 
 describe('selectionState', () => {
   it('tells all, none, and partial apart', () => {
-    expect(selectionState(clips, none)).toBe('all')
-    expect(selectionState(clips, new Set(['a', 'b', 'c']))).toBe('none')
+    expect(selectionState(clips, new Set(['a', 'b', 'c']))).toBe('all')
+    expect(selectionState(clips, none)).toBe('none')
     expect(selectionState(clips, new Set(['b']))).toBe('some')
   })
 
@@ -47,21 +47,21 @@ describe('selectionState', () => {
 })
 
 describe('toggleAll', () => {
-  it('unchecks everything when everything was checked', () => {
+  it('checks everything when nothing was checked', () => {
     expect([...toggleAll(clips, none)].sort()).toEqual(['a', 'b', 'c'])
   })
 
-  it('rechecks everything from a partial selection', () => {
-    expect([...toggleAll(clips, new Set(['b']))]).toEqual([])
+  it('checks everything from a partial selection', () => {
+    expect([...toggleAll(clips, new Set(['b']))].sort()).toEqual(['a', 'b', 'c'])
   })
 
-  it('rechecks everything when nothing was checked', () => {
+  it('unchecks everything when everything was checked', () => {
     expect([...toggleAll(clips, new Set(['a', 'b', 'c']))]).toEqual([])
   })
 
-  it('does not revive an unchecked clip the filter hides', () => {
-    // 'hidden' is not displayed: checking all must not bring it back in.
-    const next = toggleAll(clips, new Set(['b', 'hidden']))
+  it('does not drop a checked clip the filter hides', () => {
+    // 'hidden' is not displayed: unchecking all must leave it alone.
+    const next = toggleAll(clips, new Set(['a', 'b', 'c', 'hidden']))
 
     expect([...next]).toEqual(['hidden'])
   })

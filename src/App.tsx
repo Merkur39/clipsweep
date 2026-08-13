@@ -130,9 +130,10 @@ export default function App({ authError }: { authError: string | null }) {
   const [creators, setCreators] = useState<readonly string[]>([])
   const [gameIds, setGameIds] = useState<readonly string[]>([])
   const [sort, setSort] = useState<ClipSort>(DEFAULT_SORT)
-  // Exclusions, not selections: everything starts checked, including clips that
-  // appear later when the threshold is raised.
-  const [deselected, setDeselected] = useState<ReadonlySet<string>>(() => new Set())
+  // Selections, not exclusions: nothing starts checked, so no export ever
+  // carries a clip the user never pointed at — including the ones that appear
+  // later when the threshold is raised.
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set())
   // Read once: the visitor's machine does not change mid-session.
   const [flavor] = useState(() =>
     detectScriptFlavor({
@@ -233,7 +234,11 @@ export default function App({ authError }: { authError: string | null }) {
     setFromDate('')
     setToDate('')
   }
-  const selected = useMemo(() => selectedClips(shown, deselected), [shown, deselected])
+  const selected = useMemo(() => selectedClips(shown, selectedIds), [shown, selectedIds])
+  // `selectionState` all over again, minus its pass over the clips: `selected`
+  // is already the intersection the state is read from.
+  const allChecked = shown.length > 0 && selected.length === shown.length
+  const checkAll = () => setSelectedIds((previous) => toggleAll(shown, previous))
 
   /**
    * The escape hatch for a table emptied by a filter: it reopens the one the
@@ -266,7 +271,7 @@ export default function App({ authError }: { authError: string | null }) {
     }
     // A new sweep starts from a blank selection and blank filters: keeping a
     // threshold from the previous sweep would give an unexplained empty table.
-    setDeselected(new Set())
+    setSelectedIds(new Set())
     resetFilters()
     void search.start({ channel, since: effectiveSince, until: effectiveUntil })
   }
@@ -347,7 +352,19 @@ export default function App({ authError }: { authError: string | null }) {
                   selected: selected.length,
                 },
                 t,
-              )}
+              )}{' '}
+              {/* A sweep ends with nothing checked, and every export stays dead
+                  until something is: the blanket check needs a target wider
+                  than the head checkbox, and it belongs on the line that gives
+                  the count it acts on. */}
+              <button
+                type="button"
+                className="link"
+                onClick={checkAll}
+                disabled={shown.length === 0}
+              >
+                {t(allChecked ? 'results.deselectAll' : 'results.selectAll')}
+              </button>
             </p>
           )}
 
@@ -372,9 +389,9 @@ export default function App({ authError }: { authError: string | null }) {
 
           <ClipTable
             clips={shown}
-            deselected={deselected}
-            onToggle={(id) => setDeselected((previous) => toggle(previous, id))}
-            onToggleAll={() => setDeselected((previous) => toggleAll(shown, previous))}
+            selected={selectedIds}
+            onToggle={(id) => setSelectedIds((previous) => toggle(previous, id))}
+            onToggleAll={checkAll}
             emptyMessage={describeEmptyResults(
               {
                 searched: progress !== null,

@@ -48,6 +48,8 @@ export const en: Catalogue = {
   // ── Counts ───────────────────────────────────────────────────────────────
   'results.label': 'Results',
   'results.reset': 'Reset',
+  'results.selectAll': 'Select all',
+  'results.deselectAll': 'Deselect all',
   'results.showAll': 'Show all {n}',
   'results.count.found': { one: '{n} clip collected', other: '{n} clips collected' },
   'results.count.shown': { one: '{n} shown', other: '{n} shown' },
@@ -95,8 +97,6 @@ export const en: Catalogue = {
   'table.date': 'Date',
   'table.title': 'Title',
   'table.creator': 'Creator',
-  'table.checkAll': 'Check all',
-  'table.uncheckAll': 'Uncheck all',
   'table.untitledClip': 'Untitled clip',
   'table.untitled': '(untitled)',
 
@@ -136,7 +136,7 @@ export const en: Catalogue = {
   'export.download.title': 'Download the videos',
   'export.download.ledeBefore': 'A script to run on your machine: it borrows',
   'export.download.ledeAfter': 'if needed, installing nothing, then downloads the clips.',
-  'export.download.all': 'Download the clips',
+  'export.download.none': 'No clip selected',
   'export.download.some': {
     one: 'Download the clip',
     other: 'Download the {n} clips',

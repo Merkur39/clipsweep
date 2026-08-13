@@ -10,6 +10,17 @@
   color: var(--text-dim);
 }
 
+/* The blanket check, filed at the end of the counts it acts on. In the sans, on
+   a line otherwise set in the mono: the counts are a readout, this is an
+   action, and `button.link` would inherit the readout's family. Its bottom
+   padding — meant for links stacked in a panel — would push the line apart. */
+.result-count .link {
+  margin-left: var(--s-2);
+  padding: 0;
+  font-family: var(--sans);
+  font-size: 12px;
+}
+
 /* Six controls hold on one line provided they are not given the same template:
    a views field houses six digits, a date field does not go below 137px (its
    segments, its calendar and its cross), and the facets want everything that

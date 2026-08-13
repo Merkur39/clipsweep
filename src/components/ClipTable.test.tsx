@@ -24,13 +24,15 @@ const clip = (id: string, viewCount = 1): Clip =>
     game_id: '1',
   }) as Clip
 
-const setup = (options: { clips?: Clip[]; sort?: ClipSort } = {}) => {
+const setup = (
+  options: { clips?: Clip[]; sort?: ClipSort; selected?: ReadonlySet<string> } = {},
+) => {
   const onSortChange = vi.fn()
   const onToggle = vi.fn()
   const view = render(
     <ClipTable
       clips={options.clips ?? [clip('a'), clip('b')]}
-      deselected={new Set()}
+      selected={options.selected ?? new Set()}
       onToggle={onToggle}
       onToggleAll={vi.fn()}
       emptyMessage="rien"
@@ -45,6 +47,15 @@ const header = (name: string) => screen.getByRole('button', { name })
 
 describe('ClipTable, row selection', () => {
   const row = (title: string) => screen.getByTitle(title).closest('.table-row')!
+
+  // Nothing is checked by default: the box reads the selection, it does not
+  // read its complement.
+  it('checks the selected clips only', () => {
+    setup({ selected: new Set(['a']) })
+
+    expect(screen.getByRole('checkbox', { name: 'Titre a' })).toBeChecked()
+    expect(screen.getByRole('checkbox', { name: 'Titre b' })).not.toBeChecked()
+  })
 
   it('checks the clicked row', () => {
     const { onToggle } = setup()
@@ -116,7 +127,7 @@ describe('ClipTable, tri', () => {
     view.rerender(
       <ClipTable
         clips={clips}
-        deselected={new Set()}
+        selected={new Set()}
         onToggle={vi.fn()}
         onToggleAll={vi.fn()}
         emptyMessage="rien"
@@ -139,7 +150,7 @@ describe('ClipTable, tri', () => {
     view.rerender(
       <ClipTable
         clips={clips.slice(0, 400)}
-        deselected={new Set()}
+        selected={new Set()}
         onToggle={vi.fn()}
         onToggleAll={vi.fn()}
         emptyMessage="rien"
