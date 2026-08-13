@@ -99,6 +99,18 @@ export const en: Catalogue = {
   'table.creator': 'Creator',
   'table.untitledClip': 'Untitled clip',
   'table.untitled': '(untitled)',
+  'table.play': 'Play {title}',
+
+  // ── Player ───────────────────────────────────────────────────────────────
+  'player.label': 'Clip player',
+  'player.close': 'Close',
+  'player.previous': 'Previous clip',
+  'player.next': 'Next clip',
+  'player.position': '{index} / {total}',
+  'player.select': 'Select',
+  'player.deselect': 'Remove',
+  'player.openOnTwitch': 'Open on Twitch',
+  'player.unavailable': 'This clip cannot be played here.',
 
   // ── Progress ─────────────────────────────────────────────────────────────
   'progress.incomplete': {

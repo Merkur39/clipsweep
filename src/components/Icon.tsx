@@ -7,6 +7,8 @@
 interface IconProps {
   /** Rotation in degrees, for the carets that point four ways. */
   turn?: number
+  /** Drawn side, in pixels. The default is the size the glyph was drawn for. */
+  size?: number
 }
 
 const base = {
@@ -43,10 +45,23 @@ export function ChevronIcon({ turn = 0 }: IconProps) {
   )
 }
 
-export function CloseIcon() {
+/** 11 px in the fields it clears; the player asks for a bigger one. */
+export function CloseIcon({ size = 11 }: IconProps = {}) {
   return (
-    <svg {...base} width={11} height={11}>
+    <svg {...base} width={size} height={size}>
       <path d="M4 4l8 8M12 4l-8 8" />
+    </svg>
+  )
+}
+
+/**
+ * The one solid glyph of the set, and it has to be: a triangle drawn as an
+ * outline at this size reads as a caret, which already means "sort" here.
+ */
+export function PlayIcon() {
+  return (
+    <svg {...base} width={13} height={13} fill="currentColor" stroke="none">
+      <path d="M4.6 3.1 12.4 8l-7.8 4.9Z" />
     </svg>
   )
 }

@@ -6,7 +6,7 @@ import { formatCount, formatDay } from '../i18n/format'
 import { useTranslation } from '../i18n/LocaleProvider'
 import type { MessageKey } from '../i18n/messages.fr'
 import type { Clip } from '../twitch/types'
-import { CaretIcon } from './Icon'
+import { CaretIcon, PlayIcon } from './Icon'
 import { visibleRange } from './virtual'
 
 const ROW_HEIGHT = 34
@@ -33,6 +33,7 @@ export interface ClipTableProps {
   selected: ReadonlySet<string>
   onToggle: (id: string) => void
   onToggleAll: () => void
+  onPlay: (id: string) => void
   sort: ClipSort
   onSortChange: (key: SortKey) => void
 }
@@ -44,6 +45,7 @@ export function ClipTable({
   selected,
   onToggle,
   onToggleAll,
+  onPlay,
   sort,
   onSortChange,
 }: ClipTableProps) {
@@ -82,17 +84,18 @@ export function ClipTable({
   const onScroll = useCallback(() => setScrollTop(scrollerRef.current?.scrollTop ?? 0), [])
 
   /**
-   * Toute la ligne coche, sauf sur ses deux cibles propres : le titre est un
-   * link to the clip, and the checkbox already fires its own `onChange` — letting
-   * it bubble up here would immediately undo the toggle.
+   * The whole row ticks the box, save on its own three targets: the title is a
+   * link to the clip, the play button opens the player — watching a clip is not
+   * choosing it — and the checkbox already fires its own `onChange`, which
+   * bubbling up here would immediately undo.
    *
-   * No `tabIndex` and no `role="button"`: the checkbox already carries keyboard
-   * access, duplicating one per row would put thousands of stops on
-   * tabulation dans la table.
+   * No `tabIndex` and no `role="button"`: the two controls of the row already
+   * carry keyboard access, and duplicating one on the row itself would add a
+   * third stop per row for an action already reachable.
    */
   const rowClick = useCallback(
     (event: MouseEvent<HTMLDivElement>, id: string) => {
-      if ((event.target as HTMLElement).closest('a, input')) return
+      if ((event.target as HTMLElement).closest('a, input, button')) return
       // A text selection ends with a click: it must check nothing.
       if (!window.getSelection()?.isCollapsed) return
       onToggle(id)
@@ -145,6 +148,9 @@ export function ClipTable({
             </button>
           </span>
         ))}
+        {/* The actions column has no label to give, but it has a track to hold:
+            head and rows share one template. */}
+        <span className="col-play" />
       </div>
 
       <div className="table-body" ref={scrollerRef} onScroll={onScroll} role="rowgroup">
@@ -189,6 +195,18 @@ export function ClipTable({
                   </a>
                 </span>
                 <span className="col-author">{clip.creator_name || '—'}</span>
+                <span className="col-play">
+                  <button
+                    type="button"
+                    className="row-play"
+                    aria-label={t('table.play', {
+                      title: clip.title || t('table.untitledClip'),
+                    })}
+                    onClick={() => onPlay(clip.id)}
+                  >
+                    <PlayIcon />
+                  </button>
+                </span>
               </div>
             ))}
           </div>

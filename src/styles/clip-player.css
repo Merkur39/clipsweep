@@ -1,0 +1,143 @@
+/* ClipPlayer.tsx — the clip on screen, and the two gestures that follow it:
+   keep or drop, then next.
+
+   A panel lifted off the chassis, not a floating card: the same hairlines, the
+   same flats, the same square corners. What sets it apart is the scrim behind
+   it, which is the only thing that says the rest of the page is on hold. */
+
+.player {
+  width: min(1040px, 92vw);
+  max-height: 92vh;
+  padding: 0;
+  overflow: hidden;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r);
+  color: var(--text);
+  box-shadow: 0 24px 60px -12px var(--shadow-panel);
+}
+
+.player::backdrop {
+  background: var(--scrim);
+}
+
+/* ---- what is being watched ---- */
+
+.player-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0 var(--s-3);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--rule);
+}
+
+.player-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  /* One line: a five-line title would push the video off a short screen. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-meta {
+  margin: 2px 0 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* The way out of a modal: the one control the eye looks for without reading,
+   and the one it must not have to aim at. A 34 px square, framed from the
+   start — the head is a busy corner, an unframed glyph reads as decoration. */
+.player-close {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  background: none;
+  border: 1px solid var(--rule);
+  color: var(--text-dim);
+}
+
+.player-close:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--rule-strong);
+  color: var(--text);
+}
+
+/* The player itself. Black behind it, in both worlds: it is the letterbox of a
+   video, not a surface of the interface. */
+.player-frame {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: calc(92vh - 140px);
+  border: 0;
+  background: #000;
+}
+
+.player-unavailable {
+  margin: 0;
+  padding: var(--s-7) var(--s-4);
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* ---- the two gestures ----
+   Moving through the list on the left, the choice on the right: the hand that
+   sorts stays on one side, the hand that browses on the other. */
+
+.player-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  background: var(--chassis);
+  border-top: 1px solid var(--rule);
+}
+
+.player-step {
+  padding: 7px 10px;
+}
+
+.player-position {
+  min-width: 74px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+/* Filed at the far end: it is the reason the clip is on screen at all. */
+.player-keep {
+  margin-left: auto;
+}
+
+.player-away {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .player {
+    width: 96vw;
+  }
+
+  .player-actions {
+    flex-wrap: wrap;
+    padding: var(--s-3);
+  }
+
+  /* Wrapped, the away link would sit alone on its line under a stretched
+     button: the choice comes back to the left with the rest. */
+  .player-keep {
+    margin-left: 0;
+  }
+}

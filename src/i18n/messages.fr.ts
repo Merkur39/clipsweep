@@ -112,7 +112,7 @@ export const fr = {
   'results.range.between': 'entre le {from} et le {to}',
   'results.range.from': 'à partir du {from}',
   'results.range.to': 'jusqu’au {to}',
-  /** A segment, inserted into `results.empty.aboveViews`. */
+  /** A segment: inserted into `results.empty.aboveViews`, and read in the player. */
   'results.views': { one: '{n} vue', other: '{n} vues' },
 
   // ── Filters ──────────────────────────────────────────────────────────────
@@ -135,6 +135,23 @@ export const fr = {
   'table.creator': 'Créateur',
   'table.untitledClip': 'Clip sans titre',
   'table.untitled': '(sans titre)',
+  'table.play': 'Lire {title}',
+
+  // ── Player ───────────────────────────────────────────────────────────────
+  'player.label': 'Lecteur de clip',
+  'player.close': 'Fermer',
+  'player.previous': 'Clip précédent',
+  'player.next': 'Clip suivant',
+  /** Position in the list being watched. Neutral in both languages. */
+  'player.position': '{index} / {total}',
+  'player.select': 'Sélectionner',
+  'player.deselect': 'Retirer',
+  /**
+   * The way out, always offered: the player is a cross-origin iframe, and
+   * nothing tells us from here whether it managed to play.
+   */
+  'player.openOnTwitch': 'Ouvrir sur Twitch',
+  'player.unavailable': 'Ce clip ne peut pas être lu ici.',
 
   // ── Progress ─────────────────────────────────────────────────────────────
   'progress.incomplete': {
