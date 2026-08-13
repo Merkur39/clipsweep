@@ -90,6 +90,57 @@ Analytics (`@vercel/analytics`) is mounted in [main.tsx](src/main.tsx). It loads
 consequence and nothing is measured**. Where it does work, it reports the page view and nothing more —
 neither the channel swept, nor the clips, nor the token go through it.
 
+## The two readouts
+
+The same clips, in the same order, with the same selection, in two shapes — chosen at the end of the
+"Results" label, one at a time:
+
+| Readout    | What it is for                                                                |
+| ---------- | ----------------------------------------------------------------------------- |
+| Table      | the numbers: views, dates, and the zero-view clips the whole sweep exists for |
+| Thumbnails | the clips themselves, a title saying little about what one is about to watch  |
+
+Showing both at once would cost two virtualisers and a page twice as long, for nothing: the
+selection is shared, so there is nothing to compare side by side. The choice lives in
+`localStorage`, like the theme — it says how one likes to read, not what was being read.
+
+Both are windowed, for the same reason: a sweep surfaces tens of thousands of clips, and that many
+thumbnails would be as many requests as DOM nodes. The grid computes its own column count rather
+than leaving it to `auto-fill` ([virtual.ts](src/components/virtual.ts)), and applies the thumbnail
+height it computes instead of declaring an `aspect-ratio` in the sheet: two sources for one height
+round differently, and the half pixel between them becomes a visible step down a slice of rows.
+
+Nothing is checked by default. The selection stores what is **kept**, not what is excluded, so no
+export ever carries a clip nobody pointed at. The counterpart is that a sweep ends with every export
+disabled, which the blanket "Select all" on the count line exists to undo.
+
+## Watching the clips
+
+A play button on each row, and the tiles themselves, open the clip in a modal **on the page**:
+leaving for Twitch would cost the page, and with it the results of the sweep, which live in memory
+alone. From there one keeps or drops the clip and moves to the next, which is the gesture the
+exports below are waiting for.
+
+The player is Twitch's own embed in an iframe — the only way to play a clip, Helix exposing no media
+URL (see the next section). `embedSrc` ([embed.ts](src/domain/embed.ts)) rebuilds its URL from the
+slug alone, validated against an allowlist like the URLs injected into the generated scripts, and
+names the embedding page in `parent`: Twitch refuses to play an embed whose `parent` does not name
+its host. It is derived from `location.hostname`, for the same reason `redirectUri()` is derived
+rather than configured.
+
+The clip opens **paused**, and that is precisely what gives it its sound. A cross-origin iframe does
+not inherit the click that opened it: Chrome grants unmuted playback only to a frame clicked in
+itself, or to a host origin carrying enough media engagement — which `localhost` and a fresh
+deployment do not have. Starting on its own therefore meant the player muting itself in order to
+start at all, and the mute came back on every clip. The click on ▶ lands inside the frame, and it is
+what unmutes, every time and on every origin.
+
+Three limits are assumed rather than hidden. Once the focus is inside that iframe the arrow keys go
+to Twitch and never reach us, hence the focus placed on "next" when the modal opens. A cross-origin
+iframe cannot be asked whether it managed to load, hence the link to Twitch always offered. And
+Twitch's end-of-clip recommendations cannot be turned off: the clip embed takes no such parameter,
+and the JavaScript embed SDK — which does expose playback events — does not support clips at all.
+
 ## Downloading the videos
 
 The Helix API exposes **no media URL**. The only real URL is a signed CloudFront one
@@ -123,18 +174,23 @@ dropped rather than escaped.
 
 ## Architecture
 
-| File                           | Role                                                      |
-| ------------------------------ | --------------------------------------------------------- |
-| `src/twitch/windows.ts`        | time-window seeding and bisection                         |
-| `src/twitch/clips.ts`          | traversal, pagination, deduplication, completeness report |
-| `src/twitch/auth.ts`           | implicit flow, token validation                           |
-| `src/twitch/api.ts`            | Helix client: throttle, 429/5xx retry                     |
-| `src/hooks/useClipSearch.ts`   | sweep orchestration, progress, log                        |
-| `src/domain/filters.ts`        | display filters and facets                                |
-| `src/components/Frieze.tsx`    | frieze of the time breakdown                              |
-| `src/components/ClipTable.tsx` | virtualized table — shows everything, no DOM ceiling      |
-| `src/domain/scripts.ts`        | `.bat` / `.sh` yt-dlp script generation                   |
-| `src/i18n/`                    | French and English catalogues, detection and choice       |
+| File                            | Role                                                      |
+| ------------------------------- | --------------------------------------------------------- |
+| `src/twitch/windows.ts`         | time-window seeding and bisection                         |
+| `src/twitch/clips.ts`           | traversal, pagination, deduplication, completeness report |
+| `src/twitch/auth.ts`            | implicit flow, token validation                           |
+| `src/twitch/api.ts`             | Helix client: throttle, 429/5xx retry                     |
+| `src/hooks/useClipSearch.ts`    | sweep orchestration, progress, log                        |
+| `src/domain/filters.ts`         | display filters and facets                                |
+| `src/components/Frieze.tsx`     | frieze of the time breakdown                              |
+| `src/components/ClipTable.tsx`  | virtualized table — shows everything, no DOM ceiling      |
+| `src/components/ClipGrid.tsx`   | virtualized board of thumbnails, measured then placed     |
+| `src/components/virtual.ts`     | the windows both readouts are sliced by                   |
+| `src/components/ClipPlayer.tsx` | the player, in a native `<dialog>`                        |
+| `src/domain/embed.ts`           | the embed URL, from the slug and the host                 |
+| `src/domain/selection.ts`       | what is kept, nothing being kept by default               |
+| `src/domain/scripts.ts`         | `.bat` / `.sh` yt-dlp script generation                   |
+| `src/i18n/`                     | French and English catalogues, detection and choice       |
 
 The collection logic, the domain, and the components are covered by tests — Vitest for the logic,
 Testing Library for rendering.
@@ -184,7 +240,8 @@ cache ([channelCache.ts](src/domain/channelCache.ts)) capped at 50 entries.
 
 Channel and period live in `sessionStorage`: they survive a tab reload, not the tab closing. They are
 the parameters of a sweep, not preferences — carrying them from one session to the next would restart,
-on the first click, a search nobody asked for. Only the theme and the language are durable. The clips
+on the first click, a search nobody asked for. Only the theme, the language and the choice of readout
+are durable, being the three that say how one reads rather than what was read. The clips
 themselves live in memory alone: while a sweep is running or its results are on screen, leaving the
 page asks for confirmation ([useUnloadGuard.ts](src/hooks/useUnloadGuard.ts)).
 
