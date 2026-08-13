@@ -94,6 +94,18 @@
   color: var(--violet);
 }
 
+/* Filed at the very end of the "Results" label, past the reset: the choice of
+   readout governs what is drawn below, not the filters beside it. Slimmer than
+   the pills of the masthead — this one joins a line of type, not a row of
+   preferences. */
+.section-label .view-toggle {
+  order: 2;
+}
+
+.section-label .view-toggle button {
+  padding: 4px 8px;
+}
+
 /* ---- chassis ---- */
 
 .layout {
@@ -160,6 +172,23 @@
 .rail-inner .section-label:first-child,
 .stage > .section-label:first-child {
   margin-top: 0;
+}
+
+/* ---- what the two readouts share ----
+   Why there is nothing on screen: the table and the grid go empty for exactly
+   the same reasons, so the message belongs to neither of them. */
+
+.results-empty {
+  margin: 0;
+  padding: 26px var(--s-4);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.results-empty .link {
+  width: auto;
+  padding: 0;
+  font-size: 13px;
 }
 
 /* ---- footer ---- */

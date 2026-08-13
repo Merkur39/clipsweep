@@ -1,5 +1,30 @@
 import { describe, expect, it } from 'vitest'
 
+import { formatDuration } from './format'
+
+/**
+ * The one reading that takes no language: `m:ss` has the same order and the
+ * same separator everywhere, unlike a count or a date. Passing a locale here
+ * would suggest a choice that does not exist.
+ */
+describe('formatDuration', () => {
+  it('reads a clip in minutes and seconds', () => {
+    expect(formatDuration(31)).toBe('0:31')
+    expect(formatDuration(65)).toBe('1:05')
+  })
+
+  it('pads the seconds so the badge keeps its width', () => {
+    expect(formatDuration(9)).toBe('0:09')
+    expect(formatDuration(0)).toBe('0:00')
+  })
+
+  // Helix serves the duration as a float: 59.6 s is a minute, not 59.
+  it('rounds what the API serves as a float', () => {
+    expect(formatDuration(30.4)).toBe('0:30')
+    expect(formatDuration(59.6)).toBe('1:00')
+  })
+})
+
 import { formatCount, formatDay } from './format'
 
 describe('formatCount', () => {

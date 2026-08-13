@@ -1,5 +1,5 @@
 /* The shared control vocabulary: fields, buttons, checkboxes, icons.
-   The components that specialise it (`.multiselect-button`, `.col-sort`,
+   The components that specialise it (`.multiselect-button`, `.row-play`,
    `.field-clear`) are imported after this file. */
 
 label {
@@ -220,4 +220,38 @@ input[type='checkbox']:disabled {
   cursor: default;
   border-color: var(--rule);
   background: transparent;
+}
+
+/* ---- the sort key ----
+   A silkscreen label that acts, shared by the two readouts' heads: the table
+   files one per column, the grid lines them up in a strip. It inherits the
+   type of the head it sits in, and undoes every bare-button rule. */
+
+.sort-key {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.sort-key:hover:not(:disabled) {
+  background: none;
+  border-color: transparent;
+  color: var(--text);
+}
+
+/* Reserved width: the arrow appears without shifting the label. */
+.sort-key-arrow {
+  display: inline-flex;
+  width: 9px;
+  color: var(--violet);
 }

@@ -101,6 +101,12 @@ export const en: Catalogue = {
   'table.untitled': '(untitled)',
   'table.play': 'Play {title}',
 
+  // ── Thumbnails ───────────────────────────────────────────────────────────
+  'view.label': 'Display',
+  'view.table': 'Table',
+  'view.grid': 'Thumbnails',
+  'grid.sortBy': 'Sort',
+
   // ── Player ───────────────────────────────────────────────────────────────
   'player.label': 'Clip player',
   'player.close': 'Close',

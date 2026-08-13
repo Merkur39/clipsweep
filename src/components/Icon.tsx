@@ -76,6 +76,30 @@ export function LogoutIcon() {
   )
 }
 
+/* ---- the two readouts ----
+   Each glyph is its own layout seen from above: lines that run the width, or
+   cells that tile it. Nothing here names a clip — what is being chosen is a
+   shape, not a content. */
+
+export function RowsIcon() {
+  return (
+    <svg {...base} width={13} height={13}>
+      <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" />
+    </svg>
+  )
+}
+
+export function GridIcon() {
+  return (
+    <svg {...base} width={13} height={13} strokeWidth={1.6}>
+      <rect x="2.4" y="2.4" width="4.8" height="4.8" rx="0.6" />
+      <rect x="8.8" y="2.4" width="4.8" height="4.8" rx="0.6" />
+      <rect x="2.4" y="8.8" width="4.8" height="4.8" rx="0.6" />
+      <rect x="8.8" y="8.8" width="4.8" height="4.8" rx="0.6" />
+    </svg>
+  )
+}
+
 /* ---- the three themes ----
    Sun and moon are the two assertions; the panel is the act of
    n'en faire aucune et de suivre la machine. */

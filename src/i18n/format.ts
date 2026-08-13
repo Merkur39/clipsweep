@@ -76,3 +76,18 @@ export function formatCount(value: number, locale: Locale): string {
 export function formatDay(iso: string, locale: Locale): string {
   return days(locale).format(new Date(`${iso.slice(0, 10)}T00:00:00Z`))
 }
+
+/**
+ * A clip's length, on its badge.
+ *
+ * The one reading here that takes no language: `m:ss` keeps the same order and
+ * the same separator everywhere, where a count changes its grouping and a date
+ * its field order. Taking a locale would announce a choice that does not exist.
+ *
+ * Helix serves the duration as a float — 59.6 s is a minute, not fifty-nine
+ * seconds and a badge that lies by one.
+ */
+export function formatDuration(seconds: number): string {
+  const total = Math.max(0, Math.round(seconds))
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
+}

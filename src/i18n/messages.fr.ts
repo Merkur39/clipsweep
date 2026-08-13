@@ -137,6 +137,16 @@ export const fr = {
   'table.untitled': '(sans titre)',
   'table.play': 'Lire {title}',
 
+  // ── Thumbnails ───────────────────────────────────────────────────────────
+  /**
+   * Which of the two readouts is on screen. "Display" rather than "View": the
+   * choice bears on the shape given to the clips, not on a place one goes to.
+   */
+  'view.label': 'Affichage',
+  'view.table': 'Tableau',
+  'view.grid': 'Vignettes',
+  'grid.sortBy': 'Trier',
+
   // ── Player ───────────────────────────────────────────────────────────────
   'player.label': 'Lecteur de clip',
   'player.close': 'Fermer',

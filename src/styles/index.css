@@ -15,7 +15,7 @@
    ---- Cascade order ----
    The order below is significant: at equal specificity, the last one wins.
    Component files come after `controls.css` because they override the bare
-   button and the bare field (`.multiselect-button`, `.col-sort`,
+   button and the bare field (`.multiselect-button`, `.row-play`,
    `.field-clear`). Every `@media` stays in the file of the rules it
    overrides, never gathered at the end.
    ========================================================================= */
@@ -28,5 +28,6 @@
 @import './chart.css';
 @import './filters.css';
 @import './table.css';
+@import './clip-grid.css';
 @import './clip-player.css';
 @import './export-panel.css';

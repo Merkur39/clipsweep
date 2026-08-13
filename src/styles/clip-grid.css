@@ -1,0 +1,232 @@
+/* ClipGrid.tsx — the second readout: the same clips, given their images.
+
+   Careful: the geometry is settled in `ClipGrid.tsx`, which places the rows
+   from it. The thumbnail's height comes from there, applied on `.tile-frame` —
+   which is why no `aspect-ratio` is written here: two sources for one height
+   round differently, and half a pixel per row becomes a visible step.
+
+   What this sheet still owns is the block underneath, and it must come to
+   exactly `META_HEIGHT` (60px): 1 (hairline) + 6 + 32 (two lines of title) + 15
+   (the readout) + 5 + 1. A rule changed here without being changed there puts
+   the placed rows beside the drawn ones. */
+
+.grid {
+  border: 1px solid var(--rule);
+  border-radius: 0 0 var(--r) var(--r);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+/* The same silkscreen strip as the table's head, minus the columns: nothing
+   here is a column header, so the pressed key says what `aria-sort` says over
+   there. */
+.grid-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  height: 34px;
+  padding: 0 var(--s-4);
+  background: var(--chassis);
+  border-bottom: 1px solid var(--rule-strong);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.grid-head .sort-key {
+  width: auto;
+}
+
+.grid-head .sort-key[aria-pressed='true'] {
+  color: var(--text);
+}
+
+.grid-body {
+  height: clamp(300px, 62vh, 860px);
+  padding: var(--s-3) var(--s-4);
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+
+.grid-rows {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: grid;
+  gap: 12px;
+}
+
+/* ---- the tile ----
+   Its own frame, because a board of images needs a grid to hold it: the flat
+   carries the thumbnail, the hairline separates two neighbours whose images
+   would otherwise touch. */
+
+.tile {
+  position: relative;
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  background: var(--chassis);
+  overflow: hidden;
+}
+
+/* Kept: marked in the positive, never by dimming its neighbours. Nothing is
+   checked by default here, so extinguishing what is not kept would put the
+   whole board out at rest.
+
+   An outline, not an inset shadow: a shadow is painted under the element's
+   children, so the thumbnail covered the very edge meant to mark the tile — two
+   pixels around the block of type, one around the image, which read as a frame
+   the image was biting into. The outline paints above everything, follows the
+   radius, and costs no layout, which the virtualiser demands: a kept tile has
+   to measure exactly what an unkept one measures. */
+.tile.is-picked {
+  border-color: var(--violet);
+  outline: 1px solid var(--violet);
+}
+
+.tile.is-picked .tile-title {
+  color: var(--violet-strong);
+}
+
+/* The whole tile save the box: a button, hence every bare-button rule undone. */
+.tile-open {
+  display: block;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tile-open:hover:not(:disabled) {
+  background: none;
+  border-color: transparent;
+}
+
+/* Its height is set inline, from `gridMetrics`: 16:9 of the column granted. */
+.tile-frame {
+  position: relative;
+  display: block;
+  background: var(--surface-sunken);
+}
+
+.tile-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* No image to show: the hole is drawn rather than left to the broken-image
+   glyph, which says nothing about the clip behind it. */
+.tile-thumb-missing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  opacity: 0.4;
+}
+
+/* On the image, so it holds its own ground whatever the image carries. */
+.tile-duration {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 1px 5px;
+  border-radius: var(--r);
+  background: rgb(0 0 0 / 72%);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 15px;
+}
+
+/* The two lines are reserved whether the title fills them or not: a tile one
+   line shorter than its neighbour would break the row the virtualiser places. */
+.tile-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  height: 32px;
+  margin: 6px 8px 0;
+  font-size: 12.5px;
+  line-height: 16px;
+  color: var(--text);
+}
+
+.tile-open:hover .tile-title {
+  color: var(--violet-strong);
+}
+
+.tile-meta {
+  display: block;
+  height: 15px;
+  margin: 0 8px 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 15px;
+  color: var(--text-faint);
+}
+
+.tile-views {
+  color: var(--text-dim);
+}
+
+/* Zero views: the case the sweep exists to unearth. */
+.tile-views.zero {
+  color: var(--amber);
+}
+
+/* ---- the box ----
+   Always drawn, never revealed on hover: there is no hover on a touch screen,
+   and a board whose only control appears under the cursor has no control at
+   all. It sits on its own chip so it holds against any thumbnail. */
+
+.tile-pick {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  padding: 6px;
+}
+
+.tile-pick input {
+  margin: 0;
+  box-shadow: 0 0 0 3px rgb(0 0 0 / 45%);
+}
+
+/* Checked, the shared box fills with a wash — which counts on something opaque
+   behind it. Over a thumbnail there is nothing: the image showed through, and
+   the tick, drawn a shade away from that wash, all but vanished. Here the box
+   is a full violet flat and the tick takes the ink meant for that flat. */
+.tile-pick input:checked {
+  background: var(--violet);
+  border-color: var(--violet);
+}
+
+.tile-pick input:checked::after {
+  border-color: var(--on-violet);
+}
+
+@media (max-width: 700px) {
+  .grid-body {
+    padding: var(--s-2);
+  }
+
+  .grid-head {
+    gap: var(--s-3);
+    padding: 0 var(--s-3);
+  }
+}
