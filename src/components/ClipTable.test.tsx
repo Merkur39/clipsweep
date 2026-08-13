@@ -29,18 +29,20 @@ const setup = (
 ) => {
   const onSortChange = vi.fn()
   const onToggle = vi.fn()
+  const onPlay = vi.fn()
   const view = render(
     <ClipTable
       clips={options.clips ?? [clip('a'), clip('b')]}
       selected={options.selected ?? new Set()}
       onToggle={onToggle}
       onToggleAll={vi.fn()}
+      onPlay={onPlay}
       emptyMessage="rien"
       sort={options.sort ?? DEFAULT_SORT}
       onSortChange={onSortChange}
     />,
   )
-  return { onSortChange, onToggle, view }
+  return { onSortChange, onToggle, onPlay, view }
 }
 
 const header = (name: string) => screen.getByRole('button', { name })
@@ -82,6 +84,26 @@ describe('ClipTable, row selection', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Titre a' }))
 
     expect(onToggle).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('ClipTable, playing a clip', () => {
+  it('plays the clip of the row asked for', () => {
+    const { onPlay } = setup()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lire Titre b' }))
+
+    expect(onPlay).toHaveBeenCalledWith('b')
+  })
+
+  // A third target excluded from the row click: watching a clip is not choosing
+  // it, and the click must not do both at once.
+  it('does not check the row it plays', () => {
+    const { onToggle } = setup()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lire Titre a' }))
+
+    expect(onToggle).not.toHaveBeenCalled()
   })
 })
 
@@ -130,6 +152,7 @@ describe('ClipTable, tri', () => {
         selected={new Set()}
         onToggle={vi.fn()}
         onToggleAll={vi.fn()}
+        onPlay={vi.fn()}
         emptyMessage="rien"
         sort={{ key: 'views', direction: 'desc' }}
         onSortChange={vi.fn()}
@@ -153,6 +176,7 @@ describe('ClipTable, tri', () => {
         selected={new Set()}
         onToggle={vi.fn()}
         onToggleAll={vi.fn()}
+        onPlay={vi.fn()}
         emptyMessage="rien"
         sort={sort}
         onSortChange={vi.fn()}

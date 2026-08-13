@@ -15,6 +15,23 @@ if (!('ResizeObserver' in globalThis)) {
 }
 
 /**
+ * jsdom declares `<dialog>` but implements none of its behaviour: `showModal`
+ * and `close` are simply absent, and calling one throws. The top layer, the
+ * backdrop and the focus trap belong to the browser and are not what these
+ * tests are after — reflecting the `open` attribute is enough for the player's
+ * own logic to be observable.
+ */
+if (typeof HTMLDialogElement !== 'undefined' && !HTMLDialogElement.prototype.showModal) {
+  HTMLDialogElement.prototype.showModal = function () {
+    this.setAttribute('open', '')
+  }
+  HTMLDialogElement.prototype.close = function () {
+    this.removeAttribute('open')
+    this.dispatchEvent(new Event('close'))
+  }
+}
+
+/**
  * The test browser's language, pinned.
  *
  * The tests' expectations are written in French; making them depend on the

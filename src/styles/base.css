@@ -84,6 +84,11 @@
   --glow-red: light-dark(rgb(207 43 43 / 45%), rgb(255 93 93 / 55%));
   --zebra: light-dark(rgb(0 0 0 / 3%), rgb(255 255 255 / 2.2%));
   --shadow-panel: light-dark(rgb(58 48 36 / 18%), rgb(0 0 0 / 65%));
+  /* What puts the page behind the player. Dark in both worlds — a scrim's job is
+     to push back, and paper pushed back with paper pushes nothing. It is read
+     from `::backdrop`, which inherits the custom properties of its originating
+     element in every browser that can resolve `light-dark()` at all. */
+  --scrim: light-dark(rgb(38 32 24 / 52%), rgb(0 0 0 / 66%));
 
   --sans:
     system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;

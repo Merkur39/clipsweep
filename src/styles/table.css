@@ -14,7 +14,7 @@
 .table-head,
 .table-row {
   display: grid;
-  grid-template-columns: 30px 84px 104px minmax(0, 1fr) 152px;
+  grid-template-columns: 30px 84px 104px minmax(0, 1fr) 152px 26px;
   align-items: center;
   gap: var(--s-3);
   padding: 0 var(--s-3) 0 var(--s-4);
@@ -164,15 +164,65 @@
   font-size: 12px;
 }
 
+/* ---- the play control ----
+   The row's second control. It stays quiet on a resting row — a column of
+   violet triangles would out-shout the readout it serves — but it must never
+   leave a doubt about what the cursor is over: the whole row is clickable and
+   ticks the box, so the one place that does something else has to draw its own
+   edge. Hence the box, held at 26 px and outlined as soon as the row is
+   hovered; `border-color` rather than `border`, so the frame is reserved from
+   the start and the glyph never shifts by a pixel. */
+
+.col-play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.row-play {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: none;
+  border: 1px solid transparent;
+  color: var(--text-faint);
+  opacity: 0.5;
+  transition:
+    opacity 0.12s var(--ease),
+    background 0.12s var(--ease),
+    border-color 0.12s var(--ease),
+    color 0.12s var(--ease);
+}
+
+.table-row:hover .row-play {
+  border-color: var(--rule-strong);
+  color: var(--violet);
+  opacity: 1;
+}
+
+.row-play:hover:not(:disabled),
+.row-play:focus-visible {
+  background: var(--surface-raised);
+  border-color: var(--violet);
+  color: var(--violet-strong);
+  opacity: 1;
+}
+
 @media (max-width: 960px) {
   .table-head,
   .table-row {
-    grid-template-columns: 26px 58px 80px minmax(0, 1fr);
+    grid-template-columns: 26px 58px 80px minmax(0, 1fr) 26px;
     gap: var(--s-2);
     padding: 0 var(--s-3);
   }
 
   .col-author {
     display: none;
+  }
+
+  /* No hover to lean on: the control has to be readable, and framed, at rest. */
+  .row-play {
+    border-color: var(--rule);
+    opacity: 1;
   }
 }

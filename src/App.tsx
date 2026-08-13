@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { ClipPlayer } from './components/ClipPlayer'
 import { ClipTable } from './components/ClipTable'
 import { Colophon } from './components/Colophon'
 import { ExportPanel } from './components/ExportPanel'
@@ -134,6 +135,10 @@ export default function App({ authError }: { authError: string | null }) {
   // carries a clip the user never pointed at — including the ones that appear
   // later when the threshold is raised.
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(() => new Set())
+  // The clip being watched, held by id: the list moves underneath — a sweep goes
+  // on delivering, a filter can carry one off — and an index would quietly come
+  // to name another clip.
+  const [playingId, setPlayingId] = useState<string | null>(null)
   // Read once: the visitor's machine does not change mid-session.
   const [flavor] = useState(() =>
     detectScriptFlavor({
@@ -239,6 +244,7 @@ export default function App({ authError }: { authError: string | null }) {
   // is already the intersection the state is read from.
   const allChecked = shown.length > 0 && selected.length === shown.length
   const checkAll = () => setSelectedIds((previous) => toggleAll(shown, previous))
+  const toggleClip = (id: string) => setSelectedIds((previous) => toggle(previous, id))
 
   /**
    * The escape hatch for a table emptied by a filter: it reopens the one the
@@ -390,8 +396,9 @@ export default function App({ authError }: { authError: string | null }) {
           <ClipTable
             clips={shown}
             selected={selectedIds}
-            onToggle={(id) => setSelectedIds((previous) => toggle(previous, id))}
+            onToggle={toggleClip}
             onToggleAll={checkAll}
+            onPlay={setPlayingId}
             emptyMessage={describeEmptyResults(
               {
                 searched: progress !== null,
@@ -445,6 +452,16 @@ export default function App({ authError }: { authError: string | null }) {
       {/* Outside `.layout`: it runs under the rail as under the stage, with the
           masthead answering it at the top of the page. */}
       <Colophon />
+
+      {/* Last of the page, and it does not matter where: `showModal` lifts it
+          into the top layer, above everything, whatever the DOM order says. */}
+      <ClipPlayer
+        clips={shown}
+        playingId={playingId}
+        onPlayingIdChange={setPlayingId}
+        selected={selectedIds}
+        onToggle={toggleClip}
+      />
     </div>
   )
 }
