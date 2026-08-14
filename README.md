@@ -51,9 +51,16 @@ never the email address, channel management, or moderation. That is what makes s
 harmless in practice. What remains: the Twitch Developer Agreement holds the application's owner
 accountable for the activity carried out under their Client ID.
 
-No secret anywhere: implicit flow, the token comes back in the URL fragment and stays in
-`sessionStorage`. The browser talks to Helix directly (CORS allows it), there is no backend — the build
-deploys as static files.
+No secret anywhere: implicit flow, the token comes back in the URL fragment and is kept in
+`localStorage`, so a later visit finds the session still open. The browser talks to Helix directly
+(CORS allows it), there is no backend — the build deploys as static files.
+
+Keeping it is only defensible because "Disconnect" ends it: it calls `/oauth2/revoke`, which takes
+the public client id and the token and no secret, and the token is dead on Twitch's side rather than
+merely forgotten here. The forgetting never waits on that call — a click has to land whatever the
+network is doing — so only its failure has anything to say, and it says both halves rather than
+claiming a clean exit. What remains, and is the same bargain every site with a "stay signed in"
+makes: a session abandoned without clicking anything sits there until the token expires.
 
 ## Deployment
 
@@ -240,8 +247,9 @@ cache ([channelCache.ts](src/domain/channelCache.ts)) capped at 50 entries.
 
 Channel and period live in `sessionStorage`: they survive a tab reload, not the tab closing. They are
 the parameters of a sweep, not preferences — carrying them from one session to the next would restart,
-on the first click, a search nobody asked for. Only the theme, the language and the choice of readout
-are durable, being the three that say how one reads rather than what was read.
+on the first click, a search nobody asked for. Durable alongside them: the theme, the language and the
+choice of readout, the three that say how one reads rather than what was read — and the token, which
+is not a parameter of a sweep but the right to run one at all.
 
 The channel is the one exception, and it takes a tick to get: **Remember this channel**
 ([useRememberedChannel.ts](src/hooks/useRememberedChannel.ts)) mirrors the name typed into

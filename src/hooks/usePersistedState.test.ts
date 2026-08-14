@@ -2,6 +2,8 @@
 import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 
+import { tokenStore } from '../twitch/auth'
+
 import { forgetSessionScopedKeys, persistedKey, usePersistedState } from './usePersistedState'
 
 afterEach(() => {
@@ -85,6 +87,17 @@ describe('forgetSessionScopedKeys', () => {
     forgetSessionScopedKeys(localStorage)
 
     expect(localStorage.getItem('getclip.theme')).toBe('dark')
+  })
+
+  // This pass runs at every boot, over the store the token now lives in. Adding
+  // `token` to the list it erases would sign every visitor out on arrival, and
+  // nothing else would report it.
+  it('leaves the token alone, kept on purpose across visits', () => {
+    tokenStore.write('a-live-token')
+
+    forgetSessionScopedKeys(localStorage)
+
+    expect(tokenStore.read()).toBe('a-live-token')
   })
 
   it('leaves intact what does not belong to the application', () => {
