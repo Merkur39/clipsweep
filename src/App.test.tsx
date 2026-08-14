@@ -62,6 +62,19 @@ const sweep = async () => {
   await waitFor(() => expect(start).toHaveBeenCalled())
 }
 
+// The label carries three things on one line: the word, the blanket reset, and
+// the choice of readout. The last is a `role="group"` of buttons — a `<div>`,
+// which no paragraph may contain: React warns on every render, and any HTML
+// parse of that markup would close the paragraph early and lift the toggle out
+// of the label it belongs to.
+describe('App, the results label', () => {
+  it('holds the readout toggle outside any paragraph', () => {
+    render(<App authError={null} />)
+
+    expect(screen.getByRole('group', { name: 'Affichage' }).closest('p')).toBeNull()
+  })
+})
+
 describe('App, starting a sweep', () => {
   it('opens the display range on the period being swept', async () => {
     render(<App authError={null} />)
