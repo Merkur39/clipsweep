@@ -2,6 +2,7 @@ import { TranslatableError } from './errors'
 
 const AUTHORIZE_URL = 'https://id.twitch.tv/oauth2/authorize'
 const VALIDATE_URL = 'https://id.twitch.tv/oauth2/validate'
+const REVOKE_URL = 'https://id.twitch.tv/oauth2/revoke'
 
 const TOKEN_KEY = 'getclip.token'
 
@@ -47,6 +48,28 @@ export async function validateToken(accessToken: string): Promise<Session> {
 
   const payload = (await response.json()) as { client_id: string; expires_in: number }
   return { clientId: payload.client_id, accessToken, expiresInSeconds: payload.expires_in }
+}
+
+/**
+ * Asks Twitch to invalidate the token now, rather than at its expiry.
+ *
+ * The endpoint takes the public client id and the token itself, and no secret —
+ * which is what lets a browser-only app call it at all. Without it, signing out
+ * only forgot the token here: it stayed good on Twitch's side for the remainder
+ * of its sixty days, and "Disconnect" named an erasure rather than an end.
+ *
+ * Rejects when Twitch will not confirm. The caller forgets the token either way
+ * — the click has to land whatever the network does — but it may not claim a
+ * revocation that did not happen.
+ */
+export async function revokeToken(clientId: string, accessToken: string): Promise<void> {
+  const response = await fetch(REVOKE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: clientId, token: accessToken }),
+  })
+
+  if (!response.ok) throw new TranslatableError('access.revokeFailed')
 }
 
 export const tokenStore = {

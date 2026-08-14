@@ -10,6 +10,7 @@ export const en: Catalogue = {
   'access.connected': 'Connected.',
   'access.connectedFor': 'Connected — {life}.',
   'access.tokenExpired': 'Token expired.',
+  'access.revokeFailed': 'Token forgotten here; Twitch did not confirm the revocation.',
   'access.refused': 'Twitch refused the connection: {error}',
   'access.unconfigured':
     'No application configured. Set VITE_TWITCH_CLIENT_ID in .env.local, and declare {redirectUri} in your Twitch application’s “OAuth Redirect URLs”.',

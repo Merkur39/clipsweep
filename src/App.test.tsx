@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import App from './App'
 import { render } from './test-render'
+import { tokenStore } from './twitch/auth'
 import type { ClipSearch, SearchRequest } from './hooks/useClipSearch'
 
 /**
@@ -37,7 +38,7 @@ const session = () =>
   } as Response)
 
 beforeEach(() => {
-  sessionStorage.setItem('getclip.token', 'a-live-token')
+  tokenStore.write('a-live-token')
   vi.stubGlobal('fetch', vi.fn(session))
 })
 
@@ -116,5 +117,64 @@ describe('App, starting a sweep', () => {
     const swept = start.mock.calls[0][0]
     expect(displayRange()).toEqual({ from: swept.since, to: swept.until })
     expect(swept.until).not.toBe('2099-01-01')
+  })
+})
+
+// Signing out has two halves, and only one of them is ours. Forgetting the
+// token here is immediate and cannot fail; revoking it at Twitch is a request
+// like any other, and the interface has to stay honest when it does not land.
+describe('App, disconnecting', () => {
+  const disconnect = () => screen.getByRole('button', { name: 'Se déconnecter' })
+
+  const connected = async () => {
+    render(<App authError={null} />)
+    await waitFor(() => expect(fetch).toHaveBeenCalled())
+  }
+
+  const revokeCall = () =>
+    vi.mocked(fetch).mock.calls.find(([url]) => String(url).endsWith('/oauth2/revoke'))
+
+  /** Answers validation as usual, and refuses the revocation. */
+  const refusingRevocation = (url: RequestInfo | URL) =>
+    String(url).endsWith('/oauth2/revoke')
+      ? Promise.resolve({ ok: false, status: 400 } as Response)
+      : session()
+
+  it('asks Twitch to revoke the token it forgets', async () => {
+    await connected()
+
+    fireEvent.click(disconnect())
+
+    await waitFor(() => expect(revokeCall()).toBeDefined())
+    const body = String((revokeCall()![1] as RequestInit).body)
+    expect(body).toContain('token=a-live-token')
+    expect(body).toContain('client_id=test-client')
+  })
+
+  it('forgets the token on the spot, without waiting for Twitch', () => {
+    render(<App authError={null} />)
+
+    fireEvent.click(disconnect())
+
+    expect(tokenStore.read()).toBeNull()
+  })
+
+  it('forgets it even when Twitch refuses to revoke', async () => {
+    vi.stubGlobal('fetch', vi.fn(refusingRevocation))
+    await connected()
+
+    fireEvent.click(disconnect())
+
+    await waitFor(() => expect(revokeCall()).toBeDefined())
+    expect(tokenStore.read()).toBeNull()
+  })
+
+  it('says the revocation went unconfirmed rather than claiming a clean exit', async () => {
+    vi.stubGlobal('fetch', vi.fn(refusingRevocation))
+    await connected()
+
+    fireEvent.click(disconnect())
+
+    expect(await screen.findByText(/n’a pas confirmé la révocation/)).toBeInTheDocument()
   })
 })

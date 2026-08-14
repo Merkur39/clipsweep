@@ -31,6 +31,7 @@ import {
   authorizeUrl,
   BUILD_TIME_CLIENT_ID,
   redirectUri,
+  revokeToken,
   tokenStore,
   validateToken,
   type Session,
@@ -193,18 +194,31 @@ export default function App({ authError }: { authError: string | null }) {
   const connect = () => location.assign(authorizeUrl(BUILD_TIME_CLIENT_ID, redirectUri()))
 
   /**
-   * Forgets the token, nothing more: the clips already collected stay on screen
-   * and stay exportable, since none of that asks the network again.
+   * Ends the session on both sides: forgotten here, revoked at Twitch. The clips
+   * already collected stay on screen and stay exportable, since none of that
+   * asks the network again.
    *
-   * The forgetting is local. The token stays valid on Twitch's side until it
-   * expires — revoking it would take a call to `/oauth2/revoke`, outside what
-   * the tool does today. It lives in `sessionStorage`, so it dies with the tab.
+   * The forgetting comes first and never waits. A click on "Disconnect" has to
+   * land whatever the network is doing — making it depend on a request would
+   * leave a visitor holding a session they asked to end. Revocation follows,
+   * and only its failure has anything left to say.
    */
   const disconnect = () => {
+    const token = tokenStore.read()
     tokenStore.clear()
     setSession(null)
     setHasToken(false)
     setNotice(null)
+
+    // The client the token was minted for, which validation reports, rather than
+    // the one this build carries: a token from an earlier deployment would be
+    // refused under the wrong id, and refused is exactly what must not happen
+    // here.
+    if (token) {
+      void revokeToken(session?.clientId ?? BUILD_TIME_CLIENT_ID, token).catch(() =>
+        setNotice({ key: 'access.revokeFailed', kind: 'bad' }),
+      )
+    }
   }
 
   const channelCreatedAt = useChannelLookup(session, channel)
