@@ -4,6 +4,9 @@
     "lib": ["ES2023"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    // Node resolves no extension of its own: a script it runs directly must
+    // spell out the `.ts` it imports, where a bundler would have guessed.
+    "allowImportingTsExtensions": true,
     "types": ["node"],
     "strict": true,
     "noUnusedLocals": true,

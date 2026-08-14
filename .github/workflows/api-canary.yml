@@ -1,0 +1,72 @@
+name: Twitch API canary
+
+# The sweep rests on three Helix behaviours Twitch documents nowhere: the
+# view-count ordering, the ~1000 pagination cap, and the cursor encoding. They
+# would change in silence — the tool would keep running and keep returning less.
+# This measures them on a schedule and opens an issue when one moves.
+#
+# Note: GitHub disables scheduled workflows on a repository with no activity for
+# 60 days, and emails before doing so. A quiet repo therefore loses its canary
+# unless the schedule is re-enabled from the Actions tab.
+on:
+  schedule:
+    # Monday, off the hour: scheduled runs are best-effort and pile up when
+    # everyone asks for the same minute.
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # No `npm ci`: the probe imports nothing outside Node's standard library.
+      # A broken dependency should not be able to silence the canary.
+      - id: probe
+        run: node scripts/api-canary/run.ts
+        env:
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+          # Must hold far more clips than the cap, so that where the walk stops
+          # can only be Helix's doing.
+          CANARY_CHANNEL: xqc
+
+      # Only drift gets here. A probe failure — missing secret, network, an
+      # unusable sample — has already failed the step above without opening
+      # anything, because it says nothing about Twitch.
+      - name: Report drift
+        if: steps.probe.outputs.drift == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TITLE: ${{ steps.probe.outputs.title }}
+          MARKER: ${{ steps.probe.outputs.marker }}
+          ASSIGNEE: ${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          gh label create api-drift --force \
+            --color B60205 \
+            --description "An observed Twitch API behaviour has changed"
+
+          open=$(gh issue list --label api-drift --state open --limit 1 --json number,body)
+          number=$(jq -r '.[0].number // empty' <<<"$open")
+
+          # The marker fingerprints *which* assumptions are drifting. Same
+          # finding as the open issue, stay quiet; a different one, comment on
+          # it rather than opening a second issue about the same endpoint.
+          if [ -z "$number" ]; then
+            gh issue create --title "$TITLE" --body-file canary-issue.md \
+              --label api-drift --assignee "$ASSIGNEE"
+          elif jq -r '.[0].body' <<<"$open" | grep -qF "$MARKER"; then
+            echo "Same drift already open on #$number, nothing to do."
+          else
+            gh issue comment "$number" --body-file canary-issue.md
+          fi

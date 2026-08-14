@@ -5,6 +5,9 @@ dist
 *.local
 .DS_Store
 
+# The issue body the API canary writes before `gh` reads it back.
+canary-issue.md
+
 # Working notes, kept local: they describe intentions and trade-offs, not what
 # the repository ships. The README stays the public documentation.
 DESIGN.md
