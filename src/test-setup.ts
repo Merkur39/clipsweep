@@ -32,6 +32,16 @@ if (typeof HTMLDialogElement !== 'undefined' && !HTMLDialogElement.prototype.sho
 }
 
 /**
+ * jsdom implements no scrolling at all: `scrollTo` is simply absent, and the
+ * log pane calls it on every entry to stay pinned to the bottom. Where the pane
+ * would have scrolled to is the browser's business, not these tests': all that
+ * is needed here is a call that does not throw.
+ */
+if (typeof Element !== 'undefined' && !Element.prototype.scrollTo) {
+  Element.prototype.scrollTo = () => {}
+}
+
+/**
  * The test browser's language, pinned.
  *
  * The tests' expectations are written in French; making them depend on the

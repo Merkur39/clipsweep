@@ -72,6 +72,31 @@ export function dateExtent(clips: readonly Clip[]): DateExtent | null {
   return { first, last }
 }
 
+/**
+ * The display range reduced to what it actually hides.
+ *
+ * A sweep opens the range on the period it covers, so both bounds are set from
+ * the start without holding back a single clip. A bound that reaches past the
+ * clips in hand restricts nothing, and must be named neither as the reason for
+ * an empty table nor as the thing to reopen — the threshold on views, or the
+ * creator, would then be the real culprit and would go unsaid.
+ *
+ * The judge is the extent of the clips collected, not the period swept: a sweep
+ * over a month that only returned clips from its last week is just as unhindered
+ * by a range covering the whole month.
+ */
+export function narrowedRange(
+  range: { from: string | null; to: string | null },
+  extent: DateExtent | null,
+): { from: string | null; to: string | null } {
+  if (!extent) return range
+
+  return {
+    from: range.from !== null && range.from > extent.first ? range.from : null,
+    to: range.to !== null && range.to < extent.last ? range.to : null,
+  }
+}
+
 export interface Facet {
   value: string
   count: number

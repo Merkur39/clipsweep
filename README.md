@@ -250,6 +250,13 @@ selection only, never on the sweep: narrowing the shown range restarts nothing, 
 point. They are not persisted, not even for the tab's lifetime: a threshold forgotten between two
 screens would produce an empty table for no apparent reason.
 
+A starting sweep blanks them all, save the date range, which it opens on the period it is about to
+cover: nothing outside that period will be collected, so the two bounds hold back nothing while giving
+the fields a starting point to narrow from. What they then hide is judged against the clips actually
+collected ([`narrowedRange`](src/domain/filters.ts)) — a bound reaching past them restricts nothing,
+and the empty-table message must name the threshold on views rather than claim a range that hides
+nothing.
+
 Cost: ~1 request per 100 clips, plus one per bisection. Helix quota: 800 points/min; the client honors
 `Ratelimit-Reset` on 429 and spaces requests 60 ms apart.
 

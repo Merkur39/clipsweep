@@ -15,7 +15,7 @@ import { ViewToggle } from './components/ViewToggle'
 import { applyTheme, parseTheme } from './domain/theme'
 import { parseView } from './domain/view'
 import { describeAccess, describeTokenLife } from './domain/access'
-import { applyFilters, dateExtent, facets } from './domain/filters'
+import { applyFilters, dateExtent, facets, narrowedRange } from './domain/filters'
 import { clampSince, clampUntil, describePeriodError, monthBefore } from './domain/period'
 import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
@@ -230,6 +230,11 @@ export default function App({ authError }: { authError: string | null }) {
   // Bounds for the range fields: the actual extent of the clips in hand, which
   // grows along with the sweep, like the facets.
   const dateBounds = useMemo(() => dateExtent(clips), [clips])
+  // The range as it actually restricts. A sweep sets both bounds on the period
+  // it covers, so the fields are never empty afterwards: read raw, they would
+  // claim every empty table for themselves and leave the threshold on views —
+  // the real culprit — unnamed.
+  const narrowed = useMemo(() => narrowedRange({ from, to }, dateBounds), [from, to, dateBounds])
   const gameLabel = (id: string) => gameNames.get(id) ?? id
 
   const filtersActive =
@@ -262,7 +267,7 @@ export default function App({ authError }: { authError: string | null }) {
    */
   const reopenFilter = () => {
     if (clips.length === 0) return null
-    if (from !== null || to !== null) return clearDates
+    if (narrowed.from !== null || narrowed.to !== null) return clearDates
     if (maxViews !== null) return () => setMaxViewsInput('')
     return null
   }
@@ -276,7 +281,7 @@ export default function App({ authError }: { authError: string | null }) {
       running,
       clipsFound: clips.length,
       maxViews,
-      period: { from, to },
+      period: narrowed,
     },
     t,
   )
@@ -305,6 +310,12 @@ export default function App({ authError }: { authError: string | null }) {
     // threshold from the previous sweep would give an unexplained empty table.
     setSelectedIds(new Set())
     resetFilters()
+    // The range is the exception: it opens on the period being swept rather
+    // than empty. It hides nothing — nothing outside that period will be
+    // collected — and it gives the two fields a starting point to narrow from,
+    // instead of a blank the user has to fill in before narrowing at all.
+    setFromDate(effectiveSince)
+    setToDate(effectiveUntil)
     void search.start({ channel, since: effectiveSince, until: effectiveUntil })
   }
 
