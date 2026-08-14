@@ -31,11 +31,21 @@ export interface Verdict {
 /**
  * The band a full walk is expected to stop in.
  *
- * Measured at 1006 on 2026-08-14. The width absorbs the fact that the cap is
- * approximate — Helix stops issuing a cursor somewhere around a thousand, not
- * on a round number.
+ * Measured at 1100 by the probe itself on 2026-08-14, at `first=100` — eleven
+ * full pages. The figure only means anything at that page size: the cap counts
+ * in reachable offsets rather than in items, so the same endpoint stops on a
+ * different total when paged differently, and a number read at another page
+ * size is not comparable. An earlier band was calibrated on 1006 seen through a
+ * third party's interface at `first=24`, which put the expected value exactly
+ * on the ceiling.
+ *
+ * The bounds are lopsided on purpose. A cap that dropped makes the sweep lose
+ * clips in silence, so the floor stays close. A cap that rose is only an
+ * invitation to lighten the windowing, and a real one would show in thousands
+ * rather than in a hundred more — so the ceiling leaves room instead of crying
+ * wolf over ordinary variation.
  */
-export const CEILING_BAND = { min: 900, max: 1100 }
+export const CEILING_BAND = { min: 900, max: 2000 }
 
 /** Sixty days is what `/oauth2/validate` has been returning for `expires_in`. */
 const TOKEN_LIFETIME_BAND_DAYS = { min: 30, max: 90 }

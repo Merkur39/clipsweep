@@ -47,8 +47,12 @@ describe('checkSortOrder', () => {
 })
 
 describe('checkCeiling', () => {
-  it('holds when the walk stops inside the band', () => {
-    expect(checkCeiling(1006, CEILING_BAND).status).toBe('holds')
+  it('holds on the total the probe actually measures', () => {
+    expect(checkCeiling(1100, CEILING_BAND).status).toBe('holds')
+  })
+
+  it('leaves room above that total, rather than sitting on the edge', () => {
+    expect(checkCeiling(1300, CEILING_BAND).status).toBe('holds')
   })
 
   it('drifts when the walk goes past the band, and says the cap was raised', () => {
