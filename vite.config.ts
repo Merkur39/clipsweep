@@ -10,7 +10,9 @@ export default defineConfig({
     // Pure logic runs under node; component tests ask for the DOM through a
     // `@vitest-environment jsdom` docblock at the top of the file.
     environment: 'node',
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    // `scripts/` holds tooling run by Node, outside the bundle: its pure parts
+    // are tested here rather than in a runner of their own.
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.ts'],
     setupFiles: ['src/test-setup.ts'],
     restoreMocks: true,
   },
