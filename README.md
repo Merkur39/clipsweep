@@ -253,6 +253,41 @@ screens would produce an empty table for no apparent reason.
 Cost: ~1 request per 100 clips, plus one per bisection. Helix quota: 800 points/min; the client honors
 `Ratelimit-Reset` on 429 and spaces requests 60 ms apart.
 
+## What the sweep bets on
+
+Helix promises less than the sweep needs. Some of the behaviours the windowing rests on are
+**observed, never documented**: Twitch is free to change them without a note, and the tool would keep
+running while returning less.
+
+| Fact                                                      | Status                                     |
+| --------------------------------------------------------- | ------------------------------------------ |
+| 800 points/min, one bucket per user per client ID         | documented                                 |
+| `first` 1–100, RFC3339 dates, the three filters exclusive | documented                                 |
+| `Ratelimit-*` headers, 429 when the bucket empties        | documented                                 |
+| Clips sorted by descending view count                     | **observed**                               |
+| Pagination stops around 1000 results                      | **observed** — 1006 measured on 2026-08-14 |
+| The cursor encodes an offset                              | **observed**                               |
+| A token lives some sixty days                             | observed through `expires_in`              |
+
+The ordering is the load-bearing one. A window that did not saturate is exhaustive, and what a
+saturated one loses is its least-viewed clips — that is the whole claim. Lose the ordering and the
+bisection still runs, but proves nothing.
+
+So a canary measures them ([api-canary.yml](.github/workflows/api-canary.yml)), weekly and on demand.
+It walks the pagination naively — no windowing, which is precisely the point — on a channel far
+larger than the cap, then holds what it saw against what
+[assumptions.ts](scripts/api-canary/assumptions.ts) claims. A drift opens an issue, assigned and
+labelled `api-drift`; the same drift found twice does not open a second one.
+
+A failing **probe** — missing secret, network, an unusable sample — opens nothing: it says nothing
+about Twitch, so it fails the job and stays in the Actions tab instead.
+
+Two repository secrets are needed, `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET`. The secret mints an
+app access token, the only kind that survives unattended — the implicit flow needs a browser and a
+human. It never leaves Actions: the deployed site stays what it is, a static bundle holding no
+secret. The probe channel is set by `CANARY_CHANNEL` in the workflow, and must hold far more clips
+than the cap, otherwise the walk measures the channel rather than Helix.
+
 ## Scripts
 
 | Command                | Effect                    |
@@ -266,6 +301,13 @@ Cost: ~1 request per 100 clips, plus one per bisection. Helix quota: 800 points/
 | `npm run format`       | Prettier, write           |
 | `npm run format:check` | Prettier, check           |
 | `npm run build`        | static build into `dist/` |
+
+| Command                          | Effect                                   |
+| -------------------------------- | ---------------------------------------- |
+| `node scripts/api-canary/run.ts` | probes the undocumented Helix behaviours |
+| `node scripts/make-favicon.ts`   | regenerates the favicon                  |
+
+Both take no dependency outside Node's standard library, and run without `npm install`.
 
 Formatting is pinned by [.prettierrc](.prettierrc): single quotes, no semicolons, 100 columns. Those
 values match the style already in place — Prettier's defaults (double quotes, semicolons, 80 columns)
