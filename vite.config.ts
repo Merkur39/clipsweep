@@ -14,6 +14,11 @@ export default defineConfig({
     // are tested here rather than in a runner of their own.
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'scripts/**/*.test.ts'],
     setupFiles: ['src/test-setup.ts'],
+    // Pinned, because `BUILD_TIME_CLIENT_ID` decides whether the application
+    // considers itself configured at all: without it, a developer with an
+    // `.env.local` and a runner without one do not render the same interface,
+    // and a test can pass here and fail there for a reason it never states.
+    env: { VITE_TWITCH_CLIENT_ID: 'test-client' },
     restoreMocks: true,
   },
 })

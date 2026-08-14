@@ -72,15 +72,25 @@ function memoryStorage(): Storage {
 }
 
 /**
- * Node 25 defines a global `localStorage`, inert until `--localstorage-file`
- * gives it a file, and it shadows jsdom's — `sessionStorage`, for its part,
- * arrives intact. Without this replacement, any test touching storage measures
- * an object devoid of methods rather than the behaviour of the code.
+ * Both stores, made to exist and to work, whatever the runtime underneath.
+ *
+ * Two failures to cover, and they do not look alike. Node 25 defines a global
+ * `localStorage`, inert until `--localstorage-file` gives it a file, and it
+ * shadows jsdom's: a test touching it would measure an object devoid of methods
+ * rather than the behaviour of the code. Node 24 defines no `sessionStorage` at
+ * all outside jsdom, and a test in the `node` environment touching it does not
+ * fail on an assertion but on a `ReferenceError` — which is how this landed
+ * green here and red on CI.
+ *
+ * The same guard answers both: replace whatever is there unless it already
+ * behaves like a `Storage`.
  */
-if (typeof globalThis.localStorage?.clear !== 'function') {
-  Object.defineProperty(globalThis, 'localStorage', {
-    configurable: true,
-    writable: true,
-    value: memoryStorage(),
-  })
+for (const name of ['localStorage', 'sessionStorage'] as const) {
+  if (typeof globalThis[name]?.clear !== 'function') {
+    Object.defineProperty(globalThis, name, {
+      configurable: true,
+      writable: true,
+      value: memoryStorage(),
+    })
+  }
 }
