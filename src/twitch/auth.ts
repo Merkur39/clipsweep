@@ -72,10 +72,21 @@ export async function revokeToken(clientId: string, accessToken: string): Promis
   if (!response.ok) throw new TranslatableError('access.revokeFailed')
 }
 
+/**
+ * Durable, unlike the channel and the period: a token is not a parameter of a
+ * sweep but the right to run one at all, and signing in again at every visit
+ * bought nothing. What it costs, a token outliving the tab on a shared machine,
+ * is what `revokeToken` answers — the two go together and neither stands alone.
+ * Durable without revocation would leave a sixty-day token with no way to end
+ * it; revocation without durability would revoke what was about to die anyway.
+ *
+ * Not routed through `usePersistedState`: this is read once before React
+ * mounts, by `captureRedirect`, and is nobody's render state.
+ */
 export const tokenStore = {
-  read: () => sessionStorage.getItem(TOKEN_KEY),
-  write: (token: string) => sessionStorage.setItem(TOKEN_KEY, token),
-  clear: () => sessionStorage.removeItem(TOKEN_KEY),
+  read: () => localStorage.getItem(TOKEN_KEY),
+  write: (token: string) => localStorage.setItem(TOKEN_KEY, token),
+  clear: () => localStorage.removeItem(TOKEN_KEY),
 }
 
 /**

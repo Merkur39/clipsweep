@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { authorizeUrl, normalizeRedirectUri, parseAuthFragment, revokeToken } from './auth'
+import {
+  authorizeUrl,
+  normalizeRedirectUri,
+  parseAuthFragment,
+  revokeToken,
+  tokenStore,
+} from './auth'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -123,5 +129,30 @@ describe('revokeToken', () => {
     )
 
     await expect(revokeToken('cid42', 'abc123')).rejects.toThrow()
+  })
+})
+
+describe('tokenStore', () => {
+  // Durable, not tab-scoped: signing in again on every visit buys nothing once
+  // "Disconnect" actually revokes — see `revokeToken`.
+  it('keeps the token where a later visit will find it', () => {
+    tokenStore.write('abc123')
+
+    expect(localStorage.getItem('getclip.token')).toBe('abc123')
+    expect(sessionStorage.getItem('getclip.token')).toBeNull()
+  })
+
+  it('reads back what it kept', () => {
+    tokenStore.write('abc123')
+
+    expect(tokenStore.read()).toBe('abc123')
+  })
+
+  it('erases it from durable storage, leaving nothing for the next visitor', () => {
+    tokenStore.write('abc123')
+    tokenStore.clear()
+
+    expect(tokenStore.read()).toBeNull()
+    expect(localStorage.getItem('getclip.token')).toBeNull()
   })
 })

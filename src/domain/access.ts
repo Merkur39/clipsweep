@@ -22,7 +22,7 @@ export interface AccessInput {
   /** The refusal Twitch just returned on the redirect, if there is one. */
   authError: string | null
   clientId: string
-  /** A token already sits in `sessionStorage` — its validity is unconfirmed. */
+  /** A token is already in store — kept from an earlier visit, unconfirmed. */
   hasStoredToken: boolean
   /** The URL to declare on Twitch's side, quoted when the app is unconfigured. */
   redirectUri: string
