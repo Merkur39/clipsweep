@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import process from 'node:process'
 
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Verdict } from './assumptions.ts'
 import { emitReport } from './report.ts'
@@ -27,9 +27,14 @@ beforeEach(() => {
   process.env.GITHUB_OUTPUT = join(directory, 'output')
   process.env.GITHUB_STEP_SUMMARY = join(directory, 'summary')
   context = { channel: 'somechannel', bodyPath: join(directory, 'issue.md') }
+  // Captured rather than let through: the narration is meant for whoever reads
+  // the run log, and seven calls to it turned this file's own output into
+  // something to scroll past. `restoreMocks` puts the console back after each.
+  vi.spyOn(console, 'log').mockImplementation(() => {})
 })
 
 const outputs = () => readFileSync(process.env.GITHUB_OUTPUT!, 'utf8')
+const narration = () => vi.mocked(console.log).mock.calls.map(([line]) => line)
 
 describe('emitReport', () => {
   it('announces no drift while every assumption holds', () => {
@@ -65,6 +70,18 @@ describe('emitReport', () => {
     emitReport([verdict({ status: 'drifted', detail: 'a precise measurement' })], context)
 
     expect(readFileSync(context.bodyPath, 'utf8')).toContain('a precise measurement')
+  })
+
+  // The third channel, alongside the output file and the issue body: the lines
+  // a human scrolling the run log actually reads. Muting it in the tests above
+  // would leave it the only one nothing checks.
+  it('narrates every assumption, marking the ones that moved', () => {
+    emitReport(
+      [verdict({ id: 'sort-order' }), verdict({ id: 'cursor-shape', status: 'drifted' })],
+      context,
+    )
+
+    expect(narration()).toEqual(['✓ sort-order — detail', '✗ cursor-shape — detail'])
   })
 
   it('summarises every assumption for the run page, drifting or not', () => {
