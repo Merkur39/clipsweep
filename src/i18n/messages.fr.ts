@@ -25,6 +25,12 @@ export const fr = {
    * the same thing: reconnecting, for its part, is carried by the button.
    */
   'access.tokenExpired': 'Jeton expiré.',
+  /**
+   * Dit les deux moitiés, parce qu'elles ne sont pas allées ensemble : le jeton
+   * est bien parti d'ici, mais il vit encore côté Twitch. Annoncer une simple
+   * déconnexion serait promettre une révocation qui n'a pas eu lieu.
+   */
+  'access.revokeFailed': 'Jeton oublié ici ; Twitch n’a pas confirmé la révocation.',
   'access.refused': 'Twitch a refusé la connexion : {error}',
   'access.unconfigured':
     'Aucune application configurée. Renseigne VITE_TWITCH_CLIENT_ID dans .env.local, et déclare {redirectUri} dans les « OAuth Redirect URLs » de ton application Twitch.',

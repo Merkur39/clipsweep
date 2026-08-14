@@ -1,6 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { authorizeUrl, normalizeRedirectUri, parseAuthFragment } from './auth'
+import { authorizeUrl, normalizeRedirectUri, parseAuthFragment, revokeToken } from './auth'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+  localStorage.clear()
+  sessionStorage.clear()
+})
 
 describe('parseAuthFragment', () => {
   it('extracts the access token returned by the implicit flow', () => {
@@ -63,5 +69,59 @@ describe('authorizeUrl', () => {
       response_type: 'token',
       scope: '',
     })
+  })
+})
+
+describe('revokeToken', () => {
+  const accept = () => Promise.resolve({ ok: true, status: 200 } as Response)
+
+  /** Typed on the two arguments the call under test passes, so they read back. */
+  const stubFetch = (answer = accept) => {
+    const mock = vi.fn<(url: string, init: RequestInit) => Promise<Response>>(answer)
+    vi.stubGlobal('fetch', mock)
+    return mock
+  }
+
+  it('asks Twitch to drop the token, naming the client it was minted for', async () => {
+    const fetchMock = stubFetch()
+
+    await revokeToken('cid42', 'abc123')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe('https://id.twitch.tv/oauth2/revoke')
+    expect(init.method).toBe('POST')
+    expect(Object.fromEntries(new URLSearchParams(String(init.body)))).toEqual({
+      client_id: 'cid42',
+      token: 'abc123',
+    })
+  })
+
+  it('carries no secret: revocation is open to the public client', async () => {
+    const fetchMock = stubFetch()
+
+    await revokeToken('cid42', 'abc123')
+
+    const body = String(fetchMock.mock.calls[0][1].body)
+    expect(body).not.toMatch(/secret/i)
+  })
+
+  // The caller forgets the token either way; what it may not do is claim a
+  // revocation Twitch never granted.
+  it('reports a refusal rather than passing it off as done', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve({ ok: false, status: 400 } as Response)),
+    )
+
+    await expect(revokeToken('cid42', 'abc123')).rejects.toThrow()
+  })
+
+  it('reports a network failure the same way', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.reject(new Error('offline'))),
+    )
+
+    await expect(revokeToken('cid42', 'abc123')).rejects.toThrow()
   })
 })
