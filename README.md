@@ -241,7 +241,14 @@ cache ([channelCache.ts](src/domain/channelCache.ts)) capped at 50 entries.
 Channel and period live in `sessionStorage`: they survive a tab reload, not the tab closing. They are
 the parameters of a sweep, not preferences — carrying them from one session to the next would restart,
 on the first click, a search nobody asked for. Only the theme, the language and the choice of readout
-are durable, being the three that say how one reads rather than what was read. The clips
+are durable, being the three that say how one reads rather than what was read.
+
+The channel is the one exception, and it takes a tick to get: **Remember this channel**
+([useRememberedChannel.ts](src/hooks/useRememberedChannel.ts)) mirrors the name typed into
+`localStorage`, under a key of its own — `getclip.channel` keeps being erased at every boot, since what
+a version prior to 2026-08-02 left there was never consented to. Whoever sweeps their own channel types
+the same name at every opening; nobody else keeps anything. Unticking the box erases the name on the
+spot rather than at the next opening. The clips
 themselves live in memory alone: while a sweep is running or its results are on screen, leaving the
 page asks for confirmation ([useUnloadGuard.ts](src/hooks/useUnloadGuard.ts)).
 

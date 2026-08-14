@@ -44,6 +44,12 @@ export const fr = {
   'panel.disconnect': 'Se déconnecter',
   'panel.target': 'Cible',
   'panel.channel': 'Chaîne',
+  /**
+   * "this channel", not "the channel": the box bears on the name typed just
+   * above it. The wording also has to hold on one line of the rail — spelling
+   * out where the name is kept took it to two.
+   */
+  'panel.remember': 'Se souvenir de cette chaîne',
   'panel.since': 'Depuis',
   'panel.until': 'Jusqu’au',
   'panel.backToCreation': 'Remonter à la création ({date})',

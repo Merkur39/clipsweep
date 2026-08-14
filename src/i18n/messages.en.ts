@@ -26,6 +26,7 @@ export const en: Catalogue = {
   'panel.disconnect': 'Disconnect',
   'panel.target': 'Target',
   'panel.channel': 'Channel',
+  'panel.remember': 'Remember this channel',
   'panel.since': 'From',
   'panel.until': 'Until',
   'panel.backToCreation': 'Back to channel creation ({date})',

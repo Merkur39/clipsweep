@@ -13,6 +13,9 @@ export interface SearchPanelProps {
 
   channel: string
   onChannelChange: (next: string) => void
+  /** Does the name typed outlive the tab? Off unless asked for. */
+  remember: boolean
+  onRememberChange: (next: boolean) => void
   since: string
   onSinceChange: (next: string) => void
   until: string
@@ -38,6 +41,8 @@ export function SearchPanel({
   onDisconnect,
   channel,
   onChannelChange,
+  remember,
+  onRememberChange,
   since,
   onSinceChange,
   until,
@@ -78,6 +83,18 @@ export function SearchPanel({
             onChange={(event) => onChannelChange(event.target.value)}
             spellCheck={false}
           />
+        </label>
+        {/* A footnote to the field above, not a control in its own right: it
+          says what becomes of the name typed there, and nothing else. The text
+          sits bare in the label — a `<span>` would take the silkscreen
+          treatment every field label wears in this panel. */}
+        <label className="remember">
+          <input
+            type="checkbox"
+            checked={remember}
+            onChange={(event) => onRememberChange(event.target.checked)}
+          />
+          {t('panel.remember')}
         </label>
         <div className="duo">
           <label>

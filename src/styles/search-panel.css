@@ -65,6 +65,20 @@
   color: var(--red);
 }
 
+/* A footnote to the channel field, not a control of the panel's own standing:
+   it is pulled back up against the field it speaks about, and reads in the
+   dimmer ink of an annotation. The bare label text escapes the silkscreen
+   treatment `controls.css` gives to `label > span`. */
+.remember {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: -6px;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
 /* Same reservation as `.field-error`, for the same reason: the link appears
    with whatever channel and period are typed, and must push neither the sweep
    button nor the rest of the panel. One line plus the indent the link carries
