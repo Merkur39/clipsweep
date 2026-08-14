@@ -1,25 +1,3 @@
-/* ============================================================================
-   ClipSweep — "Chart recorder"
-   The world of a recording station: a chassis of panels joined by hairlines, a
-   silkscreened facade, and a graduated paper strip for the trace.
-   No soft radii, no floating cards, none of Twitch's greys.
-
-   The lasting decisions are held in design notes kept outside the repository;
-   what must travel with the code lives in these comments.
-
-   ---- Where to write a rule ----
-   A class lives in the file of the component that owns it. The vocabulary
-   shared by several components lives in `base.css` (bare elements, tokens) or
-   `controls.css` (fields, buttons, checkboxes).
-
-   ---- Cascade order ----
-   The order below is significant: at equal specificity, the last one wins.
-   Component files come after `controls.css` because they override the bare
-   button and the bare field (`.multiselect-button`, `.row-play`,
-   `.field-clear`). Every `@media` stays in the file of the rules it
-   overrides, never gathered at the end.
-   ========================================================================= */
-
 @import './base.css';
 @import './chassis.css';
 @import './controls.css';
