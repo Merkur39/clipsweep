@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { applyFilters, dateExtent, facets, NO_FILTERS } from './filters'
+import { applyFilters, dateExtent, facets, narrowedRange, NO_FILTERS } from './filters'
 import type { Clip } from '../twitch/types'
 
 const clip = (over: Partial<Clip> & { id: string }): Clip => ({
@@ -167,6 +167,57 @@ describe('dateExtent', () => {
     expect(dateExtent([clip({ id: 'a', created_at: '2020-02-29T10:00:00Z' })])).toEqual({
       first: '2020-02-29',
       last: '2020-02-29',
+    })
+  })
+})
+
+// A sweep now opens the range on the period it covers, so both bounds are set
+// as soon as it starts — without hiding a single clip. What is named as the
+// reason for an empty table, and what gets offered for reopening, must be the
+// bounds that actually restrict.
+describe('narrowedRange', () => {
+  const extent = { first: '2020-01-01', last: '2020-12-31' }
+
+  it('narrows nothing when no bound is set', () => {
+    expect(narrowedRange({ from: null, to: null }, extent)).toEqual({ from: null, to: null })
+  })
+
+  it('drops a lower bound that reaches back before the oldest clip', () => {
+    expect(narrowedRange({ from: '2019-06-01', to: null }, extent).from).toBeNull()
+  })
+
+  it('drops a lower bound that falls exactly on the oldest clip', () => {
+    expect(narrowedRange({ from: '2020-01-01', to: null }, extent).from).toBeNull()
+  })
+
+  it('drops an upper bound that reaches past the newest clip', () => {
+    expect(narrowedRange({ from: null, to: '2021-06-01' }, extent).to).toBeNull()
+  })
+
+  it('drops an upper bound that falls exactly on the newest clip', () => {
+    expect(narrowedRange({ from: null, to: '2020-12-31' }, extent).to).toBeNull()
+  })
+
+  it('keeps the bounds that do hide clips', () => {
+    expect(narrowedRange({ from: '2020-03-01', to: '2020-09-30' }, extent)).toEqual({
+      from: '2020-03-01',
+      to: '2020-09-30',
+    })
+  })
+
+  it('judges each bound on its own', () => {
+    expect(narrowedRange({ from: '2020-03-01', to: '2020-12-31' }, extent)).toEqual({
+      from: '2020-03-01',
+      to: null,
+    })
+  })
+
+  // With nothing collected there is nothing to judge against — and nothing to
+  // hide either: the callers settle that case before reaching here.
+  it('takes the range as it stands with no clip to judge against', () => {
+    expect(narrowedRange({ from: '2020-03-01', to: null }, null)).toEqual({
+      from: '2020-03-01',
+      to: null,
     })
   })
 })
