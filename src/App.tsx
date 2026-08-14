@@ -374,8 +374,14 @@ export default function App({ authError }: { authError: string | null }) {
           {/* The blanket reset lives at the end of the label, not in the row:
               there it stole a column, while every control already carries its
               own reset. Always rendered — its appearing would shift the label's
-              rule. */}
-          <p className="section-label">
+              rule.
+
+              A `<div>`, unlike every other label of the facade: this one hosts
+              the readout toggle, itself a `<div role="group">`, and no paragraph
+              may contain one. The class carries the whole appearance — its own
+              margins included — so the element it sits on changes nothing on
+              screen. */}
+          <div className="section-label">
             {t('results.label')}
             <button
               type="button"
@@ -386,7 +392,7 @@ export default function App({ authError }: { authError: string | null }) {
               {t('results.reset')}
             </button>
             <ViewToggle view={view} onChange={setView} />
-          </p>
+          </div>
           {clips.length > 0 && (
             <p className="result-count">
               {describeResultCount(
