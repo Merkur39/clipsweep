@@ -259,19 +259,25 @@ Helix promises less than the sweep needs. Some of the behaviours the windowing r
 **observed, never documented**: Twitch is free to change them without a note, and the tool would keep
 running while returning less.
 
-| Fact                                                      | Status                                     |
-| --------------------------------------------------------- | ------------------------------------------ |
-| 800 points/min, one bucket per user per client ID         | documented                                 |
-| `first` 1–100, RFC3339 dates, the three filters exclusive | documented                                 |
-| `Ratelimit-*` headers, 429 when the bucket empties        | documented                                 |
-| Clips sorted by descending view count                     | **observed**                               |
-| Pagination stops around 1000 results                      | **observed** — 1006 measured on 2026-08-14 |
-| The cursor encodes an offset                              | **observed**                               |
-| A token lives some sixty days                             | observed through `expires_in`              |
+| Fact                                                      | Status                                         |
+| --------------------------------------------------------- | ---------------------------------------------- |
+| 800 points/min, one bucket per user per client ID         | documented                                     |
+| `first` 1–100, RFC3339 dates, the three filters exclusive | documented                                     |
+| `Ratelimit-*` headers, 429 when the bucket empties        | documented                                     |
+| Clips sorted by descending view count                     | **observed**                                   |
+| Pagination stops around 1000 results                      | **observed** — 1100 at `first=100`, 2026-08-14 |
+| The cursor encodes an offset                              | **observed**                                   |
+| A token lives some sixty days                             | observed through `expires_in`                  |
 
 The ordering is the load-bearing one. A window that did not saturate is exhaustive, and what a
 saturated one loses is its least-viewed clips — that is the whole claim. Lose the ordering and the
 bisection still runs, but proves nothing.
+
+The cap comes with a catch worth stating: it counts in reachable **offsets**, not in items, so the
+same endpoint stops on a different total depending on the page size asked for. At `first=100` the
+walk ends on 1100, at `first=24` it ends a hundred short of that. A figure measured at one page size
+therefore says nothing about another, which is why `CEILING_BAND` is calibrated on the probe's own
+walk rather than on anything read elsewhere.
 
 So a canary measures them ([api-canary.yml](.github/workflows/api-canary.yml)), weekly and on demand.
 It walks the pagination naively — no windowing, which is precisely the point — on a channel far
