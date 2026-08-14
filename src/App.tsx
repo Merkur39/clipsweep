@@ -25,6 +25,7 @@ import { useTranslation } from './i18n/LocaleProvider'
 import { useChannelLookup } from './hooks/useChannelLookup'
 import { useClipSearch } from './hooks/useClipSearch'
 import { usePersistedState } from './hooks/usePersistedState'
+import { useRememberedChannel } from './hooks/useRememberedChannel'
 import { useUnloadGuard } from './hooks/useUnloadGuard'
 import {
   authorizeUrl,
@@ -121,8 +122,10 @@ export default function App({ authError }: { authError: string | null }) {
   // The target and the period live for the tab's lifetime, unlike the theme:
   // they are the parameters of a sweep, not preferences. Finding them again
   // from one session to the next would restart, on the first click, a search
-  // nobody asked for here.
-  const [channel, setChannel] = usePersistedState('channel', '', sessionStorage)
+  // nobody asked for here. The channel alone can be excepted from that, one
+  // tick at a time — whoever sweeps their own channel types the same name at
+  // every opening.
+  const { channel, setChannel, remember, setRemember } = useRememberedChannel()
   // One month, not the dawn of Twitch: the default sweep must stay cheap, an
   // immediate click on "Start" not being allowed to commit seven yearly windows
   // before the period has been chosen.
@@ -349,6 +352,8 @@ export default function App({ authError }: { authError: string | null }) {
           onDisconnect={disconnect}
           channel={channel}
           onChannelChange={setChannel}
+          remember={remember}
+          onRememberChange={setRemember}
           since={effectiveSince}
           onSinceChange={setSince}
           until={effectiveUntil}

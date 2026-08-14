@@ -10,6 +10,7 @@ afterEach(cleanup)
 const setup = (props: Partial<SearchPanelProps> = {}) => {
   const onConnect = vi.fn()
   const onDisconnect = vi.fn()
+  const onRememberChange = vi.fn()
   render(
     <SearchPanel
       authMessage="peu importe"
@@ -20,6 +21,8 @@ const setup = (props: Partial<SearchPanelProps> = {}) => {
       onDisconnect={onDisconnect}
       channel="testchannel"
       onChannelChange={vi.fn()}
+      remember={false}
+      onRememberChange={onRememberChange}
       since="2019-01-01"
       onSinceChange={vi.fn()}
       until="2026-08-01"
@@ -32,11 +35,12 @@ const setup = (props: Partial<SearchPanelProps> = {}) => {
       {...props}
     />,
   )
-  return { onConnect, onDisconnect }
+  return { onConnect, onDisconnect, onRememberChange }
 }
 
 const connexion = () => screen.queryByRole('button', { name: 'Se connecter à Twitch' })
 const deconnexion = () => screen.queryByRole('button', { name: 'Se déconnecter' })
+const memoire = () => screen.getByRole('checkbox', { name: 'Se souvenir de cette chaîne' })
 
 describe('SearchPanel, access', () => {
   it('offers to connect while you are not', () => {
@@ -101,5 +105,37 @@ describe('SearchPanel, access', () => {
     setup({ connected: true, running: true })
 
     expect(screen.getByRole('button', { name: 'Arrêter le scan' })).toBeInTheDocument()
+  })
+})
+
+// The name typed dies with the tab unless it is asked otherwise: the box is the
+// whole of that request, and it sits under the field it speaks about.
+describe('SearchPanel, remembering the channel', () => {
+  it('offers to keep the channel, unticked', () => {
+    setup()
+
+    expect(memoire()).not.toBeChecked()
+  })
+
+  it('reports the request to keep it', () => {
+    const { onRememberChange } = setup()
+
+    fireEvent.click(memoire())
+
+    expect(onRememberChange).toHaveBeenCalledWith(true)
+  })
+
+  it('shows the box ticked for a channel already kept', () => {
+    setup({ remember: true })
+
+    expect(memoire()).toBeChecked()
+  })
+
+  it('reports the withdrawal', () => {
+    const { onRememberChange } = setup({ remember: true })
+
+    fireEvent.click(memoire())
+
+    expect(onRememberChange).toHaveBeenCalledWith(false)
   })
 })
