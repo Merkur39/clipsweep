@@ -32,6 +32,8 @@ const option = (name: string) => within(panel()!).getByRole('checkbox', { name: 
 
 const panel = () => screen.queryByRole('group', { name: 'Créateurs' })
 
+const list = () => document.querySelector('.multiselect-options') as HTMLElement
+
 describe('MultiSelect', () => {
   it('stays closed until it is opened', () => {
     setup()
@@ -134,5 +136,67 @@ describe('MultiSelect', () => {
     const { button } = setup([], { options: [] })
 
     expect(button).toBeDisabled()
+  })
+})
+
+// A sweep over a busy channel yields hundreds of creators and nearly as many
+// games; the panel used to mount every one of them, twice over, on every open.
+describe('MultiSelect, longues listes', () => {
+  const many = Array.from({ length: 400 }, (_, index) => ({
+    value: `créateur-${String(index).padStart(3, '0')}`,
+    count: 400 - index,
+  }))
+
+  const openLong = (selected: string[] = []) => {
+    const rendered = setup(selected, { options: many })
+    fireEvent.click(rendered.button)
+    return rendered
+  }
+
+  const scrollTo = (offset: number) => {
+    list().scrollTop = offset
+    fireEvent.scroll(list())
+  }
+
+  it('mounts a window of the options rather than the whole list', () => {
+    openLong()
+
+    expect(within(panel()!).getAllByRole('checkbox').length).toBeLessThan(50)
+    expect(option('créateur-000')).toBeInTheDocument()
+  })
+
+  it('reserves the height of the whole list, so the scrollbar tells the truth', () => {
+    openLong()
+
+    expect(list().firstElementChild).toHaveStyle({ height: '12800px' })
+  })
+
+  it('mounts the options scrolled to, and lets go of those left behind', () => {
+    openLong()
+
+    scrollTo(3000)
+
+    expect(option('créateur-100')).toBeInTheDocument()
+    expect(within(panel()!).queryByRole('checkbox', { name: /créateur-000/ })).toBeNull()
+  })
+
+  // The panel is unmounted on close, so the DOM reopens at the top; the window
+  // has to be told, or it would draw the options from where we left off against
+  // a scroller sitting at zero.
+  it('reopens at the top of the list after having been closed further down', () => {
+    const { button } = openLong()
+    scrollTo(3000)
+
+    fireEvent.click(button)
+    fireEvent.click(button)
+
+    expect(option('créateur-000')).toBeInTheDocument()
+  })
+
+  it('keeps "Uncheck all" out of the scrolling list, in reach at any depth', () => {
+    openLong(['créateur-000'])
+
+    const clear = within(panel()!).getByRole('button', { name: 'Tout décocher' })
+    expect(list().contains(clear)).toBe(false)
   })
 })

@@ -185,29 +185,45 @@
   white-space: nowrap;
 }
 
+/* The panel holds the cap; the list inside it is what scrolls. */
 .multiselect-panel {
   position: absolute;
   z-index: 10;
   top: calc(100% + 4px);
   left: 0;
   right: 0;
+  display: flex;
+  flex-direction: column;
   min-width: 230px;
   max-height: 280px;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 5px;
   background: var(--surface-raised);
   border: 1px solid var(--rule-strong);
   border-radius: var(--r);
   box-shadow: 0 12px 28px -6px var(--shadow-panel);
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
 }
 
 .multiselect-panel .link {
+  flex: none;
   width: 100%;
   padding: 4px 8px 8px;
 }
 
+/* `min-height: 0` is what lets the list shrink under the spacer standing in for
+   the options not mounted — without it the flex item would take the height of
+   the whole catalogue and the panel would scroll nothing. */
+.multiselect-options {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+
+/* The height is applied by `OPTION_HEIGHT`, in `MultiSelect.tsx`, at the 32px
+   these rules already came to on their own: the window places the options at
+   that pitch. Change the padding or the font size here without changing it
+   there and they land beside their own places. */
 .multiselect-option {
   display: flex;
   align-items: center;
