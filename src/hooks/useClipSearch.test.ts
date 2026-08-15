@@ -60,6 +60,10 @@ const channelFound = () =>
 
 const logText = (entries: { text: string }[]) => entries.map((e) => e.text).join('\n')
 
+/** What the resolution of the game names hands back, whole unless said otherwise. */
+const gameNames = (names: Map<string, string>, incomplete = false) =>
+  fetchGameNames.mockResolvedValue({ names, incomplete })
+
 describe('useClipSearch', () => {
   it('does not call the API without a session', async () => {
     const { result } = renderHook(() => useClipSearch(null, vi.fn(), t))
@@ -81,7 +85,7 @@ describe('useClipSearch', () => {
   it('collects the clips and resolves the game names', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [clip('a'), clip('b')] })
-    fetchGameNames.mockResolvedValue(new Map([['1', 'Cult of the Lamb']]))
+    gameNames(new Map([['1', 'Cult of the Lamb']]))
 
     const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
@@ -94,7 +98,7 @@ describe('useClipSearch', () => {
   it('warns when the channel predates the period asked for', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [] })
-    fetchGameNames.mockResolvedValue(new Map())
+    gameNames(new Map())
 
     const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
@@ -108,13 +112,43 @@ describe('useClipSearch', () => {
   it('keeps the clips even when the game names fail', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [clip('a')] })
-    fetchGameNames.mockRejectedValue(new Error('boom'))
+    gameNames(new Map(), true)
 
     const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
 
     await waitFor(() => expect(result.current.clips).toHaveLength(1))
-    expect(logText(result.current.logEntries)).toContain('Noms des jeux indisponibles')
+    expect(logText(result.current.logEntries)).toContain('n’ont pas pu être récupérés')
+  })
+
+  // The names that did come back are worth keeping and worth showing; the
+  // warning is there to say the list is not the whole of what was asked for.
+  it('keeps the names it did get, and says so when some are missing', async () => {
+    channelFound()
+    fetchPage.mockResolvedValue({ clips: [clip('a')] })
+    gameNames(new Map([['1', 'Cult of the Lamb']]), true)
+
+    const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
+    await act(async () => result.current.start(request))
+
+    await waitFor(() => expect(result.current.clips).toHaveLength(1))
+    expect(result.current.gameNames.get('1')).toBe('Cult of the Lamb')
+    expect(logText(result.current.logEntries)).toContain('n’ont pas pu être récupérés')
+  })
+
+  // An id Helix has no row for leaves a gap in the map on a request that went
+  // perfectly well. Warning on it would cry wolf on every sweep touching a
+  // category Twitch has retired.
+  it('stays silent when every batch answered, gaps in the map included', async () => {
+    channelFound()
+    fetchPage.mockResolvedValue({ clips: [clip('a', '305984745')] })
+    gameNames(new Map())
+
+    const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
+    await act(async () => result.current.start(request))
+
+    await waitFor(() => expect(result.current.clips).toHaveLength(1))
+    expect(logText(result.current.logEntries)).not.toContain('n’ont pas pu être récupérés')
   })
 
   // The cache is fed only by a sweep actually started, never by a plain
@@ -122,7 +156,7 @@ describe('useClipSearch', () => {
   it('remembers the swept channel with its creation date', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [] })
-    fetchGameNames.mockResolvedValue(new Map())
+    gameNames(new Map())
 
     const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))
@@ -153,7 +187,7 @@ describe('useClipSearch', () => {
   it('starts from a clean slate on every sweep', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [clip('a')] })
-    fetchGameNames.mockResolvedValue(new Map())
+    gameNames(new Map())
 
     const { result } = renderHook(() => useClipSearch(session, vi.fn(), t))
     await act(async () => result.current.start(request))

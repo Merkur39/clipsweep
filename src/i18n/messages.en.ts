@@ -207,7 +207,7 @@ export const en: Catalogue = {
   'log.window': '{indent}{from} → {to}: {n} clips',
   'log.summary': '{clips} unique clips in {requests} requests.',
   'log.interrupted': 'Sweep interrupted: the result is partial.',
-  'log.gameNames': 'Game names unavailable: the filter will list ids.',
+  'log.gameNames': 'Some game names could not be fetched: the filter will list their ids.',
   'log.failed': 'Failed: {reason}',
 
   // ── Network errors ───────────────────────────────────────────────────────

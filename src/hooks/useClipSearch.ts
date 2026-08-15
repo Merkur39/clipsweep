@@ -148,12 +148,15 @@ export function useClipSearch(
         }
 
         // Helix only returns a game id. Labelling a filter is worth one request,
-        // but failing at it must not invalidate a search that succeeded.
-        try {
-          setGameNames(await api.fetchGameNames(result.clips.map((clip) => clip.game_id)))
-        } catch {
-          log(t('log.gameNames'), 'warn')
-        }
+        // but failing at it must not invalidate a search that succeeded — which
+        // is why what comes back is kept whether it is whole or not, and only
+        // the shortfall is said out loud. An abort still goes up: the sweep was
+        // stopped, and there is nothing left to label.
+        const { names, incomplete: namesIncomplete } = await api.fetchGameNames(
+          result.clips.map((clip) => clip.game_id),
+        )
+        setGameNames(names)
+        if (namesIncomplete) log(t('log.gameNames'), 'warn')
       } catch (cause) {
         const error = cause as Error
         if (error.name === 'AbortError') return
