@@ -121,6 +121,20 @@ describe('MultiSelect', () => {
     expect(panel()).toBeNull()
   })
 
+  // The name column is 149px wide and ellipsises anything longer — a game's
+  // full title, or the id an unresolved category is named by, which is the very
+  // part the label exists to carry.
+  it('carries the full label on the option, past what the column can show', () => {
+    const { button } = setup([], {
+      options: [{ value: '1', count: 3 }],
+      labelOf: () => 'Tom Clancy’s Rainbow Six Siege',
+    })
+
+    fireEvent.click(button)
+
+    expect(within(panel()!).getByTitle('Tom Clancy’s Rainbow Six Siege')).toBeInTheDocument()
+  })
+
   it('maps the values through the label provided', () => {
     const { button } = setup([], {
       options: [{ value: '1', count: 3 }],

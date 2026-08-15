@@ -138,6 +138,7 @@ export const fr = {
   'filters.all': 'Tous',
   'filters.selectedCount': '{n} sélectionnés',
   'filters.uncheckAll': 'Tout décocher',
+  'filters.unknownGame': 'Sans nom ({id})',
   'filters.clearField': 'Effacer {label}',
 
   // ── Table ────────────────────────────────────────────────────────────────

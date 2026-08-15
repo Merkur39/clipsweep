@@ -92,6 +92,7 @@ export const en: Catalogue = {
   'filters.all': 'All',
   'filters.selectedCount': '{n} selected',
   'filters.uncheckAll': 'Uncheck all',
+  'filters.unknownGame': 'Unnamed ({id})',
   'filters.clearField': 'Clear {label}',
 
   // ── Table ────────────────────────────────────────────────────────────────

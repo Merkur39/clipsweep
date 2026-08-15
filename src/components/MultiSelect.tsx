@@ -153,7 +153,12 @@ export function MultiSelect({
                       checked={selected.includes(option.value)}
                       onChange={() => toggle(option.value)}
                     />
-                    <span className="multiselect-option-name">{labelOf(option.value)}</span>
+                    {/* The column ellipsises anything past 149px — a game's
+                        full title, or the id an unresolved category is named
+                        by. The attribute is what puts it back within reach. */}
+                    <span className="multiselect-option-name" title={labelOf(option.value)}>
+                      {labelOf(option.value)}
+                    </span>
                     <span className="multiselect-option-count">
                       {formatCount(option.count, locale)}
                     </span>

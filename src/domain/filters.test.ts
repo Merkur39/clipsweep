@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { applyFilters, dateExtent, facets, narrowedRange, NO_FILTERS } from './filters'
+import {
+  applyFilters,
+  dateExtent,
+  facets,
+  namedFirst,
+  narrowedRange,
+  NO_FILTERS,
+  type Facet,
+} from './filters'
 import type { Clip } from '../twitch/types'
 
 const clip = (over: Partial<Clip> & { id: string }): Clip => ({
@@ -246,5 +254,42 @@ describe('facets', () => {
 
   it('returns nothing for an empty list', () => {
     expect(facets([], (c) => c.creator_name)).toEqual([])
+  })
+})
+
+describe('namedFirst', () => {
+  const all = [
+    { value: '1', count: 9 },
+    { value: '305984745', count: 7 },
+    { value: '2', count: 5 },
+    { value: '460630', count: 3 },
+  ]
+  const named = new Set(['1', '2'])
+  const values = (list: Facet[]) => list.map((facet) => facet.value)
+
+  it('sends the values it could not name to the end of the list', () => {
+    expect(values(namedFirst(all, (value) => named.has(value)))).toEqual([
+      '1',
+      '2',
+      '305984745',
+      '460630',
+    ])
+  })
+
+  it('leaves the order within each group alone, counts included', () => {
+    const result = namedFirst(all, (value) => named.has(value))
+
+    expect(result.slice(0, 2)).toEqual([
+      { value: '1', count: 9 },
+      { value: '2', count: 5 },
+    ])
+  })
+
+  it('changes nothing when every value has a name', () => {
+    expect(namedFirst(all, () => true)).toEqual(all)
+  })
+
+  it('changes nothing when none of them has one', () => {
+    expect(namedFirst(all, () => false)).toEqual(all)
   })
 })

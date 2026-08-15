@@ -10,12 +10,13 @@ import { SearchPanel } from './components/SearchPanel'
 import { Mark } from './components/Icon'
 import { LocaleToggle } from './components/LocaleToggle'
 import { SearchProgress } from './components/SearchProgress'
+import { gameLabeller } from './components/selectionLabel'
 import { ThemeToggle } from './components/ThemeToggle'
 import { ViewToggle } from './components/ViewToggle'
 import { applyTheme, parseTheme } from './domain/theme'
 import { parseView } from './domain/view'
 import { describeAccess, describeTokenLife } from './domain/access'
-import { applyFilters, dateExtent, facets, narrowedRange } from './domain/filters'
+import { applyFilters, dateExtent, facets, namedFirst, narrowedRange } from './domain/filters'
 import { clampSince, clampUntil, describePeriodError, monthBefore } from './domain/period'
 import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
@@ -243,7 +244,16 @@ export default function App({ authError }: { authError: string | null }) {
     [clips, minViews, maxViews, from, to, creators, gameIds, sort],
   )
   const creatorFacets = useMemo(() => facets(clips, (clip) => clip.creator_name), [clips])
-  const gameFacets = useMemo(() => facets(clips, (clip) => clip.game_id), [clips])
+  // Named first: the ids Helix could not resolve go to the end of the list
+  // rather than sitting between two names, where they read as a fault.
+  const gameFacets = useMemo(
+    () =>
+      namedFirst(
+        facets(clips, (clip) => clip.game_id),
+        (id) => gameNames.has(id),
+      ),
+    [clips, gameNames],
+  )
   // Bounds for the range fields: the actual extent of the clips in hand, which
   // grows along with the sweep, like the facets.
   const dateBounds = useMemo(() => dateExtent(clips), [clips])
@@ -252,7 +262,7 @@ export default function App({ authError }: { authError: string | null }) {
   // claim every empty table for themselves and leave the threshold on views —
   // the real culprit — unnamed.
   const narrowed = useMemo(() => narrowedRange({ from, to }, dateBounds), [from, to, dateBounds])
-  const gameLabel = (id: string) => gameNames.get(id) ?? id
+  const gameLabel = useMemo(() => gameLabeller(gameNames, t), [gameNames, t])
 
   const filtersActive =
     Boolean(minViewsInput || maxViewsInput || fromDate || toDate) ||
