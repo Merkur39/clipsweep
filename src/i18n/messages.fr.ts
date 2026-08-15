@@ -272,7 +272,8 @@ export const fr = {
   'log.window': '{indent}{from} → {to} : {n} clips',
   'log.summary': '{clips} clips uniques en {requests} requêtes.',
   'log.interrupted': 'Scan interrompu : le résultat est partiel.',
-  'log.gameNames': 'Noms des jeux indisponibles : le filtre listera les identifiants.',
+  'log.gameNames':
+    'Certains noms de jeux n’ont pas pu être récupérés : le filtre listera leurs identifiants.',
   'log.failed': 'Échec : {reason}',
 
   // ── Network errors ───────────────────────────────────────────────────────

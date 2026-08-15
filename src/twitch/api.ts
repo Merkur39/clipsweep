@@ -84,19 +84,41 @@ export class TwitchApi {
     return user
   }
 
-  /** Resolves game ids to names, 100 at a time — the endpoint's ceiling. */
-  async fetchGameNames(gameIds: string[]): Promise<Map<string, string>> {
+  /**
+   * Resolves game ids to names, 100 at a time — the endpoint's ceiling.
+   *
+   * A batch that fails costs its own hundred and nothing more. These names only
+   * label a filter: dropping the four hundred already in hand because the fifth
+   * request timed out trades a whole legible filter for a partly legible one.
+   *
+   * `incomplete` reports that some batch was lost, which is not the same thing
+   * as a name missing from the map. Helix returns no row for a category it has
+   * retired, and that id comes back unnamed on a request that went perfectly
+   * well — reading the map's gaps as failures would cry wolf on every sweep
+   * touching an old clip.
+   */
+  async fetchGameNames(
+    gameIds: string[],
+  ): Promise<{ names: Map<string, string>; incomplete: boolean }> {
     const names = new Map<string, string>()
     const unique = [...new Set(gameIds.filter(Boolean))]
+    let incomplete = false
 
     for (let offset = 0; offset < unique.length; offset += 100) {
       const params = new URLSearchParams()
       for (const id of unique.slice(offset, offset + 100)) params.append('id', id)
 
-      const { data } = await this.get<Game>('games', params)
-      for (const game of data) names.set(game.id, game.name)
+      try {
+        const { data } = await this.get<Game>('games', params)
+        for (const game of data) names.set(game.id, game.name)
+      } catch (cause) {
+        // An abort is the user stopping the sweep, not a batch going wrong:
+        // swallowing it here would have us carry on requesting after the stop.
+        if ((cause as Error).name === 'AbortError') throw cause
+        incomplete = true
+      }
     }
-    return names
+    return { names, incomplete }
   }
 
   clipPageFetcher(broadcasterId: string): ClipPageFetcher {
