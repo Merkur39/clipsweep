@@ -239,11 +239,25 @@
   background: var(--surface-hover);
 }
 
-.multiselect-option-name {
+/* An option's name is content, not a field label, and it has to say so twice:
+   the option is a `<label>` and its name a `<span>`, which `controls.css` reads
+   as a nameplate — 11px, 600, uppercase, letterspaced, in faint ink. Twitch
+   returns "Special Events"; the panel was drawing SPECIAL EVENTS, in the ink
+   reserved for what is secondary, and paying 13% of the column's width for the
+   privilege. Same escape `.remember` had to make in `search-panel.css`.
+
+   The specificity is what carries it: two classes against the nameplate's one
+   class and two elements. */
+.multiselect-option .multiselect-option-name {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--text);
 }
 
 .multiselect-option-count {
