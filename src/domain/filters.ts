@@ -105,12 +105,40 @@ export interface Facet {
 /**
  * Distinct values and their counts, for the filter dropdowns. Empty values are
  * dropped: an option nothing can be selected by is worse than no option.
+ *
+ * The two lists it reads part company as soon as another filter is on. `all` is
+ * everything the sweep turned up and settles **which options exist**; `matching`
+ * is what the other filters leave standing and settles **what each is worth**.
+ * A count taken from `all` would promise clips that the range on dates has
+ * already ruled out — "SpiZ 584" on a range holding none of his, and an empty
+ * table for reward.
+ *
+ * `matching` deliberately excludes the facet's own constraint, or the list would
+ * erase itself: counted on its own selection, "Creators" would hold nothing but
+ * the creators already checked and there would be no way left to add another.
+ *
+ * Spent values stay, at zero, and the order sinks them to the bottom in one
+ * block. Removing them would take a checked value out of the only list it can
+ * be unchecked from; sorting on the absolute count instead would scatter them
+ * between the live ones, and a list hundreds long would have to be read whole
+ * to find what is still worth clicking.
  */
-export function facets(clips: readonly Clip[], pick: (clip: Clip) => string | undefined): Facet[] {
+export function facets(
+  all: readonly Clip[],
+  matching: readonly Clip[],
+  pick: (clip: Clip) => string | undefined,
+): Facet[] {
   const counts = new Map<string, number>()
-  for (const clip of clips) {
+  for (const clip of all) {
     const value = pick(clip)?.trim()
-    if (value) counts.set(value, (counts.get(value) ?? 0) + 1)
+    if (value) counts.set(value, 0)
+  }
+  for (const clip of matching) {
+    const value = pick(clip)?.trim()
+    // `has` rather than a blind increment: `matching` is a subset of `all`, and
+    // trusting that here would turn any future caller's mistake into a phantom
+    // option nothing can be filtered by.
+    if (value && counts.has(value)) counts.set(value, counts.get(value)! + 1)
   }
 
   return [...counts]
@@ -138,4 +166,27 @@ export function namedFirst(all: Facet[], isNamed: (value: string) => boolean): F
   if (named.length === 0 || named.length === all.length) return all
 
   return [...named, ...all.filter((facet) => !isNamed(facet.value))]
+}
+
+/**
+ * The order the panel draws: live facets over spent ones, and the values
+ * nothing could name at the tail of whichever block they fall in.
+ *
+ * Two rules that would otherwise fight. Applied to the whole list at once,
+ * [namedFirst] would lift a named category the filters have emptied above an
+ * unresolved id with twelve clips behind it — putting a dead row over a live
+ * one, which is the very scattering the count-first order exists to prevent.
+ * Liveness wins; namedness settles the rest.
+ */
+export function panelOrder(all: Facet[], isNamed: (value: string) => boolean): Facet[] {
+  const live = all.filter((facet) => facet.count > 0)
+  if (live.length === all.length) return namedFirst(all, isNamed)
+
+  return [
+    ...namedFirst(live, isNamed),
+    ...namedFirst(
+      all.filter((facet) => facet.count === 0),
+      isNamed,
+    ),
+  ]
 }

@@ -145,7 +145,12 @@ export function MultiSelect({
                 {options.slice(firstIndex, endIndex).map((option) => (
                   <label
                     key={option.value}
-                    className="multiselect-option"
+                    /* Spent by the other filters: drawn back, never disabled —
+                       a checked value can fall to zero, and this panel is the
+                       only place it can be unchecked from. */
+                    className={
+                      option.count === 0 ? 'multiselect-option is-spent' : 'multiselect-option'
+                    }
                     style={{ height: OPTION_HEIGHT }}
                   >
                     <input

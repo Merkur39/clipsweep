@@ -151,6 +151,35 @@ describe('MultiSelect', () => {
 
     expect(button).toBeDisabled()
   })
+
+  // A facet the other filters have emptied still shows, at zero: it is drawn
+  // back so the eye skips it, not withdrawn.
+  it('marks the options the other filters have spent', () => {
+    const { button } = setup([], {
+      options: [
+        { value: 'SpiZ', count: 12 },
+        { value: 'Ori', count: 0 },
+      ],
+    })
+
+    fireEvent.click(button)
+
+    expect(option('SpiZ').closest('label')).not.toHaveClass('is-spent')
+    expect(option('Ori').closest('label')).toHaveClass('is-spent')
+  })
+
+  // Drawn back, never disabled: a checked value can fall to zero — the panel it
+  // was checked from is the only place it can be unchecked.
+  it('leaves a spent option clickable, so a checked one can be taken back', () => {
+    const { button, onChange } = setup(['Ori'], {
+      options: [{ value: 'Ori', count: 0 }],
+    })
+
+    fireEvent.click(button)
+    fireEvent.click(option('Ori'))
+
+    expect(onChange).toHaveBeenCalledWith([])
+  })
 })
 
 // A sweep over a busy channel yields hundreds of creators and nearly as many
