@@ -5,6 +5,7 @@ import {
   dateExtent,
   facets,
   namedFirst,
+  panelOrder,
   narrowedRange,
   NO_FILTERS,
   type Facet,
@@ -232,7 +233,7 @@ describe('narrowedRange', () => {
 
 describe('facets', () => {
   it('counts occurrences, the most numerous first', () => {
-    expect(facets(clips, (c) => c.creator_name)).toEqual([
+    expect(facets(clips, clips, (c) => c.creator_name)).toEqual([
       { value: 'SpiZ', count: 2 },
       { value: 'Garami', count: 1 },
       { value: 'Ori', count: 1 },
@@ -240,20 +241,56 @@ describe('facets', () => {
   })
 
   it('breaks ties alphabetically', () => {
-    const result = facets(clips, (c) => c.creator_name)
+    const result = facets(clips, clips, (c) => c.creator_name)
 
     expect(result.slice(1).map((f) => f.value)).toEqual(['Garami', 'Ori'])
   })
 
   it('drops empty values rather than offering an unusable filter', () => {
-    expect(facets(clips, (c) => c.game_id)).toEqual([
+    expect(facets(clips, clips, (c) => c.game_id)).toEqual([
       { value: '2', count: 2 },
       { value: '1', count: 1 },
     ])
   })
 
   it('returns nothing for an empty list', () => {
-    expect(facets([], (c) => c.creator_name)).toEqual([])
+    expect(facets([], [], (c) => c.creator_name)).toEqual([])
+  })
+
+  // The two lists part company as soon as another filter is on: the options
+  // come from everything swept, the counts from what that filter leaves.
+  describe('counted against a narrower set', () => {
+    const matching = clips.filter((c) => c.view_count >= 7)
+
+    it('counts on the narrower set, not on everything swept', () => {
+      expect(facets(clips, matching, (c) => c.creator_name)[0]).toEqual({
+        value: 'SpiZ',
+        count: 2,
+      })
+    })
+
+    it('keeps a value the other filters have spent, at zero', () => {
+      const result = facets(clips, matching, (c) => c.creator_name)
+
+      expect(result.map((f) => f.value)).toContain('Ori')
+      expect(result.find((f) => f.value === 'Ori')?.count).toBe(0)
+    })
+
+    // Sorted on the absolute count, a spent value would sit between two live
+    // ones and the useful rows would scatter through a list hundreds long.
+    it('sinks the spent values below the live ones, in one block', () => {
+      expect(facets(clips, matching, (c) => c.creator_name)).toEqual([
+        { value: 'SpiZ', count: 2 },
+        { value: 'Garami', count: 0 },
+        { value: 'Ori', count: 0 },
+      ])
+    })
+
+    it('offers nothing the sweep never turned up', () => {
+      const result = facets(clips, matching, (c) => c.creator_name)
+
+      expect(result.map((f) => f.value)).not.toContain('Nobody')
+    })
   })
 })
 
@@ -291,5 +328,44 @@ describe('namedFirst', () => {
 
   it('changes nothing when none of them has one', () => {
     expect(namedFirst(all, () => false)).toEqual(all)
+  })
+})
+
+describe('panelOrder', () => {
+  const named = (value: string) => value.startsWith('named')
+  const order = (list: Facet[]) => panelOrder(list, named).map((facet) => facet.value)
+
+  // The two rules meet here, and the wrong one winning is visible at a glance:
+  // an unresolved id with clips behind it must not be pushed under a named
+  // category the current filters have emptied.
+  it('sinks the spent facets below every live one, named or not', () => {
+    const list = [
+      { value: 'named-live', count: 45 },
+      { value: 'named-spent', count: 0 },
+      { value: 'raw-live', count: 12 },
+      { value: 'raw-spent', count: 0 },
+    ]
+
+    expect(order(list)).toEqual(['named-live', 'raw-live', 'named-spent', 'raw-spent'])
+  })
+
+  it('keeps the unnamed at the tail of the block they belong to', () => {
+    const list = [
+      { value: 'raw-a', count: 9 },
+      { value: 'named-b', count: 3 },
+      { value: 'raw-c', count: 0 },
+      { value: 'named-d', count: 0 },
+    ]
+
+    expect(order(list)).toEqual(['named-b', 'raw-a', 'named-d', 'raw-c'])
+  })
+
+  it('leaves a list with nothing spent to namedFirst alone', () => {
+    const list = [
+      { value: 'raw-a', count: 9 },
+      { value: 'named-b', count: 3 },
+    ]
+
+    expect(order(list)).toEqual(['named-b', 'raw-a'])
   })
 })

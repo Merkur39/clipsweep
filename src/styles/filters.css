@@ -266,3 +266,14 @@
   font-variant-numeric: tabular-nums;
   color: var(--text-faint);
 }
+
+/* An option the other filters have emptied: it falls back to the ink the count
+   beside it already uses, one step under a live name and still legible — one
+   has to be able to read what one is unchecking.
+
+   Deliberately not `.zero`, which this sheet spends on the opposite errand:
+   amber, for the clip at zero views that the sweep exists to unearth. There the
+   eye is called; here it is meant to pass over. */
+.multiselect-option.is-spent .multiselect-option-name {
+  color: var(--text-faint);
+}

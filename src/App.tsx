@@ -16,7 +16,7 @@ import { ViewToggle } from './components/ViewToggle'
 import { applyTheme, parseTheme } from './domain/theme'
 import { parseView } from './domain/view'
 import { describeAccess, describeTokenLife } from './domain/access'
-import { applyFilters, dateExtent, facets, namedFirst, narrowedRange } from './domain/filters'
+import { applyFilters, dateExtent, facets, narrowedRange, panelOrder } from './domain/filters'
 import { clampSince, clampUntil, describePeriodError, monthBefore } from './domain/period'
 import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
@@ -243,16 +243,34 @@ export default function App({ authError }: { authError: string | null }) {
     () => sortClips(applyFilters(clips, { minViews, maxViews, from, to, creators, gameIds }), sort),
     [clips, minViews, maxViews, from, to, creators, gameIds, sort],
   )
-  const creatorFacets = useMemo(() => facets(clips, (clip) => clip.creator_name), [clips])
-  // Named first: the ids Helix could not resolve go to the end of the list
-  // rather than sitting between two names, where they read as a fault.
+  /**
+   * What each facet is counted against: every filter **but its own**.
+   *
+   * A facet counted on the full sweep promises clips another filter has already
+   * ruled out. Counted on `shown`, it would erase itself instead — the creators
+   * list, read off a selection of creators, would hold only those already
+   * checked and no second one could ever be added. Excluding its own constraint
+   * is what makes "SpiZ or Ori" survive the first click.
+   */
+  const creatorMatching = useMemo(
+    () => applyFilters(clips, { minViews, maxViews, from, to, creators: [], gameIds }),
+    [clips, minViews, maxViews, from, to, gameIds],
+  )
+  const gameMatching = useMemo(
+    () => applyFilters(clips, { minViews, maxViews, from, to, creators, gameIds: [] }),
+    [clips, minViews, maxViews, from, to, creators],
+  )
+  const creatorFacets = useMemo(
+    () => facets(clips, creatorMatching, (clip) => clip.creator_name),
+    [clips, creatorMatching],
+  )
   const gameFacets = useMemo(
     () =>
-      namedFirst(
-        facets(clips, (clip) => clip.game_id),
+      panelOrder(
+        facets(clips, gameMatching, (clip) => clip.game_id),
         (id) => gameNames.has(id),
       ),
-    [clips, gameNames],
+    [clips, gameMatching, gameNames],
   )
   // Bounds for the range fields: the actual extent of the clips in hand, which
   // grows along with the sweep, like the facets.
