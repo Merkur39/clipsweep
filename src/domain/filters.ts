@@ -117,3 +117,25 @@ export function facets(clips: readonly Clip[], pick: (clip: Clip) => string | un
     .map(([value, count]) => ({ value, count }))
     .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value))
 }
+
+/**
+ * The facets the caller could name, then the rest, each group keeping the order
+ * it came in.
+ *
+ * Helix resolves most game ids to a name but not all — a category it has since
+ * retired comes back from `/games` with no row at all, and the filter has only
+ * the number to show for it. Sorted by count, those numbers land in the middle
+ * of the names, where each one reads as a fault in the tool. At the end of the
+ * list they read as what they are: the tail nothing could name.
+ *
+ * Kept out of [facets], which knows values and counts and has no business
+ * knowing what a name is.
+ */
+export function namedFirst(all: Facet[], isNamed: (value: string) => boolean): Facet[] {
+  const named = all.filter((facet) => isNamed(facet.value))
+  // Nothing to part: hand back the very array, so a caller memoizing on it is
+  // not woken by an identity that changed for nothing.
+  if (named.length === 0 || named.length === all.length) return all
+
+  return [...named, ...all.filter((facet) => !isNamed(facet.value))]
+}
