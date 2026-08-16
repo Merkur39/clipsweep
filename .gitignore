@@ -1,5 +1,6 @@
 node_modules
 dist
+design
 .env
 .env.local
 *.local
