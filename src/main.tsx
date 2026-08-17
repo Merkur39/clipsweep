@@ -35,15 +35,45 @@ applyLocale(
 // has no reason to stay.
 forgetSessionScopedKeys(localStorage)
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <LocaleProvider>
-      <App authError={authError} />
-    </LocaleProvider>
-    {/* Vercel analytics: it loads its script from `/_vercel/insights/`, a path
-        only a Vercel deployment serves — anywhere else the request fails without
-        consequence. Nothing the visitor types or collects goes through it: only
-        the page view. */}
-    <Analytics />
-  </StrictMode>,
-)
+function start() {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <LocaleProvider>
+        <App authError={authError} />
+      </LocaleProvider>
+      {/* Vercel analytics: it loads its script from `/_vercel/insights/`, a path
+          only a Vercel deployment serves — anywhere else the request fails without
+          consequence. Nothing the visitor types or collects goes through it: only
+          the page view. */}
+      <Analytics />
+    </StrictMode>,
+  )
+}
+
+/**
+ * The offline fixture: `?fake=demo` and the like, in development only.
+ *
+ * Two guards, and they do different work. `import.meta.env.DEV` is a literal
+ * Rollup folds away, which takes the **dynamic import** with it — the module
+ * never enters the production graph, rather than entering it and being shaken
+ * afterwards. The query parameter is what keeps a normal `npm run dev` normal.
+ *
+ * The import is awaited before the first render because the fixture replaces
+ * `fetch`, and the token check fires from an effect on mount: installing it
+ * afterwards would let the first request leave for the real Twitch.
+ */
+if (import.meta.env.DEV) {
+  const scenario = new URLSearchParams(location.search).get('fake')
+
+  void import('./dev/fakeTwitch').then((fixture) => {
+    // The token outlives the parameter that created it. Dropping it on a plain
+    // load is what stops a stale fixture token from being sent to Twitch, which
+    // would report an expired session with nothing on screen to explain it.
+    if (!scenario) fixture.forgetFakeToken()
+    else fixture.installFakeTwitch(scenario)
+
+    start()
+  })
+} else {
+  start()
+}
