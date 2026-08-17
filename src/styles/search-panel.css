@@ -15,6 +15,18 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  /* The work area's row is definite, so this column is given a height rather
+     than asked for one — and a short window can hand it less than its two
+     blocks need. Then it scrolls, rather than spilling its tally out through
+     the bottom edge, which is what it did: measured at a 899px viewport, the
+     verdict finished 20px below the panel that was supposed to hold it.
+     `min-height: 0` is what lets a stretched grid item shrink at all.
+     `overflow-x` is written out because setting one axis to `auto` promotes
+     the other from `visible` on its own, and a stray horizontal bar here would
+     sit under the sweep button. */
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: var(--sp-8) var(--sp-7);
 }
 
@@ -25,12 +37,17 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-6);
+  /* Neither block may be compressed to make the other fit: squeezing the tally
+     would crop the verdict, and squeezing the controls would crop the button
+     that starts the sweep. The column scrolls instead. */
+  flex: none;
 }
 
 .rail-bottom {
   display: flex;
   flex-direction: column;
   gap: var(--sp-5);
+  flex: none;
 }
 
 /* The presets belong to the dates above them, not beside them: they sit inside

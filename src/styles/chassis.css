@@ -255,6 +255,22 @@
 
   display: grid;
   grid-template-columns: 300px minmax(0, 1fr);
+  /**
+   * The row is declared, and the `0` in it is the whole rule.
+   *
+   * A height on the container is not a height on its track: left implicit, the
+   * row is `auto`, sizes itself to its content and overflows the box that was
+   * supposed to hold it. `.stage` then has no definite height either, so the
+   * `flex: 1` on the results card has no leftover to resolve against and the
+   * card is content-sized in turn — the table stops scrolling inside itself and
+   * runs out under the export dock. Measured at a 899px viewport: 45px of
+   * overspill, and the dock covering the last row it is built never to cover.
+   *
+   * `1fr` alone would not do it — that reads as `minmax(auto, 1fr)`, and the
+   * `auto` floor is the content again. The same trap as the statistics drawer's
+   * collapsing track, one file over.
+   */
+  grid-template-rows: minmax(0, 1fr);
   gap: var(--sp-7);
   block-size: clamp(360px, calc(100dvh - var(--work-reserve)), 1400px);
 }
