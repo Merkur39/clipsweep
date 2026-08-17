@@ -295,6 +295,53 @@ const HELIX_WINDOW_CAP = 1000
 const PAGE = 100
 
 /**
+ * The clips of one window, ordered as Helix orders them, computed once.
+ *
+ * Memoised on the window's own bounds, and that is not a micro-optimisation:
+ * done per *request*, a filter over the whole universe plus a sort ran on all
+ * 297 pages of a sweep instead of its 46 windows, and it ran on the main
+ * thread. Measured before the fix, the fixture alone accounted for 35 long
+ * tasks and 3.8 seconds of blocking — which is to say it produced the very
+ * stutter one would then have gone looking for in React.
+ *
+ * A fixture that is slow does not merely waste time: it lies about the thing it
+ * exists to measure.
+ */
+const slices = new Map<string, Clip[]>()
+
+function windowSlice(clips: Clip[], startedAt: string, endedAt: string): Clip[] {
+  const key = `${startedAt}|${endedAt}`
+  const cached = slices.get(key)
+  if (cached) return cached
+
+  // The universe is sorted by `created_at`, so the range is two binary searches
+  // rather than a pass. Only the ordering below is linearithmic, and only in
+  // the size of the window.
+  const lower = (bound: string) => {
+    let low = 0
+    let high = clips.length
+    while (low < high) {
+      const mid = (low + high) >>> 1
+      if (clips[mid].created_at < bound) low = mid + 1
+      else high = mid
+    }
+    return low
+  }
+
+  /* Helix orders a window by view count, which is what makes its 1000-row
+     ceiling lose the *least* watched clips of a busy period — the very fact the
+     sweep exists to work around. Ordering by date here would hand back a
+     complete-looking list and hide the whole problem. */
+  const slice = clips
+    .slice(lower(startedAt), lower(endedAt))
+    .sort((a, b) => b.view_count - a.view_count)
+    .slice(0, HELIX_WINDOW_CAP)
+
+  slices.set(key, slice)
+  return slice
+}
+
+/**
  * Installs the fake. Returns the scenario it resolved, so the caller can say
  * which one is running and refuse an unknown name loudly rather than serving
  * something plausible.
@@ -363,14 +410,7 @@ export function installFakeTwitch(name: string): Scenario {
 
       const startedAt = url.searchParams.get('started_at') ?? ''
       const endedAt = url.searchParams.get('ended_at') ?? ''
-      /* Helix orders a window by view count, which is what makes its 1000-row
-         ceiling lose the *least* watched clips of a busy period — the very fact
-         the sweep exists to work around. Ordering by date here would hand back
-         a complete-looking list and hide the whole problem. */
-      const inWindow = clips
-        .filter((clip) => clip.created_at >= startedAt && clip.created_at < endedAt)
-        .sort((a, b) => b.view_count - a.view_count)
-        .slice(0, HELIX_WINDOW_CAP)
+      const inWindow = windowSlice(clips, startedAt, endedAt)
 
       const offset = Number(url.searchParams.get('after') ?? '0')
       const page = inWindow.slice(offset, offset + PAGE)
