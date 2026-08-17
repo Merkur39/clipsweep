@@ -35,11 +35,11 @@ applyLocale(
 // has no reason to stay.
 forgetSessionScopedKeys(localStorage)
 
-function start() {
+function start(fixture = false) {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <LocaleProvider>
-        <App authError={authError} />
+        <App authError={authError} fixture={fixture} />
       </LocaleProvider>
       {/* Vercel analytics: it loads its script from `/_vercel/insights/`, a path
           only a Vercel deployment serves — anywhere else the request fails without
@@ -72,7 +72,11 @@ if (import.meta.env.DEV) {
     if (!scenario) fixture.forgetFakeToken()
     else fixture.installFakeTwitch(scenario)
 
-    start()
+    // Whether this session's clips are a fixture's is decided here and passed
+    // down, rather than read from the query inside the application: `src/dev/`
+    // has to stay unreachable from the bundle, and the entry point is already
+    // the one place that knows.
+    start(Boolean(scenario))
   })
 } else {
   start()

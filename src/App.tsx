@@ -101,7 +101,20 @@ function toCsv(clips: Clip[]): string {
   return '\uFEFF' + [CSV_COLUMNS.join(','), ...rows].join('\n')
 }
 
-export default function App({ authError }: { authError: string | null }) {
+export interface AppProps {
+  authError: string | null
+  /**
+   * Whether the clips on screen come from the offline fixture rather than from
+   * Twitch.
+   *
+   * One thing turns on it, and only in development: nothing is lost by leaving
+   * a fixture's page, so nothing asks to confirm. Set by `main.tsx`, which
+   * resolves the scenario; the application never looks for `src/dev/` itself.
+   */
+  fixture?: boolean
+}
+
+export default function App({ authError, fixture = false }: AppProps) {
   const { t } = useTranslation()
   const [session, setSession] = useState<Session | null>(null)
   // Read once only, before the first render: that is what allows announcing
@@ -206,8 +219,10 @@ export default function App({ authError }: { authError: string | null }) {
 
   // A running sweep, or its results on screen, live in the application's memory
   // alone: leaving the page loses them and forces a full re-sweep, Helix quota
-  // included.
-  useUnloadGuard(running || clips.length > 0)
+  // included. A fixture's sweep costs neither, so it is not worth a prompt —
+  // and the prompt fires on the very reload one is doing all day while working
+  // on the interface.
+  useUnloadGuard((running || clips.length > 0) && !fixture)
 
   // The fragment was already consumed in main.tsx; here we only confirm the
   // stored token is still live.

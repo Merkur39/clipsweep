@@ -14,6 +14,12 @@ import type { ClipSearch, SearchRequest } from './hooks/useClipSearch'
  * returns nothing, which is the state a sweep starts from anyway.
  */
 const start = vi.fn<(request: SearchRequest) => Promise<void>>(() => Promise.resolve())
+/**
+ * What the doubled sweep reports. Mutable so a case can say "a sweep is under
+ * way" without driving one; reset between tests, so the default stays the state
+ * a fresh page is in.
+ */
+const searchState = { running: false }
 vi.mock('./hooks/useClipSearch', () => ({
   useClipSearch: (): ClipSearch => ({
     clips: [],
@@ -23,7 +29,9 @@ vi.mock('./hooks/useClipSearch', () => ({
     span: null,
     logEntries: [],
     gameNames: new Map(),
-    running: false,
+    get running() {
+      return searchState.running
+    },
     start,
     stop: vi.fn(),
   }),
@@ -65,6 +73,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
   start.mockClear()
   mockClientId.value = 'test-client'
+  searchState.running = false
   localStorage.clear()
   sessionStorage.clear()
 })
@@ -264,5 +273,36 @@ describe('App, disconnecting', () => {
     fireEvent.click(deconnexion()!)
 
     expect(await screen.findByText(/n’a pas confirmé la révocation/)).toBeInTheDocument()
+  })
+})
+
+/** The browser only asks for confirmation if the event is cancelled. */
+const leave = () => {
+  const event = new Event('beforeunload', { cancelable: true })
+  window.dispatchEvent(event)
+  return event.defaultPrevented
+}
+
+describe('App, leaving the page', () => {
+  it('asks before dropping a sweep that is under way', () => {
+    searchState.running = true
+
+    render(<App authError={null} />)
+
+    expect(leave()).toBe(true)
+  })
+
+  /**
+   * A fixture's sweep costs no request and no quota, so there is nothing to
+   * confirm — and the prompt lands on the reload one does all day while working
+   * on the interface. Development only: `fixture` is set by `main.tsx`, which
+   * can only reach the fixture behind `import.meta.env.DEV`.
+   */
+  it('lets a fixture session go without a word', () => {
+    searchState.running = true
+
+    render(<App authError={null} fixture />)
+
+    expect(leave()).toBe(false)
   })
 })
