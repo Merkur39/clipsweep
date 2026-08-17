@@ -1,257 +1,1064 @@
-/* The shared control vocabulary: fields, buttons, checkboxes, icons.
-   The components that specialise it (`.multiselect-button`, `.row-play`,
-   `.field-clear`) are imported after this file. */
+/* The shared control vocabulary of Bleu franc: buttons, sort keys, fields,
+   choice controls, and the small surfaces a control lands in.
 
-label {
-  display: block;
-  margin: 0 0 var(--s-3);
-}
+   Authority is split. `design/clipsweep-design-system.html` decides the values,
+   `design/clipsweep-catalogue.html` decides which pieces exist and what they are
+   called. Both scope every rule under `.p`, and the catalogue doubles each state
+   with a plate hook (`.is-hover`, `.is-focus`, `[data-force='hover']`) so a
+   static page can show what a pointer would do. Neither survives here: this
+   sheet *is* the product, so the scope is gone and only the real pseudo-classes
+   are kept.
 
-/* `.field-control` is also a `<span>` that is a direct child of its `<label>`,
-   but it is a control container, not a label: the label bottom margin was
-   adding 5px under its field, and shifting the whole filter row relative to
-   the controls that carry none. */
-.field-label,
-label > span:not(.field-control) {
-  display: block;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+   Two conventions run through the whole file:
+
+   - State lives in the ARIA attribute and the CSS hangs off it — `aria-checked`,
+     `aria-pressed`, `aria-expanded`, `aria-disabled`. There is no `.on` or
+     `.is-active`. A checkbox is a `<button role="checkbox">`, never an
+     `<input type="checkbox">`, so nothing below styles one.
+   - Every hover is written `:hover:not([aria-disabled='true'])`. An attribute
+     selector weighs the same as a class, so `.cta.stop:hover` (0,2,1) would
+     otherwise outrank `.cta[aria-disabled='true']` (0,2,0) and repaint a dead
+     button under the pointer. Excluding it in the selector settles the question
+     once instead of once per compound.
+
+   Tokens all come from `base.css`. None is declared here. */
+
+/* ==========================================================================
+   Labels — the smallest type the system has
+   ========================================================================== */
+
+/* The silkscreen step: 10px capitals, opened up by `--track-silk` because
+   capitals at this size close up and stop being separable. */
+.silk {
+  font: var(--w-semi) var(--text-3xs) / var(--lead-none) var(--sans);
+  letter-spacing: var(--track-silk);
   text-transform: uppercase;
-  color: var(--text-faint);
-  margin-bottom: 5px;
+  color: var(--tx3);
 }
 
-input:not([type='checkbox']) {
-  width: 100%;
-  min-width: 0;
-  padding: 8px 10px;
-  background: var(--ground);
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
-  transition:
-    border-color 0.12s var(--ease),
-    background 0.12s var(--ease);
+/* The same silkscreen, but as a section heading: the rule that runs to the end
+   of the line is drawn by the label itself, so a section needs no second
+   element and no margin agreement between the two. */
+.lbl {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  font: var(--w-semi) var(--text-3xs) / var(--lead-none) var(--sans);
+  letter-spacing: var(--track-silk);
+  text-transform: uppercase;
+  color: var(--tx3);
 }
 
-input:not([type='checkbox']):hover {
-  border-color: var(--rule-strong);
+.lbl::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
 }
 
-input:not([type='checkbox']):focus {
-  border-color: var(--violet);
-  background: var(--chassis);
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+
+/* The one button per screen that starts the thing the app exists for. 48px is
+   the only control height above the touch floor, which is why the sweep gets it
+   and nothing else does. */
+/* The four families whose glyph is not the set's default side. Everything else
+   takes the 15px `Icon` draws at, and none of these four is a rounding of it:
+   the sweep button is the page's one large control, a dock pill and a date
+   bound are set in 13px text, and the play button is a glyph with no label at
+   all. Written together so the exceptions can be counted at a glance. */
+.cta svg {
+  width: 18px;
+  height: 18px;
 }
 
-input::placeholder {
-  color: var(--text-faint);
+.dbtn svg,
+.date svg {
+  width: 14px;
+  height: 14px;
 }
 
-/* Without `min-width: 0`, the intrinsic width of an `input[type=date]` — with
-   its picker icon — overruns its column and pushes the grid. */
-.duo {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s-2);
+.playbtn svg {
+  width: 13px;
+  height: 13px;
 }
 
-.duo > * {
-  min-width: 0;
-}
-
-button {
+.cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  background: var(--surface-raised);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r);
-  color: var(--text);
+  gap: var(--sp-4);
+  height: var(--ctrl-2xl);
+  padding: 0 var(--sp-8);
+  border: 0;
+  border-radius: var(--r-lg);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: var(--w-semi) var(--text-lg) / var(--lead-none) var(--sans);
+  letter-spacing: var(--track-tight);
+  white-space: nowrap;
   cursor: pointer;
-  font: inherit;
-  font-weight: 550;
-  font-size: 13px;
-  padding: 9px 15px;
-  transition:
-    background 0.12s var(--ease),
-    border-color 0.12s var(--ease),
-    color 0.12s var(--ease);
+  transition: background-color var(--dur-instant) var(--ease-out);
 }
 
-button:hover:not(:disabled) {
-  background: var(--surface-hover);
-  border-color: var(--violet);
+.cta:hover:not([aria-disabled='true']) {
+  background: var(--accent-press);
 }
 
-/* Pressed, therefore darker than hover. In light, `--surface` is the white of
-   the readout: using it here would lighten a button as it is pressed. */
-button:active:not(:disabled) {
-  background: var(--surface-sunken);
+/* Pressed shares the hover flat and adds the 1px drop: the colour has already
+   been spent announcing the pointer, so the press has to say something the
+   colour no longer can. */
+.cta:active:not([aria-disabled='true']) {
+  background: var(--accent-press);
+  transform: translateY(1px);
 }
 
-button.primary {
-  background: var(--violet);
-  border-color: var(--violet);
-  color: var(--on-violet);
-  font-weight: 650;
-}
-
-button.primary:hover:not(:disabled) {
-  background: var(--violet-strong);
-  border-color: var(--violet-strong);
-}
-
-/* `--violet-fill` is the flat that carries the ink — pale on paper. A pressed
-   button sinks: it needs the darkest violet of the two worlds. */
-button.primary:active:not(:disabled) {
-  background: var(--violet-press);
-  border-color: var(--violet-press);
-  color: var(--on-violet-press);
-}
-
-/* The violet ring on a violet background is invisible: it gets lifted off. */
-button.primary:focus-visible {
-  outline-color: var(--text);
-}
-
-button.wide {
+.cta.wide {
   width: 100%;
 }
 
-button.link {
-  background: none;
-  border: none;
-  color: var(--violet);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 0 0 var(--s-3);
-  text-align: left;
-  justify-content: flex-start;
+/* Stopping a sweep is not the same act as starting one, and it must not be
+   dressed as one: the fill goes, the outline stays, the geometry is untouched
+   so the button does not jump when the sweep begins. */
+.cta.stop {
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-control);
+  color: var(--tx);
 }
 
-button.link:hover:not(:disabled) {
+.cta.stop:hover:not([aria-disabled='true']) {
+  background: var(--surface-hover);
+}
+
+/* Keeping a clip — the decision the whole readout is built around, so it takes
+   the accent flat, one step below the sweep in height. */
+.keep {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--ctrl-lg);
+  padding: 0 var(--sp-7);
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: var(--on-accent);
+  font: var(--w-semi) var(--text-sm) / var(--lead-none) var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--dur-instant) var(--ease-out);
+}
+
+.keep:hover:not([aria-disabled='true']) {
+  background: var(--accent-press);
+}
+
+/* Everything secondary next to a `.keep` or a `.cta`: an outline, the second
+   ink, and no fill to compete with. */
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--ctrl-lg);
+  padding: 0 var(--sp-6);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  color: var(--tx2);
+  font: var(--w-medium) var(--text-sm) / var(--lead-none) var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-instant) var(--ease-out),
+    color var(--dur-instant) var(--ease-out);
+}
+
+.ghost:hover:not([aria-disabled='true']) {
+  background: var(--surface-hover);
+  color: var(--tx);
+}
+
+/* The dock's button: a pill because the dock is one, and 36px because a strip of
+   actions at 40px reads as a toolbar of its own. */
+.dbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: var(--ctrl-md);
+  padding: 0 var(--sp-6);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  color: var(--tx2);
+  font: var(--w-medium) var(--text-sm) / var(--lead-none) var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-instant) var(--ease-out),
+    color var(--dur-instant) var(--ease-out);
+}
+
+.dbtn:hover:not([aria-disabled='true']) {
+  background: var(--surface-hover);
+  color: var(--tx);
+}
+
+/* The border goes transparent rather than to zero: dropping it would take a
+   pixel off each side and the primary would sit 2px narrower than its
+   neighbours in the same dock. */
+.dbtn.primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: var(--w-semi);
+}
+
+.dbtn.primary:hover:not([aria-disabled='true']) {
+  background: var(--accent-press);
+}
+
+/* Unavailable. Written for the four filled or outlined buttons at once, because
+   the answer is the same for all four: the fill goes, the hairline comes back,
+   the ink drops to the third step. `.keep` is in the list on purpose — a
+   blue-filled button that does nothing reads as the most actionable thing on
+   the screen. `transform: none` cancels the `:active` drop, which `aria-disabled`
+   does not prevent the way `disabled` would. */
+.cta[aria-disabled='true'],
+.keep[aria-disabled='true'],
+.ghost[aria-disabled='true'],
+.dbtn[aria-disabled='true'] {
+  background: var(--surface-raised);
+  border: 1px solid var(--rule);
+  color: var(--tx3);
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* A round 26px button carrying one glyph — the theme and locale toggles, the
+   player's close. */
+.iconbtn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--ctrl-2xs);
+  height: var(--ctrl-2xs);
+  border: 0;
+  border-radius: var(--r-pill);
+  background: var(--surface-raised);
+  color: var(--tx2);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-instant) var(--ease-out),
+    color var(--dur-instant) var(--ease-out);
+}
+
+.iconbtn:hover:not([aria-disabled='true']) {
+  background: var(--surface-hover);
+  color: var(--tx);
+}
+
+.iconbtn[aria-disabled='true'] {
+  background: var(--surface-raised);
+  color: var(--tx3);
+  cursor: not-allowed;
+}
+
+/* Play, at the end of a 52px row where a 44px button would swallow the row's
+   own rhythm. It is drawn at rest rather than revealed on hover: on a touch
+   screen no row is ever hovered, and a control that only the pointer can find
+   does not exist there. */
+.playbtn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--ctrl-xs);
+  height: var(--ctrl-xs);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
   background: none;
-  color: var(--violet-strong);
+  color: var(--tx3);
+  cursor: pointer;
+  transition:
+    color var(--dur-instant) var(--ease-out),
+    border-color var(--dur-instant) var(--ease-out);
+}
+
+/* Two triggers, cumulative: the row reveals the affordance, the button answers
+   for itself. */
+.playbtn:hover:not([aria-disabled='true']),
+.trow:hover .playbtn:not([aria-disabled='true']) {
+  border-color: var(--rule-control);
+  color: var(--accent-ink);
+}
+
+.playbtn[aria-disabled='true'] {
+  border-color: transparent;
+  color: var(--tx3);
+  cursor: not-allowed;
+}
+
+/* Both sit below the 44px touch floor and neither can grow: the row and the top
+   bar are built on their drawn size. The pseudo-element is the hit area, centred
+   on the button and painting nothing, so the target is honest while the mark
+   stays 26 or 28px. */
+.iconbtn::after,
+.playbtn::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: var(--ctrl-xl);
+  height: var(--ctrl-xl);
+  transform: translate(-50%, -50%);
+}
+
+/* A button that acts like a link — "select all", "clear the filters". No border,
+   no fill, no padding: it belongs to the sentence it sits in. */
+.link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-ink);
+  font: var(--w-medium) var(--text-xs) / var(--lead-none) var(--sans);
+  cursor: pointer;
+}
+
+/* The underline is the only answer left to a control with neither border nor
+   fill; `a` in `base.css` reaches for the same one from the other direction. */
+.link:hover:not([aria-disabled='true']) {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-button.link:disabled {
-  border: none;
+/* The undoing twin of `.link`: same shape, third ink, because undoing a choice
+   must not be advertised in the colour that means "chosen". */
+.quiet {
+  padding: 0;
+  border: 0;
   background: none;
+  color: var(--tx3);
+  font: var(--w-medium) var(--text-xs) / var(--lead-none) var(--sans);
+  cursor: pointer;
 }
 
-/* Written last, and it must stay that way: `button:disabled` has exactly the
-   same specificity as `button.primary` (0,1,1), so only the order settles
-   between them. Placed before, the primary variant kept its full violet once
-   disabled — a dead button that looks like the most actionable on the page.
+.quiet:hover:not([aria-disabled='true']) {
+  color: var(--tx);
+}
 
-   Opacity takes the label below the contrast threshold: the switching-off is
-   explicit, it is not a dilution. */
-button:disabled {
-  background: transparent;
-  border-color: var(--rule);
-  color: var(--text-faint);
+.link[aria-disabled='true'],
+.quiet[aria-disabled='true'] {
+  color: var(--tx3);
+  text-decoration: none;
   cursor: not-allowed;
 }
 
-.icon {
-  flex: none;
-  display: block;
-}
+/* ==========================================================================
+   Sort keys — a group of buttons, never a header with an arrow in a string
+   ========================================================================== */
 
-/* ---- checkboxes ----
-   Everything starts ticked: the box must therefore not be the heaviest ink of
-   the table. Outline at rest, light tint once ticked. */
-
-input[type='checkbox'] {
-  appearance: none;
-  position: relative;
-  flex: none;
-  width: 15px;
-  height: 15px;
-  margin: 0;
-  padding: 0;
-  background: var(--ground);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r);
+/* The same piece serves the table's column head and the strip above the grid,
+   which is why it carries its own silkscreen type instead of inheriting from
+   whichever head it lands in. */
+.sort-key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  height: var(--ctrl-sm);
+  padding: 0 var(--sp-4);
+  border: 0;
+  border-radius: var(--r-xs);
+  background: none;
+  color: var(--tx3);
+  font: var(--w-semi) var(--text-3xs) / var(--lead-none) var(--sans);
+  letter-spacing: var(--track-silk);
+  text-transform: uppercase;
   cursor: pointer;
   transition:
-    background 0.12s var(--ease),
-    border-color 0.12s var(--ease);
+    color var(--dur-instant) var(--ease-out),
+    background-color var(--dur-instant) var(--ease-out);
 }
 
-input[type='checkbox']:hover:not(:disabled) {
-  border-color: var(--violet);
+.sort-key:hover:not([aria-disabled='true']) {
+  background: var(--surface-hover);
+  color: var(--tx2);
 }
 
-input[type='checkbox']:checked,
-input[type='checkbox']:indeterminate {
-  background: var(--violet-wash);
-  border-color: var(--violet);
+/* The active key writes in the accent ink, not the mark: this is text, and
+   `--accent-mark` is only guaranteed to 3:1. */
+.sort-key[aria-pressed='true'] {
+  color: var(--accent-ink);
 }
 
-input[type='checkbox']:checked::after {
-  content: '';
-  position: absolute;
-  left: 4px;
-  top: 1px;
-  width: 4px;
-  height: 8px;
-  border: solid var(--violet-strong);
-  border-width: 0 1.6px 1.6px 0;
-  transform: rotate(43deg);
+.sort-key[aria-disabled='true'] {
+  background: none;
+  color: var(--tx3);
+  cursor: not-allowed;
 }
 
-input[type='checkbox']:indeterminate::after {
-  content: '';
-  position: absolute;
-  inset: 6px 3px auto;
-  height: 0;
-  border-top: 1.6px solid var(--violet-strong);
+/* The slot is always drawn, sorted or not, so switching the sort on does not
+   shift the label beside it. */
+.sort-key-arrow {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 12px;
+  height: 12px;
 }
 
-input[type='checkbox']:disabled {
-  cursor: default;
-  border-color: var(--rule);
-  background: transparent;
+.sort-key-arrow svg {
+  transition: transform var(--dur-quick) var(--ease-out);
 }
 
-/* ---- the sort key ----
-   A silkscreen label that acts, shared by the two readouts' heads: the table
-   files one per column, the grid lines them up in a strip. It inherits the
-   type of the head it sits in, and undoes every bare-button rule. */
+/* The chevron of the icon set already points down, so descending is the rest
+   position and ascending is the turn. Stated as an explicit `rotate(0deg)`
+   rather than left unset: the two states then interpolate as one property and
+   the arrow turns instead of jumping. */
+.sort-key-arrow.desc svg {
+  transform: rotate(0deg);
+}
 
-.sort-key {
+.sort-key-arrow.asc svg {
+  transform: rotate(180deg);
+}
+
+/* ==========================================================================
+   Fields
+   ========================================================================== */
+
+.flabel {
+  font: var(--w-semi) var(--text-3xs) / var(--lead-none) var(--sans);
+  letter-spacing: var(--track-silk);
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+
+/* Label, control and message stack at one gap, so a field that grows an error
+   pushes what follows by exactly the height of that line. */
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+/* `.field` is the box. Everything inside it — the `@` prefix, the value, the
+   placeholder, and in this app a real `<input>` — is unpainted, so there is one
+   border, one background and one radius no matter how the field is composed. */
+.field {
   display: flex;
   align-items: center;
-  gap: 5px;
-  width: 100%;
+  gap: var(--sp-4);
+  height: var(--ctrl-2xl);
+  padding: 0 var(--sp-4) 0 var(--sp-5);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  color: var(--tx);
+  font: var(--w-regular) var(--text-md) / var(--lead-none) var(--mono);
+  transition:
+    border-color var(--dur-instant) var(--ease-out),
+    box-shadow var(--dur-instant) var(--ease-out);
+}
+
+.field .at {
+  color: var(--tx3);
+}
+
+/* Truncated by ellipsis — without it `min-width: 0` has no visible effect on a
+   long value: the text would simply overflow the box it was allowed to shrink
+   below. */
+.field .val {
+  flex: 1;
+  min-width: 0;
+  font-weight: var(--w-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field .ph {
+  flex: 1;
+  color: var(--tx3);
+}
+
+/* The bare control inside the box carries no box of its own. `align-self:
+   stretch` rather than a height: it fills the 48px without a percentage to
+   resolve, and the user agent centres the single line inside it, so `--lead-none`
+   cannot clip a descender. */
+.field input,
+.field select {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
   padding: 0;
+  border: 0;
   background: none;
-  border: none;
   color: inherit;
   font: inherit;
-  font-weight: inherit;
-  letter-spacing: inherit;
-  text-transform: inherit;
+}
+
+/* Only the select is stripped, and only here: the composition draws the chevron
+   from the icon set, and two arrows in one control is one too many. Left on the
+   text inputs, `appearance: none` would also take the date input's picker away
+   in Safari, which is the one control that has nothing to fall back on. */
+.field select {
+  appearance: none;
+}
+
+.field input::placeholder {
+  color: var(--tx3);
+}
+
+/* The ring is drawn outside, on the field, never on the input: an inner outline
+   inside the border would make three concentric strokes and would leave nothing
+   to answer with when a field is both wrong and focused. The inside stays
+   reserved for the error. */
+.field:has(:focus-visible),
+.date:has(:focus-visible) {
+  outline: var(--focus-ring) solid var(--accent-ink);
+  outline-offset: var(--focus-offset);
+}
+
+.field input:focus-visible,
+.field select:focus-visible,
+.date input:focus-visible {
+  outline: none;
+}
+
+/* Safari and iOS grey a disabled control through `-webkit-text-fill-color`,
+   which overrides `color` and ignores every token this sheet sets. Pinning it to
+   `currentcolor` hands the ink back to the cascade. */
+.field input:disabled,
+.field select:disabled,
+.date input:disabled {
+  color: var(--tx3);
+  -webkit-text-fill-color: currentcolor;
+  cursor: not-allowed;
+}
+
+/* The hairline takes the mark, not the fill: on `--surface-raised`, which is what
+   a field is drawn on, `--window-lost` only holds 2.66:1 in the dark world. The
+   inner 1px ring doubles the stroke so the error survives beside a focus ring. */
+.field.bad {
+  border-color: var(--window-lost-mark);
+  box-shadow: 0 0 0 1px var(--window-lost-mark);
+}
+
+.field[aria-disabled='true'] {
+  background: var(--surface);
+  border-color: var(--rule);
+  color: var(--tx3);
+  cursor: not-allowed;
+}
+
+.field[aria-disabled='true'] .val {
+  color: var(--tx3);
+}
+
+.field-err {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--text-xs);
+  color: var(--window-lost-ink);
+}
+
+.field-hint {
+  font-size: var(--text-xs);
+  color: var(--tx3);
+}
+
+/* No image yet, and possibly never: the disc is the shape of the thing, drawn in
+   the control hairline so it reads as chrome rather than as data. */
+.avatar {
+  display: block;
+  flex: none;
+  width: var(--ctrl-2xs);
+  height: var(--ctrl-2xs);
+  border-radius: 50%;
+  background: var(--rule-control);
+}
+
+.dates {
+  display: flex;
+  gap: var(--sp-4);
+}
+
+/* 44px, the touch floor: a date bound is the one field a thumb reaches for on a
+   phone. `min-width: 0` because the intrinsic width of a native date input —
+   picker indicator included — otherwise overruns its half of the pair. */
+.date {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: 1;
+  min-width: 0;
+  height: var(--ctrl-xl);
+  padding: 0 var(--sp-5);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-md);
+  background: var(--surface-raised);
+  color: var(--tx2);
+  font: var(--w-regular) var(--text-xs) / var(--lead-none) var(--mono);
+}
+
+.date svg {
+  flex: none;
+  color: var(--tx3);
+}
+
+.date input {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+/* The user agent draws this indicator from its own two-tone image, picked by
+   `color-scheme` alone: near-black on paper, near-white in the dark, and neither
+   is the ink of the field it sits in. Painting the box with `currentcolor` and
+   cutting the shape out of it with a mask puts the mark back under the cascade —
+   one declaration, both worlds. The geometry is the icon set's `cal`, restated
+   here because a user-agent pseudo-element cannot host a rendered node. */
+.date input[type='date']::-webkit-calendar-picker-indicator {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  background: currentcolor;
+  cursor: pointer;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2.5'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2.5'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.date[aria-disabled='true'] {
+  background: var(--surface);
+  border-color: var(--rule);
+  color: var(--tx3);
+  cursor: not-allowed;
+}
+
+/* A threshold, and the button that empties it. The wrapper is positioned so the
+   button can be laid over the field rather than sit inside its flex row: a
+   clear affordance belongs at the edge of the box, not in the reading order of
+   its value. */
+.numfield {
+  position: relative;
+  display: inline-block;
+  width: 132px;
+}
+
+/* Room for the overlay: 6px inset, the 22px button, and 2px so a long figure
+   does not touch it. Written as its derivation rather than as the 30px it comes
+   to, so moving the button moves the padding with it. */
+.numfield .field {
+  padding-right: calc(var(--sp-3) + 22px + var(--sp-1));
+}
+
+/* The native spinners would land under the clear button, and a threshold is
+   typed, not nudged one view at a time. */
+.numfield input[type='number'] {
+  appearance: textfield;
+}
+
+.numfield input[type='number']::-webkit-inner-spin-button,
+.numfield input[type='number']::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.numfield .clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--tx3);
   cursor: pointer;
 }
 
-.sort-key:hover:not(:disabled) {
-  background: none;
-  border-color: transparent;
-  color: var(--text);
+.numfield .clear:hover:not([aria-disabled='true']) {
+  background: var(--surface-hover);
+  color: var(--tx);
 }
 
-/* Reserved width: the arrow appears without shifting the label. */
-.sort-key-arrow {
-  display: inline-flex;
+.numfield .clear[aria-disabled='true'] {
+  background: transparent;
+  color: var(--tx3);
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Choice — checkbox, switch, chip, segmented control
+   ========================================================================== */
+
+/* A `<button role="checkbox">`, and the sheet paints every state itself. Nothing
+   here styles `input[type='checkbox']`: a native box cannot be given this fill
+   in every browser, and half a control drawn by the user agent is a control
+   nobody owns. */
+.box {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-xs);
+  background: var(--surface-raised);
+  cursor: pointer;
+  transition:
+    background-color var(--dur-instant) var(--ease-out),
+    border-color var(--dur-instant) var(--ease-out);
+}
+
+/* The tick is always in the tree and only its opacity moves: laying it out on
+   check would reflow the 17px box, and the glyph would arrive a frame late. */
+.box svg {
+  display: block;
+  width: 11px;
+  height: 11px;
+  opacity: 0;
+  color: var(--on-accent);
+}
+
+/* The border stays even under the fill: `--accent` on `--surface-raised` falls to
+   2.06:1 in the dark world, so the flat alone would lose the boundary the empty
+   box had. `--accent-mark` is the token that must be seen. */
+.box[aria-checked='true'],
+.box[aria-checked='mixed'] {
+  border-color: var(--accent-mark);
+  background: var(--accent);
+}
+
+.box[aria-checked='true'] svg {
+  opacity: 1;
+}
+
+/* Mixed is a bar, not a half-tick: the dash says "some", where a faded tick
+   would only say "a tick, drawn badly". */
+.box[aria-checked='mixed']::after {
+  content: '';
+  position: absolute;
   width: 9px;
-  color: var(--violet);
+  height: 2px;
+  border-radius: 1px;
+  background: var(--on-accent);
+}
+
+.box:hover:not([aria-disabled='true']) {
+  border-color: var(--accent-mark);
+}
+
+/* On a thumbnail there is no token for what is underneath: the halo is the
+   written exception that keeps a 17px box findable over any frame of video. */
+.box.on-image {
+  box-shadow: var(--halo-overlay);
+}
+
+/* After the checked rules on purpose — same specificity, so only the order
+   settles it, and the other way round a disabled box would keep its blue fill. */
+.box[aria-disabled='true'] {
+  border-color: var(--rule);
+  background: var(--surface);
+  cursor: not-allowed;
+}
+
+.switch-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.switch {
+  position: relative;
+  display: block;
+  flex: none;
+  width: 38px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  background: var(--rule-control);
+  cursor: pointer;
+  transition: background-color var(--dur-quick) var(--ease-out);
+}
+
+/* The knob is white in both worlds: it rides on `--accent` once on, and that
+   flat is the same colour in both, so its counter-colour is too. */
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--on-accent);
+  transition: transform var(--dur-quick) var(--ease-out);
+}
+
+/* Same reasoning as the box: the track at rest holds 3.44:1 through the control
+   hairline, and the accent flat would drop to 2.06:1 once on. The border gives
+   the boundary back. */
+.switch[aria-checked='true'] {
+  background: var(--accent);
+  border-color: var(--accent-mark);
+}
+
+.switch[aria-checked='true']::after {
+  transform: translateX(16px);
+}
+
+/* After the checked rules, for the reason written on the box. */
+.switch[aria-disabled='true'] {
+  background: var(--rule);
+  cursor: not-allowed;
+}
+
+.switch[aria-disabled='true']::after {
+  background: var(--surface-raised);
+}
+
+.switch-row span {
+  font-size: var(--text-xs);
+  color: var(--tx2);
+}
+
+/* A value that can be picked or dropped — the window presets. Pressed, it takes
+   the wash and the ink, never the flat: a strip of blue rectangles would read as
+   one selected group rather than as several independent choices. */
+.chip {
+  padding: var(--sp-3) var(--sp-5);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-pill);
+  background: var(--surface-raised);
+  color: var(--tx2);
+  font: var(--w-medium) var(--text-xs) / var(--lead-none) var(--sans);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-instant) var(--ease-out),
+    border-color var(--dur-instant) var(--ease-out),
+    color var(--dur-instant) var(--ease-out);
+}
+
+.chip:hover:not([aria-disabled='true']) {
+  background: var(--surface-hover);
+  color: var(--tx);
+}
+
+.chip[aria-pressed='true'] {
+  border-color: var(--accent-mark);
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+/* After the pressed rule — see the box. */
+.chip[aria-disabled='true'] {
+  border-color: var(--rule);
+  background: var(--surface);
+  color: var(--tx3);
+  cursor: not-allowed;
+}
+
+/* Exclusive choice among two or three: the track is the group, so the buttons
+   inside carry no border of their own and the pressed one is told by its wash
+   alone. */
+.seg {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: var(--sp-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  background: var(--surface-raised);
+}
+
+.seg button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--tx3);
+  font: var(--w-semi) var(--text-2xs) / var(--lead-none) var(--sans);
+  letter-spacing: var(--track-seg);
+  cursor: pointer;
+}
+
+.seg button svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.seg button[aria-pressed='true'] {
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+/* Only the unpressed segments answer: darkening the one already chosen would
+   read as a second, stronger state that does not exist. */
+.seg button:hover:not([aria-pressed='true'], [aria-disabled='true']) {
+  color: var(--tx2);
+}
+
+/* Glyph-only segments — the view toggle. The label lives in `aria-label`, so the
+   horizontal padding falls back to the vertical one and the button is square. */
+.seg.icons button {
+  padding: var(--sp-3);
+}
+
+/* After the pressed rule — see the box. */
+.seg button[aria-disabled='true'] {
+  background: transparent;
+  color: var(--tx3);
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Surfaces a control reports through
+   ========================================================================== */
+
+/* Amber, and therefore about a window: something was reached partially. Capped at
+   62ch because this is prose and a line of prose is measured in characters, not
+   in the width of whatever column it landed in. */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  max-width: 62ch;
+  padding: var(--sp-5) var(--sp-6);
+  border: 1px solid color-mix(in srgb, var(--window-split) 40%, transparent);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--window-split) 8%, transparent);
+  font-size: var(--text-sm);
+  line-height: var(--lead-body);
+  color: var(--window-split);
+}
+
+/* Optically aligned to the first line rather than to the box: the glyph's ink
+   starts one pixel below its own top edge. */
+.alert svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+/* Red, and therefore about something lost. Flattened tokens rather than a mix,
+   so the surface stays citable and its contrast figure checkable. */
+.alert.bad {
+  border-color: var(--lost-edge);
+  background: var(--lost-wash);
+  color: var(--window-lost-ink);
+}
+
+/* Nothing to show, and the reason why. Centred in both axes because an empty
+   readout has no content to align to. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-5);
+  padding: var(--sp-9) var(--sp-7);
+  text-align: center;
+  color: var(--tx3);
+  font-size: var(--text-md);
+}
+
+.empty b {
+  display: block;
+  margin-bottom: var(--sp-1);
+  color: var(--tx);
+  font-size: var(--text-lg);
+  font-weight: var(--w-semi);
+}
+
+/* The painted arc is the mark and the rest of the ring is the edge: one hue,
+   two roles, so the thing that turns is legible without a second colour. `flex:
+   none` because the column's main axis is the height, and a shrunk circle is an
+   ellipse. `--ease-rate` is not a fallback — any curve on a loop would make the
+   spinner appear to hesitate once per turn, which reads as a stall. */
+.empty .pulse {
+  display: block;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-edge);
+  border-top-color: var(--accent-mark);
+  animation: spin 900ms var(--ease-rate) infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Stated here as well as in the blanket rule of `base.css`: the promise belongs
+   to the piece that makes it, and a loop is the one thing reduced motion asks to
+   be stopped rather than shortened. */
+@media (prefers-reduced-motion: reduce) {
+  .empty .pulse {
+    animation: none;
+  }
+}
+
+/* No shimmer, on purpose: a moving placeholder competes with the rows arriving
+   beside it, and the sweep already has one thing in motion. */
+.skel {
+  display: block;
+  height: 11px;
+  border-radius: var(--r-xs);
+  background: var(--surface-hover);
+}
+
+/* The one readout the sweep exists to give — is the list whole? — and it has its
+   own hue precisely because it is not a choice. */
+.verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--r-md);
+  background: var(--verdict-wash);
+  border: 1px solid var(--verdict-edge);
+  font-size: var(--text-xs);
+  color: var(--verdict);
+}
+
+.verdict svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* Still running: the accent, and the ink of it rather than the mark, because
+   `--accent-mark` is only guaranteed to 3:1 and a verdict is read. */
+.verdict.pending {
+  background: var(--accent-wash);
+  border-color: var(--accent-edge);
+  color: var(--accent-ink);
+}
+
+.verdict.broken {
+  background: var(--lost-wash);
+  border-color: var(--lost-edge);
+  color: var(--window-lost-ink);
 }

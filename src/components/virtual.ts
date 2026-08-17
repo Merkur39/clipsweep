@@ -26,11 +26,17 @@ export interface GridMetricsInput {
   tileMin: number
   gap: number
   /**
-   * The fixed block under the thumbnail — title, then the readout line — and
-   * the tile's two hairlines with it. Everything, in short, that the width does
-   * not decide.
+   * The fixed block under the thumbnail — the title box, then the readout line,
+   * their margins included — and nothing else. The hairlines used to be counted
+   * in here; they are `border` below, because they cost width before they cost
+   * height and only one of the two figures can say so.
    */
   metaHeight: number
+  /**
+   * One of the tile's hairlines, in pixels. Default 1, which is what every tile
+   * in this application draws.
+   */
+  border?: number
 }
 
 /**
@@ -42,22 +48,30 @@ export interface GridMetricsInput {
  * screen would jump on every scroll.
  *
  * `thumbHeight` is returned to be **applied**, not merely to be assumed. Left
- * to an `aspect-ratio` in the sheet, the drawn height is 16:9 of a content box
- * — the column less its two hairlines — and rounded by the browser, where this
- * is 16:9 of the column and rounded here: half a pixel apart, which a slice of
- * five rows turns into a visible step. One height, computed once, drawn as
- * computed.
+ * to the sheet's `aspect-ratio` alone, the browser rounds its own box and this
+ * rounds another, half a pixel away — which a slice of five rows turns into a
+ * visible step. One height, computed once, drawn as computed.
+ *
+ * And it is 16:9 of the **inner** width, not of the column. Under
+ * `box-sizing: border-box` the tile's two hairlines come off the column before
+ * anything is drawn inside it, so a 190px tile hands its thumbnail 188px: the
+ * ratio applied to the column overstated every thumbnail by a pixel and a
+ * quarter, and the drift accumulated down the placed rows. The same two
+ * hairlines are added back to the row, which is a border-box figure again.
  */
-export function gridMetrics({ width, tileMin, gap, metaHeight }: GridMetricsInput): {
+export function gridMetrics({ width, tileMin, gap, metaHeight, border = 1 }: GridMetricsInput): {
   perRow: number
   thumbHeight: number
   rowHeight: number
 } {
+  // `tileMin` and the column are border-box widths, like the tiles themselves:
+  // the hairlines are inside them, and the gaps are what sits between.
   const perRow = Math.max(1, Math.floor((width + gap) / (tileMin + gap)))
   const columnWidth = Math.max(0, (width - gap * (perRow - 1)) / perRow)
-  const thumbHeight = Math.round((columnWidth * 9) / 16)
+  const innerWidth = Math.max(0, columnWidth - border * 2)
+  const thumbHeight = Math.round((innerWidth * 9) / 16)
 
-  return { perRow, thumbHeight, rowHeight: thumbHeight + metaHeight + gap }
+  return { perRow, thumbHeight, rowHeight: thumbHeight + border * 2 + metaHeight + gap }
 }
 
 export interface GridRangeInput extends VisibleRangeInput {

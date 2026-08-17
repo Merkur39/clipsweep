@@ -44,11 +44,21 @@ export const fr = {
   'access.life.hours': { one: '{n} h restante', other: '{n} h restantes' },
   'access.life.days': { one: '{n} j restant', other: '{n} j restants' },
 
+  /**
+   * The pill in the top bar. Without the full stop of `access.connected`: it is
+   * a state, not a sentence — the remaining life sits beside it, not after it.
+   */
+  'session.connected': 'Connecté',
+  'session.disconnected': 'Déconnecté',
+
   // ── Search panel ─────────────────────────────────────────────────────────
   'panel.access': 'Accès',
   'panel.connect': 'Se connecter à Twitch',
   'panel.disconnect': 'Se déconnecter',
   'panel.target': 'Cible',
+  /** The rail's own heading: what this whole column is for. */
+  'panel.sweep': 'Scan',
+  'panel.period': 'Période',
   'panel.channel': 'Chaîne',
   /**
    * "this channel", not "the channel": the box bears on the name typed just
@@ -58,9 +68,43 @@ export const fr = {
   'panel.remember': 'Se souvenir de cette chaîne',
   'panel.since': 'Depuis',
   'panel.until': 'Jusqu’au',
-  'panel.backToCreation': 'Remonter à la création ({date})',
   'panel.run': 'Lancer le scan',
   'panel.stop': 'Arrêter le scan',
+
+  /**
+   * The period presets. They write the two date fields and nothing else — no
+   * request is spent, and the fields stay editable straight after: a preset is
+   * a shortcut for typing, never a mode.
+   */
+  'panel.preset.30d': '30 j',
+  'panel.preset.6m': '6 m',
+  'panel.preset.1y': '1 an',
+  'panel.preset.all': 'Tout',
+  'panel.presets': 'Période prédéfinie',
+
+  // ── The rail's footer: what the last sweep brought back ───────────────────
+  // Nothing sits above the table any more, so the tally lives here. Eleven
+  // visible rows is what that buys.
+  'panel.thisSweep': 'Ce scan',
+  'panel.lastSweep': 'Dernier scan',
+  'panel.clipsFound': 'Clips trouvés',
+  'panel.totalViews': 'Vues cumulées',
+  'panel.periodCovered': 'Période couverte',
+  'panel.elapsed': 'Temps écoulé',
+  /** Nothing swept yet: the row is drawn all the same, so starting one shifts nothing. */
+  'panel.nothingYet': '—',
+  /**
+   * The one thing the sweep exists to promise. Three states, three tokens:
+   * complete takes `--verdict`, running takes the accent — a sweep in flight
+   * cannot yet answer "is the list whole?" — and a loss takes the red.
+   */
+  'panel.verdict.complete': 'Complet — aucun clip manquant',
+  'panel.verdict.pending': '{done} périodes sur {total} balayées',
+  'panel.verdict.broken': {
+    one: 'Incomplet — {n} période perdue',
+    other: 'Incomplet — {n} périodes perdues',
+  },
+  'panel.verdict.idle': 'Aucun scan lancé',
 
   // ── Period ───────────────────────────────────────────────────────────────
   /**
@@ -141,6 +185,22 @@ export const fr = {
   'filters.unknownGame': 'Sans nom ({id})',
   'filters.clearField': 'Effacer {label}',
 
+  /**
+   * A filter is now a pill that opens a panel. The pill is the closed state: it
+   * carries the facet's name and its current value, so nothing has to be opened
+   * to read what is filtering.
+   */
+  'filters.views': 'Vues',
+  'filters.range': 'Plage',
+  /** The pill's value when the facet restricts nothing. Neutral in both languages. */
+  'filters.anyViews': '0 – ∞',
+  'filters.anyRange': 'Toutes',
+  'filters.rangeValue': '{from} → {to}',
+  'filters.facetTotal': { one: '{n} valeur', other: '{n} valeurs' },
+  'filters.chosen': { one: '{n} choisie', other: '{n} choisies' },
+  'filters.noOptions': 'Rien à filtrer pour l’instant.',
+  'filters.open': 'Ouvrir le filtre {label}',
+
   // ── Table ────────────────────────────────────────────────────────────────
   'table.views': 'Vues',
   'table.date': 'Date',
@@ -167,8 +227,11 @@ export const fr = {
   'player.next': 'Clip suivant',
   /** Position in the list being watched. Neutral in both languages. */
   'player.position': '{index} / {total}',
-  'player.select': 'Sélectionner',
-  'player.deselect': 'Retirer',
+  'player.select': 'Garder ce clip',
+  'player.deselect': 'Ne plus garder',
+  /** The two steps carry a word now, not just a chevron: the dock has the room. */
+  'player.previousShort': 'Précédent',
+  'player.nextShort': 'Suivant',
   /**
    * The way out, always offered: the player is a cross-origin iframe, and
    * nothing tells us from here whether it managed to play.
@@ -182,16 +245,70 @@ export const fr = {
     other:
       '{n} périodes n’ont pas pu être explorées entièrement : il manque des clips sur celles-ci. Resserre l’intervalle de dates.',
   },
-  'progress.details': 'Détail du scan',
-  'progress.detailsAside': 'frise, compteurs, journal',
+  'progress.details': 'Statistiques du scan',
+  'progress.detailsAside': 'découpage du temps · créateurs · journal',
   'progress.timeSplit': 'Découpage du temps',
   'progress.legend.done': 'période complète',
-  'progress.legend.split': 'saturée, recoupée',
-  'progress.legend.lost': 'saturée au plancher — clips manquants',
+  'progress.legend.split': 'recoupée',
+  /**
+   * The result, not the cause. "Saturée au plancher" named the mechanism that
+   * produced the hole; what the reader needs is that clips are missing from
+   * this window.
+   */
+  'progress.legend.lost': 'perdue',
   'progress.periods': 'Périodes',
   'progress.requests': 'Requêtes',
   'progress.log': 'Journal',
   'progress.logEmpty': 'En attente.',
+
+  // ── Statistics drawer ────────────────────────────────────────────────────
+  // Shut by default and never opened on its own: the result is what the page is
+  // for, and everything technical waits behind one click.
+  'stats.toggle': 'Statistiques du scan',
+  'stats.hide': 'Replier',
+  'stats.peekPeriods': { one: '{n} période', other: '{n} périodes' },
+  'stats.peekRequests': { one: '{n} requête', other: '{n} requêtes' },
+  'stats.peekSplit': { one: '{n} fenêtre recoupée', other: '{n} fenêtres recoupées' },
+  'stats.topCreators': 'Top créateurs',
+  'stats.topGames': 'Top jeux',
+  'stats.total': { one: '{n} au total', other: '{n} au total' },
+  /** The aggregate row of a ranking. It is the remainder, not a ranked entity. */
+  'stats.others': { one: '{n} autre', other: '{n} autres' },
+  'stats.rankingEmpty': 'Rien à classer.',
+  'stats.zeroViews': 'Clips à 0 vue',
+  'stats.windowsSplit': 'Fenêtres recoupées',
+  'stats.friezeSub': { one: '{n} période', other: '{n} périodes' },
+  'stats.logSub': { one: '{n} requête · trace complète', other: '{n} requêtes · trace complète' },
+
+  // ── The floating sweep banner ────────────────────────────────────────────
+  /**
+   * Tidying it away does not stop the sweep, which is why it folds with a
+   * chevron and never a cross: a cross would read as "stop the sweep". Stopping
+   * lives in the rail, and says so in words.
+   */
+  'sweep.tidy': 'Replier — le scan continue',
+  'sweep.reopen': 'Rouvrir le suivi du scan',
+  'sweep.label': 'Avancement du scan',
+  'sweep.percent': '{n} %',
+  'sweep.window': '{from} → {to}',
+
+  // ── The connect screen ───────────────────────────────────────────────────
+  'hero.badge': 'Chaque fenêtre recoupée jusqu’à ce que rien ne manque',
+  /**
+   * The tagline, cut in two around the accented half. Splitting a sentence is
+   * normally forbidden here; this one is the exception the design asks for, and
+   * both halves are translated together.
+   */
+  'hero.titleLead': 'Tous les clips d’une chaîne.',
+  'hero.titleEm': 'Oui, même celui-là.',
+  'hero.lede':
+    'Twitch ne rend jamais que les mille clips les plus vus d’une période. ClipSweep recoupe la période jusqu’à ce que chaque tranche passe sous ce plafond — puis te donne la liste entière.',
+  'hero.fact.storage': 'Rien n’est conservé',
+  'hero.fact.storageNote': 'Le jeton vit dans ton navigateur, et il est révoqué à la déconnexion.',
+  'hero.fact.exports': 'Des exports à ta main',
+  'hero.fact.exportsNote': 'CSV, JSON, liste d’URLs, ou un script de téléchargement prêt à lancer.',
+  'hero.fact.zero': 'Les clips à 0 vue',
+  'hero.fact.zeroNote': 'Ceux qu’aucun classement ne te montrera jamais.',
 
   // ── Frieze ───────────────────────────────────────────────────────────────
   'frieze.empty': 'Chaque période explorée apparaîtra ici, sa hauteur donnant le nombre de clips.',
@@ -206,8 +323,8 @@ export const fr = {
   },
   // Terser than the legend: the readout line already names the period.
   'frieze.kind.done': 'complète',
-  'frieze.kind.split': 'saturée, recoupée',
-  'frieze.kind.lost': 'saturée au plancher — clips manquants',
+  'frieze.kind.split': 'recoupée',
+  'frieze.kind.lost': 'perdue',
 
   // ── Export ───────────────────────────────────────────────────────────────
   'export.download.title': 'Télécharger les vidéos',

@@ -23,28 +23,32 @@ import { writeFileSync } from 'node:fs'
 import { deflateSync } from 'node:zlib'
 
 /** One rectangle of the mark, in the frame of the `viewBox`. */
-type Rect = readonly [fill: string, x: number, y: number, width: number, height: number]
-
-/**
- * The rectangles of `Mark`, in the **light variant** of `base.css`.
- *
- * A PNG does not follow the tab's theme: a side has to be taken. The beige of
- * the first bar stays readable on a dark tab, whereas the `#39415c` of the dark
- * variant would disappear on a light tab — the choice is therefore not
- * symmetric.
- */
-const RECTS: readonly Rect[] = [
-  ['#b6ada0', 1, 2.4, 14, 2.2],
-  ['#b6ada0', 1, 6.9, 6.4, 2.2],
-  ['#8f6ae8', 8.6, 6.9, 6.4, 2.2],
-  ['#8f6ae8', 1, 11.4, 2.8, 2.2],
-  ['#6b3fd4', 5, 11.4, 2.4, 2.2],
-  ['#6b3fd4', 8.6, 11.4, 2.4, 2.2],
-  ['#cf2b2b', 12.2, 11.4, 2.8, 2.2],
+type Rect = readonly [
+  fill: string,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
 ]
 
-/** The `rx` of the rects, and the side of the `viewBox`: both come from `Mark`. */
-const RADIUS = 0.6
+/**
+ * The rectangles of `Mark`, at half the scale the sheet draws them: the mark is
+ * a 32px plate and the `viewBox` is 16 units.
+ *
+ * No world has to be chosen here, unlike the previous mark. The plate carries
+ * `--accent`, the one colour of the system declared identically in both worlds,
+ * and the bars carry the white that value was picked to hold — so the PNG is
+ * not a light variant frozen into a file, it is the mark.
+ */
+const RECTS: readonly Rect[] = [
+  ['#0b5ed7', 0, 0, 16, 16, 5],
+  ['#ffffff', 4, 10, 2, 3, 1],
+  ['#ffffff', 7, 7, 2, 6, 1],
+  ['#ffffff', 10, 4.5, 2, 8.5, 1],
+]
+
+/** The side of the `viewBox`, which comes from `Mark`. */
 const VIEW = 16
 
 const rgb = (hex: string): [number, number, number] => [
@@ -58,10 +62,10 @@ const rgb = (hex: string): [number, number, number] => [
  * back onto the inner rectangle (the one the roundings do not bite into), and
  * it is the distance to that point which decides.
  */
-function inside(px: number, py: number, [, x, y, width, height]: Rect): boolean {
-  const cx = Math.min(Math.max(px, x + RADIUS), x + width - RADIUS)
-  const cy = Math.min(Math.max(py, y + RADIUS), y + height - RADIUS)
-  return (px - cx) ** 2 + (py - cy) ** 2 <= RADIUS * RADIUS
+function inside(px: number, py: number, [, x, y, width, height, radius]: Rect): boolean {
+  const cx = Math.min(Math.max(px, x + radius), x + width - radius)
+  const cy = Math.min(Math.max(py, y + radius), y + height - radius)
+  return (px - cx) ** 2 + (py - cy) ** 2 <= radius * radius
 }
 
 /**
@@ -85,7 +89,10 @@ function render(size: number, samples = 8): Buffer {
         for (let sx = 0; sx < samples; sx++) {
           const x = (col * VIEW) / size + (sx + 0.5) * step
           const y = (row * VIEW) / size + (sy + 0.5) * step
-          const hit = RECTS.find((rect) => inside(x, y, rect))
+          // Last hit, not first: the rects are in painting order and the plate
+          // comes before the bars it sits behind. `find` would return the plate
+          // for every sample and the bars would never be drawn.
+          const hit = RECTS.findLast((rect) => inside(x, y, rect))
           if (!hit) continue
 
           const [hr, hg, hb] = rgb(hit[0])

@@ -1,262 +1,428 @@
-/* The shell of App.tsx: nameplate, chassis columns, facade labels. */
+/* The chassis: the top bar, the page column, the work grid, and the two
+   surfaces every card is cut from. Nothing here belongs to a single feature. */
 
-.page {
-  max-width: 1360px;
-  margin: 0 auto;
-  padding: 0 var(--s-5) var(--s-7);
+/* ---- surfaces --------------------------------------------------------
+   `.glass` kept its name and lost its blur. The background is `--surface`,
+   an opaque flat, and a backdrop filter behind an opaque flat can show
+   nothing — it was a compositing cost on 36 elements for no effect. What
+   the class names is the panel, not the glass. Four surfaces do have something
+   passing behind them, and each carries its own blur: the top bar, the export
+   dock, the sweep banner, and the player's scrim. Counted rather than assumed —
+   the filter popover is not among them, its ground being opaque too. */
+
+.glass {
+  border: 1px solid var(--rule);
+  border-radius: var(--r-2xl);
+  background: var(--surface);
+  box-shadow: var(--elev-1);
 }
 
-/* ---- nameplate ---- */
+.card {
+  padding: var(--sp-6) var(--sp-7);
+}
 
-.masthead {
+.card-head {
   display: flex;
   align-items: baseline;
-  gap: var(--s-4);
-  flex-wrap: wrap;
-  padding: var(--s-5) 0 var(--s-4);
-  border-bottom: 1px solid var(--rule-strong);
+  justify-content: space-between;
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-5);
 }
 
-.masthead-name {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.card-head h4 {
   margin: 0;
-  font-size: 19px;
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  font-size: var(--text-md);
+  font-weight: var(--w-semi);
+  letter-spacing: var(--track-tight);
 }
 
-.masthead-mark {
-  flex: none;
-  display: block;
+.card-head .sub {
+  font: var(--w-regular) var(--text-xs) / var(--lead-none) var(--mono);
+  color: var(--tx3);
 }
 
-.lede {
-  margin: 0;
-  max-width: 62ch;
-  font-size: 13px;
-  color: var(--text-dim);
-}
+/* ---- top bar ---------------------------------------------------------
+   Access left the rail for a pill up here: being connected is a global
+   state, not a parameter of the sweep.
 
-/* ---- preference rows ----
-   Display preferences, not actions of the task: they file at the end of the
-   plate and weigh no more than their pills. The chassis aligns on the
-   baseline, which would lay them askew.
+   ⚠️ The stacking ladder of the page lives here, in one place, because it is
+   the one contract no single sheet can hold on its own — written in halves, it
+   collides, and it did:
 
-   The two rows share the same shape because they have the same standing: a
-   three-position state whose current one reads without acting. */
-.masthead-prefs {
-  display: flex;
-  align-self: center;
-  margin-left: auto;
-  gap: var(--s-3);
-}
+     3  `.filters`      lifted only to beat the results card, its own sibling
+     6  `.float`/`.mini` the sweep banner, which overlays the work surface
+     8  `.topbar`        scrolls over everything
 
-/* No `overflow: hidden` to cut the corners: here it would clip the focus ring,
-   as it already did at the edge of the rail. */
-.segmented {
-  display: flex;
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-}
+   The player takes none of these: `showModal` puts it in the top layer, above
+   any z-index there could be. Nothing else in `src/styles/` sets a positive
+   z-index outside its own component. */
 
-.segmented button {
-  padding: 6px 9px;
-  background: transparent;
-  border: 0;
-  border-right: 1px solid var(--rule);
-  border-radius: 0;
-  color: var(--text-faint);
-  /* The language codes stand in for a pill: to the pixel the same box height
-     as the icons of the neighbouring row, without which the two frames would
-     not line up. */
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  line-height: 16px;
-}
-
-.segmented button:last-child {
-  border-right: 0;
-}
-
-/* The bare button turns violet on its border; here the border is a seam shared
-   between three pills, it does not follow the hover of any one of them. */
-.segmented button:hover:not(:disabled) {
-  background: var(--surface-hover);
-  border-color: var(--rule);
-  color: var(--text);
-}
-
-.segmented button[aria-pressed='true'] {
-  background: var(--violet-wash);
-  color: var(--violet);
-}
-
-/* Filed at the very end of the "Results" label, past the reset: the choice of
-   readout governs what is drawn below, not the filters beside it. Slimmer than
-   the pills of the masthead — this one joins a line of type, not a row of
-   preferences. */
-.section-label .view-toggle {
-  order: 2;
-}
-
-.section-label .view-toggle button {
-  padding: 4px 8px;
-}
-
-/* ---- chassis ---- */
-
-.layout {
-  display: grid;
-  grid-template-columns: 296px minmax(0, 1fr);
-  align-items: stretch;
-}
-
-/* The seam runs the full height: a chassis is not cut short at the point where
-   its left panel stops having content. */
-.rail {
-  border-right: 1px solid var(--rule-strong);
-  padding: var(--s-5) 0 var(--s-6);
-}
-
-/* `overflow-y: auto` moves `overflow-x` from `visible` to `auto`: the slightest
-   horizontal overflow — a focus ring, the intrinsic width of a date field —
-   brings out a scrollbar. The gutters are therefore inside the container that
-   scrolls, not on the panel.
-
-   The left one is worth the exact reach of the focus ring, `outline-width` plus
-   `outline-offset`: what overflows to the left of a scrolling container is
-   clipped, and not recoverable by scrolling. The negative margin cancels the
-   shift this gutter would impose on the content. */
-.rail-inner {
+.topbar {
   position: sticky;
   top: 0;
-  max-height: 100vh;
-  overflow-y: auto;
-  padding: 4px var(--s-5) 0 4px;
-  margin-left: -4px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
+  z-index: 8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-6);
+  height: var(--topbar);
+  padding: 0 var(--sp-8);
+  border-bottom: 1px solid var(--rule);
+  /* One of the four real blurs: the page scrolls underneath this one. */
+  background: color-mix(in srgb, var(--surface) 76%, transparent);
+  backdrop-filter: blur(24px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+}
+
+/* The mark is the mechanism: three windows of a sweep, growing. Drawn in
+   elements rather than an SVG so the plate takes `--accent` and the bars
+   take `--on-accent` — the accent's roles apply to it like anything else. */
+.mark {
+  display: block;
+  position: relative;
+  flex: none;
+  width: 32px;
+  height: var(--ctrl-sm);
+  overflow: hidden;
+  border-radius: var(--r-sm);
+  background: var(--accent);
+}
+
+.mark s {
+  position: absolute;
+  bottom: 6px;
+  width: 4px;
+  border-radius: var(--r-mark);
+  background: var(--on-accent);
+  text-decoration: none;
+}
+
+.mark s:nth-child(1) {
+  left: 8px;
+  height: 6px;
+}
+
+.mark s:nth-child(2) {
+  left: 14px;
+  height: 12px;
+}
+
+.mark s:nth-child(3) {
+  left: 20px;
+  height: 17px;
+}
+
+/* The reduced mark keeps `--r-xs` rather than a proportional radius: no step
+   preserves the ratio — 10/32 asks for 8px, which does not exist, and 10px on
+   26 would make it a pebble. The exception is written rather than hidden. */
+.mark.sm {
+  width: var(--ctrl-2xs);
+  height: var(--ctrl-2xs);
+  border-radius: var(--r-xs);
+}
+
+.mark.sm s {
+  bottom: 5px;
+  width: 3px;
+}
+
+.mark.sm s:nth-child(1) {
+  left: 6px;
+  height: 5px;
+}
+
+.mark.sm s:nth-child(2) {
+  left: 11px;
+  height: 9px;
+}
+
+.mark.sm s:nth-child(3) {
+  left: 16px;
+  height: 14px;
+}
+
+.wordmark b {
+  display: block;
+  font-size: var(--text-xl);
+  font-weight: var(--w-semi);
+  letter-spacing: var(--track-title);
+}
+
+.wordmark span {
+  display: block;
+  margin-top: 1px;
+  font-size: var(--text-2xs);
+  color: var(--tx3);
+}
+
+.bar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+/* ---- the session pill ------------------------------------------------ */
+
+.session {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4) var(--sp-3) var(--sp-6);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  background: var(--surface-raised);
+}
+
+.session b {
+  font-size: var(--text-sm);
+  font-weight: var(--w-semi);
+}
+
+.session span {
+  font: var(--w-regular) var(--text-xs) / var(--lead-none) var(--mono);
+  color: var(--tx3);
+}
+
+/* Disconnected, the pill carries the way back in. Brought down a step from the
+   dock's own height: at 36px it would burst a pill built around a 26px icon
+   button, and the two states of this pill must stay the same height or the top
+   bar twitches the moment a token expires. */
+.session .dbtn {
+  height: var(--ctrl-sm);
+  padding: 0 var(--sp-5);
+}
+
+/* The lamp reads without acting — the same rule as the theme row. It is never
+   the only carrier: the word beside it says the state in words. */
+.lamp {
+  display: block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-mark);
+  box-shadow: var(--glow-lamp) color-mix(in srgb, var(--accent-mark) 80%, transparent);
+}
+
+.lamp.warn {
+  background: var(--window-split);
+  box-shadow: var(--glow-lamp) color-mix(in srgb, var(--window-split) 80%, transparent);
+}
+
+.lamp.bad {
+  background: var(--window-lost-mark);
+  box-shadow: var(--glow-lamp) color-mix(in srgb, var(--window-lost-mark) 80%, transparent);
+}
+
+.lamp.off {
+  background: var(--tx3);
+  box-shadow: none;
+}
+
+/* ---- the page column -------------------------------------------------
+   The working layout, then the export dock, then the statistics drawer,
+   then the colophon. Nothing above the table: the sweep's tally lives in
+   the rail's footer, which is what buys the eleven visible rows. */
+
+.canvas-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  min-height: calc(100dvh - var(--topbar));
+  padding: var(--sp-8);
+}
+
+/**
+ * What the work area does not get: the bar above it, the column's own
+ * padding, the two gaps under it, the dock and the drawer's bar.
+ *
+ * The height is taken from the viewport rather than from a `flex: 1` share,
+ * and that is the point: the drawer opens *under* the table and makes the
+ * column taller than the viewport, at which moment there is no free space
+ * left to share and a flexed work area would collapse to nothing. Reading
+ * the viewport directly means opening the drawer scrolls the page and moves
+ * neither the rail nor a single row.
+ */
+.body {
+  --work-reserve: calc(
+    var(--topbar) + 2 * var(--sp-8) + 2 * var(--sp-6) + var(--ctrl-2xl) + var(--bar)
+  );
+
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  /**
+   * The row is declared, and the `0` in it is the whole rule.
+   *
+   * A height on the container is not a height on its track: left implicit, the
+   * row is `auto`, sizes itself to its content and overflows the box that was
+   * supposed to hold it. `.stage` then has no definite height either, so the
+   * `flex: 1` on the results card has no leftover to resolve against and the
+   * card is content-sized in turn — the table stops scrolling inside itself and
+   * runs out under the export dock. Measured at a 899px viewport: 45px of
+   * overspill, and the dock covering the last row it is built never to cover.
+   *
+   * `1fr` alone would not do it — that reads as `minmax(auto, 1fr)`, and the
+   * `auto` floor is the content again. The same trap as the statistics drawer's
+   * collapsing track, one file over.
+   */
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--sp-7);
+  block-size: clamp(360px, calc(100dvh - var(--work-reserve)), 1400px);
 }
 
 .stage {
-  padding: var(--s-5) 0 0 var(--s-5);
-  min-width: 0;
-}
-
-/* ---- facade labels ----
-   Silkscreen: small drawn capitals, extended by a hairline that runs to the
-   edge of the panel. That is what organises the surface — not cards. */
-
-.section-label {
   display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  margin: var(--s-6) 0 var(--s-3);
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-dim);
+  flex-direction: column;
+  gap: var(--sp-6);
+  min-width: 0;
+  min-height: 0;
 }
 
-.section-label::after {
-  content: '';
+/* Everything but the readout holds its own height; the readout takes what is
+   left, and scrolls inside itself. */
+.stage > .alert,
+.stage > .filters {
+  flex: none;
+}
+
+/* The introduction takes the work surface rather than sitting above it: there
+   is nothing above the table, on this screen as on every other. */
+.stage > .hero {
   flex: 1;
-  height: 1px;
-  background: var(--rule);
+  min-height: 0;
 }
 
-.rail-inner .section-label:first-child,
-.stage > .section-label:first-child {
-  margin-top: 0;
-}
+/* ---- colophon --------------------------------------------------------
+   No dedicated page: the application has no router, and a legal notice you
+   have to go looking for is a notice nobody reads. */
 
-/* ---- what the two readouts share ----
-   Why there is nothing on screen: the table and the grid go empty for exactly
-   the same reasons, so the message belongs to neither of them. */
-
-.results-empty {
-  margin: 0;
-  padding: 26px var(--s-4);
-  font-size: 13px;
-  color: var(--text-dim);
-}
-
-.results-empty .link {
-  width: auto;
-  padding: 0;
-  font-size: 13px;
-}
-
-/* ---- footer ---- */
-
-/* The counterpart of the nameplate: the same seam hairline, above rather than
-   below. Both close the page on the same line, one announces, the other
-   accounts. */
 .colophon {
-  margin-top: var(--s-6);
-  padding: var(--s-4) 0 var(--s-5);
-  border-top: 1px solid var(--rule-strong);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding-top: var(--sp-7);
+  border-top: 1px solid var(--rule);
+  font-size: var(--text-xs);
 }
 
 .colophon-links {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-3) var(--s-5);
-  margin: 0 0 var(--s-3);
-}
-
-/* Silkscreened like the section labels: they are markers, not invitations. The
-   underline on hover is enough to say they are alive. */
-.colophon-links a {
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  text-decoration: none;
-}
-
-.colophon-links a:hover {
-  color: var(--violet-strong);
-  text-decoration: underline;
-}
-
-/* Bounded measure: a legal notice reads in one go, not by sweeping 1600px from
-   one temple to the other. */
-.colophon-note {
-  max-width: 78ch;
+  gap: var(--sp-4) var(--sp-6);
   margin: 0;
-  font-size: 12px;
-  line-height: 1.55;
-  color: var(--text-faint);
 }
 
-@media (max-width: 960px) {
-  .page {
-    padding: 0 var(--s-4) var(--s-6);
+.colophon-links a {
+  color: var(--accent-ink);
+}
+
+.colophon-note {
+  margin: 0;
+  line-height: var(--lead-body);
+  color: var(--tx3);
+}
+
+/* The two display preferences, once the top bar can no longer carry them. They
+   sit above the colophon and are pushed to the far end: filed with what the
+   page says about itself, not with what it is for. */
+.prefs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--sp-4);
+}
+
+/* ---- generic composition --------------------------------------------- */
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  flex-wrap: wrap;
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+}
+
+/* ---- 768 – 1079 ------------------------------------------------------
+   The rail is the one thing that no longer fits: at 768px it would leave the
+   title nothing at all. Its two blocks already have catalogued replacements —
+   a compact search line and a one-line tally — so nothing new is drawn, and
+   the work area only has to allow for them. */
+
+@media (max-width: 1079.98px) {
+  .body {
+    /* Two more rows above the work area: the compact search and the tally. */
+    --work-reserve: calc(
+      var(--topbar) + 2 * var(--sp-8) + 4 * var(--sp-6) + var(--ctrl-xl) + var(--ctrl-2xl) +
+        var(--ctrl-2xl) + var(--bar)
+    );
+
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---- under 768 ------------------------------------------------------- */
+
+@media (max-width: 767.98px) {
+  .topbar {
+    height: var(--bar);
+    padding: 0 var(--sp-6);
   }
 
-  .layout {
-    grid-template-columns: 1fr;
+  /* The tagline is the first thing to go: the wordmark still names the tool. */
+  .wordmark span {
+    display: none;
   }
 
-  .rail {
-    border-right: 0;
-    border-bottom: 1px solid var(--rule-strong);
-    padding: var(--s-5) 0 var(--s-5);
+  /* What is left of the bar is the brand and the session, and the session is the
+     half that must not be cut: it says whether the tool can work at all. The
+     brand yields its name first, then its glyph keeps the corner. */
+  .brand {
+    min-width: 0;
+    gap: var(--sp-4);
   }
 
-  .rail-inner {
-    position: static;
-    max-height: none;
-    overflow: visible;
+  .wordmark b {
+    overflow: hidden;
+    font-size: var(--text-lg);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .stage {
-    padding: var(--s-5) 0 0;
+  .session {
+    min-width: 0;
+    padding-left: var(--sp-5);
+  }
+
+  .canvas-col {
+    gap: var(--sp-5);
+    padding: var(--sp-6);
+    min-height: calc(100dvh - var(--bar));
+  }
+
+  .body {
+    --work-reserve: calc(
+      var(--bar) + 2 * var(--sp-6) + 4 * var(--sp-5) + var(--ctrl-xl) + var(--ctrl-2xl) +
+        var(--ctrl-sm) + var(--ctrl-2xl)
+    );
+  }
+
+  .glass {
+    border-radius: var(--r-xl);
   }
 }

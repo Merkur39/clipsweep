@@ -1,186 +1,297 @@
-/* ClipTable.tsx — the readout table, the main work surface: visible rules,
-   numeric columns right-aligned, one row followed by the cursor.
+/* The results card and the readout table it holds — the main work surface.
 
-   Careful: `ROW_HEIGHT` lives in `ClipTable.tsx` and drives the virtualiser.
-   A row's height is set over there, not here. */
+   The card is a flex column: a fixed head, then the table, which takes what is
+   left and scrolls inside itself. Nothing here names a viewport height any
+   more; `.body` in chassis.css sizes the work area, and that is what buys the
+   eleven visible rows. A second height on this side would only fight it.
 
-.table {
-  border: 1px solid var(--rule);
-  border-radius: 0 0 var(--r) var(--r);
+   Careful: a row is `--row` tall and `ROW_HEIGHT` in ClipTable.tsx restates
+   that number for the virtualiser. Change one, change the other. */
+
+/* ---- the results card ------------------------------------------------- */
+
+.results {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  /* A flex item refuses by default to shrink below its content: without this
+     the table would push the card past the work area and the page would scroll
+     instead of the rows. */
+  min-height: 0;
+  /* `.glass` draws the radius; only this clips to it. The head's raised flat
+     and the rows' hairlines both run edge to edge and would otherwise square
+     off the two top corners. */
   overflow: hidden;
-  background: var(--surface);
 }
 
-.table-head,
-.table-row {
-  display: grid;
-  grid-template-columns: 30px 84px 104px minmax(0, 1fr) 152px 26px;
+.res-head {
+  display: flex;
   align-items: center;
-  gap: var(--s-3);
-  padding: 0 var(--s-3) 0 var(--s-4);
-}
-
-.table-head {
-  height: 34px;
-  background: var(--chassis);
-  border-bottom: 1px solid var(--rule-strong);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.table-body {
-  height: clamp(300px, 52vh, 760px);
-  overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
-}
-
-/* The whole row ticks the box: see `rowClick` in ClipTable.tsx for the three
-   targets excluded from it. */
-.table-row {
+  gap: var(--sp-6);
+  flex: none;
+  padding: var(--sp-6);
   border-bottom: 1px solid var(--rule);
-  font-size: 13px;
+}
+
+.res-head .count {
+  font: var(--w-regular) var(--text-sm) / var(--lead-none) var(--mono);
+  color: var(--tx2);
+  /* Three counts that all move while the sweep runs and again on every filter:
+     proportional digits would make the line twitch on each update. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* The figures themselves carry the ink; the words between them are scaffolding
+   and stay at `--tx2`, so the eye lands on the numbers. */
+.res-head .count b {
+  color: var(--tx);
+  font-weight: var(--w-medium);
+}
+
+/* The view switch is the only thing that belongs on the right: pushed there
+   from here rather than by a spacer element, so the counts and the select-all
+   link stay a group whatever the card's width. */
+.res-head .seg {
+  margin-left: auto;
+}
+
+/* ---- the table --------------------------------------------------------
+   The catalogue gives `.tbl` a border, a radius and a flat of its own, because
+   there it stands free. Here it is welded into the results card, which already
+   carries all three — drawing them a second time would put two frames a pixel
+   apart, which is exactly what the design system's own plate takes off when it
+   sets the table flush. What remains is the column that stacks the head above
+   the scroller. */
+
+.tbl {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.thead,
+.trow {
+  display: grid;
+  grid-template-columns: 34px 108px 104px minmax(0, 1fr) 148px 34px;
+  align-items: center;
+  gap: var(--sp-5);
+  padding: 0 var(--sp-6);
+}
+
+.thead {
+  flex: none;
+  height: var(--row-head);
+  font: var(--w-semi) var(--text-3xs) / var(--lead-none) var(--sans);
+  letter-spacing: var(--track-silk);
+  text-transform: uppercase;
+  color: var(--tx3);
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface-raised);
+}
+
+/* A figure column's label files against its values, not against the track's
+   left edge. `.sort-key` is inline-flex, so text alignment still reaches it —
+   which is why no flex trick is needed here to move the label across. */
+.thead .num,
+.trow .num {
+  text-align: right;
+}
+
+/* The scroller. The design files have none: they draw thirteen rows and stop.
+   A sweep returns tens of thousands, so the rows are windowed and something
+   between the head and the slice has to own the scrolling — the head must stay
+   put while the rows move under it.
+
+   Both axes are stated: setting one of them to anything but `visible` promotes
+   the other to `auto` on its own, and a horizontal bar under the last row is a
+   bar nobody asked for. */
+.tbody {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-control) transparent;
+}
+
+.trow {
+  position: relative;
+  height: var(--row);
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--text-sm);
+  /* Stated rather than inherited: the wash and the hover flat both *replace*
+     this one, and a state that replaces nothing composes with whatever happens
+     to be behind instead of reading as its own colour. */
+  background: var(--surface);
+  /* The whole row ticks the box — see `rowClick` in ClipTable.tsx for the three
+     targets excluded from it. */
   cursor: pointer;
 }
 
-.table-row:nth-child(even) {
-  background: var(--zebra);
-}
+/* No `:last-child` rule to lift the last hairline, unlike the catalogue's
+   free-standing table: the last mounted row is the last row of the *window*,
+   almost never the last clip, so that rule would rub out a separator somewhere
+   in the middle of the list on every scroll. */
 
-.table-row:hover {
+.trow:hover {
   background: var(--surface-hover);
 }
 
-.col-pick {
-  display: flex;
-  align-items: center;
+.trow.picked {
+  background: var(--accent-wash);
 }
 
-.table-head [aria-sort='ascending'],
-.table-head [aria-sort='descending'] {
-  color: var(--text);
+/* The wash steps aside under the pointer and the rule carries the selection
+   alone — which is the whole reason the rule exists. Declared after `.picked`:
+   at equal specificity the order is what settles it, and the other way round
+   left a ticked row with no answer at all to being hovered. */
+.trow.picked:hover {
+  background: var(--surface-hover);
 }
 
-/* Numeric column: the label must line up with its values, so the arrow files
-   to its left rather than pushing the header away from the edge. */
-.table-head .col-views .sort-key,
-.table-head .col-date .sort-key {
-  flex-direction: row-reverse;
-  justify-content: flex-start;
+/* A wash that vanishes under the pointer cannot be the only carrier, and a
+   wash alone does not survive a colour-vision deficiency either. The 2px mark
+   is what is always there to say "this one is kept". */
+.trow.picked::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent-mark);
 }
 
-.col-views {
-  font-family: var(--mono);
-  font-size: 12.5px;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  color: var(--text-dim);
-}
+/* ---- the cells --------------------------------------------------------- */
 
-.table-row .col-views {
-  color: var(--text);
-}
-
-/* Zero views: the case the sweep exists to unearth. */
-.table-row .col-views.zero {
-  color: var(--amber);
-}
-
-.col-date {
-  font-family: var(--mono);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-  color: var(--text-faint);
-}
-
-.col-title,
-.col-author {
+.title-cell {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* The whole column is clickable: an underline on every row would be noise; the
-   affordance is the column itself. */
-.table-row .col-title a {
-  color: var(--text);
+/* The whole column is a link: underlining every row would turn the readout
+   into a page of rules, so the affordance is the column and the underline
+   waits for the pointer. The title is also the row's heaviest ink — it is what
+   identifies a clip — so it takes `--tx` at rest, not the link ink. */
+.title-cell a {
+  color: var(--tx);
   text-decoration: none;
 }
 
-.table-row .col-title a:hover {
-  color: var(--violet-strong);
+.title-cell a:hover {
+  color: var(--accent-ink);
   text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration-color: var(--accent-edge);
 }
 
-.col-author {
-  color: var(--text-dim);
-  font-size: 12px;
+.creator-cell {
+  font-size: var(--text-xs);
+  color: var(--tx2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* ---- the play control ----
-   The row's second control. It stays quiet on a resting row — a column of
-   violet triangles would out-shout the readout it serves — but it must never
-   leave a doubt about what the cursor is over: the whole row is clickable and
-   ticks the box, so the one place that does something else has to draw its own
-   edge. Hence the box, held at 26 px and outlined as soon as the row is
-   hovered; `border-color` rather than `border`, so the frame is reserved from
-   the start and the glyph never shifts by a pixel. */
+.date-cell {
+  font: var(--w-regular) var(--text-xs) / var(--lead-none) var(--mono);
+  color: var(--tx3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 
-.col-play {
+/* ---- the views cell ----
+   A figure, and beside it that clip's share of the busiest one in the list.
+   One hue for the whole ranking: the length is what carries the value, so a
+   second colour would say it twice — and say it wrong, since no scale of hues
+   is ordered to the eye the way a length is. */
+
+.views {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  gap: var(--sp-4);
 }
 
-.row-play {
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  background: none;
-  border: 1px solid transparent;
-  color: var(--text-faint);
-  opacity: 0.5;
-  transition:
-    opacity 0.12s var(--ease),
-    background 0.12s var(--ease),
-    border-color 0.12s var(--ease),
-    color 0.12s var(--ease);
+.views b {
+  font: var(--w-medium) var(--text-sm) / var(--lead-none) var(--mono);
+  /* The one figure the eye compares down a column of fifty rows. */
+  font-variant-numeric: tabular-nums;
 }
 
-.table-row:hover .row-play {
-  border-color: var(--rule-strong);
-  color: var(--violet);
-  opacity: 1;
+.views u {
+  display: block;
+  /* The length is the datum. Left to shrink, a bar beside a seven-figure count
+     would come out shorter than one beside a four-figure count, and the ranking
+     would read backwards. */
+  flex: none;
+  height: 4px;
+  border-radius: var(--r-mark);
+  background: var(--accent-mark);
+  /* `<u>` is here for an unarticulated annotation, not for the line browsers
+     still draw under it. */
+  text-decoration: none;
 }
 
-.row-play:hover:not(:disabled),
-.row-play:focus-visible {
-  background: var(--surface-raised);
-  border-color: var(--violet);
-  color: var(--violet-strong);
-  opacity: 1;
+/* Zero views is what an exhaustive sweep exists to unearth — a find, not a
+   gap, and never what an ordinary search returns. The amber is not being spent
+   as a data colour: it keeps its one meaning, "something happened in this
+   window", which is precisely the reading wanted. The bar stays drawn at the
+   floor so the column keeps its left edge. */
+.views.zero b {
+  color: var(--window-split);
 }
 
-@media (max-width: 960px) {
-  .table-head,
-  .table-row {
-    grid-template-columns: 26px 58px 80px minmax(0, 1fr) 26px;
-    gap: var(--s-2);
-    padding: 0 var(--s-3);
+.views.zero u {
+  background: var(--window-split);
+}
+
+/* ---- 768 – 1079 -------------------------------------------------------
+   Folding the rail hands the table back 320px where this tier costs it 312, so
+   six columns would in fact still fit. The creator drops anyway: it repeats the
+   channel being swept more often than not, and the title — the one thing that
+   identifies a clip — goes from 190px to 358px in the worst case.
+
+   The cell and its header go together. Hiding one without the other would put
+   every following head one track out of step with the values under it. */
+
+@media (max-width: 1079.98px) {
+  .thead,
+  .trow {
+    grid-template-columns: 34px 108px 104px minmax(0, 1fr) 34px;
   }
 
-  .col-author {
+  .creator-cell,
+  .creator-head {
     display: none;
   }
+}
 
-  /* No hover to lean on: the control has to be readable, and framed, at rest. */
-  .row-play {
-    border-color: var(--rule);
-    opacity: 1;
+/* ---- under 768 --------------------------------------------------------
+   Down here the tiles are the readout, not the table — but the view switch
+   still reaches it, so it has to survive 390px rather than merely not crash.
+
+   The two figure tracks come in to what their type actually measures: ten mono
+   digits at `--text-xs` is 72px of date, nine at `--text-sm` is 70px of count.
+   The bar is what goes: 44px of it plus its gap plus the figure would leave the
+   title nothing at all, and between a ranking and a name, the name is what
+   tells one clip from another. */
+
+@media (max-width: 767.98px) {
+  .res-head {
+    gap: var(--sp-5);
+    padding: var(--sp-5);
+  }
+
+  .thead,
+  .trow {
+    grid-template-columns: 34px 72px 78px minmax(0, 1fr) 34px;
+    gap: var(--sp-4);
+    padding: 0 var(--sp-5);
+  }
+
+  .views u {
+    display: none;
   }
 }

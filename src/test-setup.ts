@@ -42,6 +42,25 @@ if (typeof Element !== 'undefined' && !Element.prototype.scrollTo) {
 }
 
 /**
+ * jsdom parses no media queries: `matchMedia` is simply absent, and the layout
+ * asks it which tier is on screen. The stub answers "no" to everything, which
+ * is the wide tier — the one every rule is written against, and the one whose
+ * markup the tests assert on. A test aiming at a narrow tier overrides this.
+ */
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia
+}
+
+/**
  * The test browser's language, pinned.
  *
  * The tests' expectations are written in French; making them depend on the

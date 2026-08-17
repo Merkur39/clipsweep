@@ -12,28 +12,35 @@ export interface Span {
 }
 
 /**
- * Timeline of the search: one slab per queried window, height scaled on the
- * clips found. Split slabs mark the spans that saturated and got halved.
+ * Timeline of the search: one bar per queried window, height scaled on the clips
+ * found. Split bars mark the spans that saturated and got halved.
  *
  * The height is logarithmic, so the chart is unreadable without its graticule:
- * two slabs of visibly different height can be 100 or 10 000 clips. The decade
+ * two bars of visibly different height can be 100 or 10 000 clips. The decade
  * rules and their labels are half the information, not decoration.
  */
 
-const PLOT_HEIGHT = 176
+/**
+ * Geometry duplicated from `chart.css` — change one, change the other. The
+ * frieze is `--frieze` (118px) tall and gives its bottom 22px to the axis, so
+ * the plot the log scale is drawn on is what is left.
+ */
+const PLOT_HEIGHT = 118 - 22
 /** A window that found nothing still leaves a mark on the paper. */
 const BASELINE = 4
 /**
- * One decade per 52px. A single window tops out around the API's 1000-result
- * ceiling, so the scale is sized on that: a taller decade step would leave the
- * top third of the paper permanently blank.
+ * One decade per 28px. A single window tops out around the API's 1000-result
+ * ceiling, so the four decades have to fit under the ceiling below and nothing
+ * above them ever gets drawn: 4 + 3 × 28 = 88px, two pixels clear. A taller step
+ * would push the 1 k rule off the paper, a shorter one would leave the top of
+ * the plot permanently blank.
  */
-const DECADE = 52
+const DECADE = 28
 const CEILING = PLOT_HEIGHT - 6
-/** As a share of the period: below this, a slab would become invisible. */
-const MIN_SLAB_WIDTH = 0.25
+/** As a share of the period: below this, a bar would become invisible. */
+const MIN_BAR_WIDTH = 0.25
 
-const slabHeight = (clipCount: number) =>
+const barHeight = (clipCount: number) =>
   Math.min(CEILING, BASELINE + Math.log10(clipCount + 1) * DECADE)
 
 const DECADES = [
@@ -64,16 +71,14 @@ export function Frieze({
   running?: boolean
 }) {
   const { locale, t } = useTranslation()
-  // Presentational only: which slab the pointer is over, so its numbers land in
+  // Presentational only: which bar the pointer is over, so its numbers land in
   // the readout instead of staying locked inside a `title` attribute.
   const [hovered, setHovered] = useState<WindowReport | null>(null)
 
   if (!span || span.to <= span.from) {
     return (
       <figure className="chart">
-        <div className="frieze">
-          <p className="frieze-empty">{t('frieze.empty')}</p>
-        </div>
+        <p className="frieze-empty">{t('frieze.empty')}</p>
       </figure>
     )
   }
@@ -87,20 +92,8 @@ export function Frieze({
   return (
     <figure className="chart">
       <div className="frieze">
-        <div className="frieze-scale" aria-hidden="true">
-          {DECADES.map((decade) => (
-            <span
-              key={decade.value}
-              className="frieze-decade-label"
-              style={{ bottom: slabHeight(decade.value) }}
-            >
-              {decade.label}
-            </span>
-          ))}
-        </div>
-
         <div
-          className="frieze-plot"
+          className="plot"
           onPointerLeave={() => setHovered(null)}
           role="img"
           aria-label={t('frieze.plot', {
@@ -109,15 +102,20 @@ export function Frieze({
             to: { day: new Date(span.to).toISOString() },
           })}
         >
+          {/* The graticule sits inside the plot and hangs its labels out to the
+              left through `right: 100%`: one element positioned on the decade
+              rather than two that have to be kept level by hand. */}
+          {DECADES.map((decade) => (
+            <span key={decade.value} className="ylab" style={{ bottom: barHeight(decade.value) }}>
+              {decade.label}
+            </span>
+          ))}
           {DECADES.map((decade) => (
             <div
               key={decade.value}
-              className="frieze-decade"
-              style={{ bottom: slabHeight(decade.value) }}
+              className="decade"
+              style={{ bottom: barHeight(decade.value) }}
             />
-          ))}
-          {ticks.map((tick) => (
-            <div key={tick.time} className="frieze-year" style={{ left: `${pct(tick.time)}%` }} />
           ))}
 
           {reports.map((report) => {
@@ -137,27 +135,27 @@ export function Frieze({
              * sides.
              *
              * A period too short to be seen keeps a floor width: there, the
-             * joint matters less than the slab's existence.
+             * joint matters less than the bar's existence.
              */
             const edges =
-              end - start >= MIN_SLAB_WIDTH
+              end - start >= MIN_BAR_WIDTH
                 ? { left: `${start}%`, right: `${100 - end}%` }
-                : { left: `${start}%`, width: `${MIN_SLAB_WIDTH}%` }
+                : { left: `${start}%`, width: `${MIN_BAR_WIDTH}%` }
 
             return (
               <div
                 key={`${report.window.startedAt}-${report.depth}`}
-                className={hovered === report ? `slab ${kind} active` : `slab ${kind}`}
-                style={{ ...edges, height: slabHeight(report.clipCount) }}
+                className={hovered === report ? `bar ${kind} active` : `bar ${kind}`}
+                style={{ ...edges, height: barHeight(report.clipCount) }}
                 onPointerEnter={() => setHovered(report)}
               />
             )
           })}
 
-          {running && last && <div className="frieze-pen" style={{ left: `${penLeft}%` }} />}
+          {running && last && <div className="pen" style={{ left: `${penLeft}%` }} />}
         </div>
 
-        <div className="frieze-axis">
+        <div className="xaxis">
           {ticks.map((tick) => (
             <span className="tick" key={tick.time} style={{ left: `${pct(tick.time)}%` }}>
               {tick.label}

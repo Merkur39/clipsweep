@@ -1,49 +1,86 @@
-/* ExportPanel.tsx — the two take-away blocks. */
+/* ExportPanel.tsx — the export dock.
 
-.group {
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  background: var(--chassis);
-  padding: var(--s-4);
-  margin-top: var(--s-3);
-}
+   It sits in the flow, between the result and the statistics drawer. That is
+   what separates it from the sweep banner: the banner floats and can cover a
+   row, the dock pushes the page and never hides anything. */
 
-.group h2 {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 650;
-  letter-spacing: 0.02em;
-}
-
-.group-lede {
-  margin: 4px 0 var(--s-3);
-  font-size: 12.5px;
-  color: var(--text-dim);
-}
-
-.group-actions {
+.dock {
   display: flex;
-  gap: var(--s-2);
   align-items: center;
-  flex-wrap: wrap;
+  /* A pill, not a bar: it takes the width of what it holds and centres itself
+     in the column rather than stretching to the canvas. `flex: none` keeps the
+     column from squashing it once the drawer opens below. */
+  flex: none;
+  align-self: center;
+  gap: var(--sp-5);
+  /* Asymmetric on purpose: the count needs air against the pill's curve, the
+     last button already carries its own padding on the right. */
+  padding: var(--sp-4) var(--sp-5) var(--sp-4) var(--sp-7);
+  /* `--rule-control`, not `--rule`: the pill's edge *is* the control here, and
+     it has to hold 3:1 against whatever scrolls behind it. */
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-pill);
+  /* One of the four places something really passes underneath, so one of the
+     four that earn a blur. The 8% of transparency is what makes the movement
+     legible — opaque, the blur would cost a compositing layer for nothing. */
+  background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+  backdrop-filter: blur(20px);
+  /* Second step: the dock rides above the work, below a modal. */
+  box-shadow: var(--elev-2);
 }
 
-.group-actions .count {
-  margin-left: auto;
-  font-family: var(--mono);
-  font-size: 11.5px;
+.dock .n {
+  font: var(--w-medium) var(--text-sm) / var(--lead-none) var(--mono);
+  color: var(--tx);
+  /* The figure moves under the eye as rows are ticked; proportional digits
+     would shift the whole button row a pixel at every click. */
   font-variant-numeric: tabular-nums;
-  color: var(--text-faint);
 }
 
-.hint {
-  margin: var(--s-3) 0 0;
-  font-size: 12px;
-  color: var(--text-faint);
+.dock .sep {
+  /* An empty span is inline and has no box to size — the width and the height
+     below only land because the display is set here. */
+  display: block;
+  flex: none;
+  width: 1px;
+  /* Short of the pill's inner height: the stroke separates the count from the
+     actions, it does not cut the dock in two. */
+  height: 22px;
+  background: var(--rule);
 }
 
-.hint .link {
-  width: auto;
-  padding: 0;
-  font-size: 12px;
+/* Below 768px there is no script, and that is a deliberate narrowing rather
+   than an oversight: the button hands over a .bat or a .sh that shells out to
+   yt-dlp, and neither runs on a phone. Offering it would promise something the
+   device cannot keep, so it is removed rather than greyed — a disabled control
+   still claims the space and still asks to be understood.
+
+   767.98 rather than 767: the tier is everything *below* 768, and a viewport
+   can land on a fractional width under zoom or on a scaled display. */
+@media (max-width: 767.98px) {
+  .dock {
+    /* Nothing left to centre around — three buttons of equal share fill the
+       column, so the pill takes the column. */
+    align-self: stretch;
+    gap: var(--sp-4);
+    padding: var(--sp-4) var(--sp-4) var(--sp-4) var(--sp-6);
+  }
+
+  .dock .script {
+    display: none;
+  }
+
+  .dock .dbtn {
+    /* Equal shares: the three labels are short and of unequal length, and a
+       ragged row of pills across the full width reads as an accident. */
+    flex: 1;
+    justify-content: center;
+    padding: 0 var(--sp-4);
+  }
+
+  .dock .n {
+    /* One step down so the count keeps its place beside the buttons instead of
+       stealing width from them. */
+    font-size: var(--text-xs);
+  }
 }

@@ -21,18 +21,43 @@ export const en: Catalogue = {
   'access.life.hours': { one: '{n} h left', other: '{n} h left' },
   'access.life.days': { one: '{n} d left', other: '{n} d left' },
 
+  'session.connected': 'Connected',
+  'session.disconnected': 'Disconnected',
+
   // ── Search panel ─────────────────────────────────────────────────────────
   'panel.access': 'Access',
   'panel.connect': 'Connect to Twitch',
   'panel.disconnect': 'Disconnect',
   'panel.target': 'Target',
+  'panel.sweep': 'Sweep',
+  'panel.period': 'Period',
   'panel.channel': 'Channel',
   'panel.remember': 'Remember this channel',
   'panel.since': 'From',
   'panel.until': 'Until',
-  'panel.backToCreation': 'Back to channel creation ({date})',
   'panel.run': 'Start the sweep',
   'panel.stop': 'Stop the sweep',
+
+  'panel.preset.30d': '30 d',
+  'panel.preset.6m': '6 m',
+  'panel.preset.1y': '1 y',
+  'panel.preset.all': 'All time',
+  'panel.presets': 'Period preset',
+
+  'panel.thisSweep': 'This sweep',
+  'panel.lastSweep': 'Last sweep',
+  'panel.clipsFound': 'Clips found',
+  'panel.totalViews': 'Total views',
+  'panel.periodCovered': 'Period covered',
+  'panel.elapsed': 'Elapsed',
+  'panel.nothingYet': '—',
+  'panel.verdict.complete': 'Complete — no clip missing',
+  'panel.verdict.pending': '{done} of {total} periods swept',
+  'panel.verdict.broken': {
+    one: 'Incomplete — {n} window lost',
+    other: 'Incomplete — {n} windows lost',
+  },
+  'panel.verdict.idle': 'No sweep started',
 
   // ── Period ───────────────────────────────────────────────────────────────
   'period.order': 'The start date must come before the end date.',
@@ -95,6 +120,16 @@ export const en: Catalogue = {
   'filters.unknownGame': 'Unnamed ({id})',
   'filters.clearField': 'Clear {label}',
 
+  'filters.views': 'Views',
+  'filters.range': 'Range',
+  'filters.anyViews': '0 – ∞',
+  'filters.anyRange': 'All',
+  'filters.rangeValue': '{from} → {to}',
+  'filters.facetTotal': { one: '{n} value', other: '{n} values' },
+  'filters.chosen': { one: '{n} chosen', other: '{n} chosen' },
+  'filters.noOptions': 'Nothing to filter yet.',
+  'filters.open': 'Open the {label} filter',
+
   // ── Table ────────────────────────────────────────────────────────────────
   'table.views': 'Views',
   'table.date': 'Date',
@@ -117,7 +152,9 @@ export const en: Catalogue = {
   'player.next': 'Next clip',
   'player.position': '{index} / {total}',
   'player.select': 'Select',
-  'player.deselect': 'Remove',
+  'player.deselect': 'Stop keeping it',
+  'player.previousShort': 'Previous',
+  'player.nextShort': 'Next',
   'player.openOnTwitch': 'Open on Twitch',
   'player.unavailable': 'This clip cannot be played here.',
 
@@ -127,16 +164,52 @@ export const en: Catalogue = {
     other:
       '{n} periods could not be explored in full: clips are missing from them. Narrow the date range.',
   },
-  'progress.details': 'Sweep details',
-  'progress.detailsAside': 'frieze, counters, log',
+  'progress.details': 'Sweep statistics',
+  'progress.detailsAside': 'time breakdown · creators · log',
   'progress.timeSplit': 'Time breakdown',
   'progress.legend.done': 'complete period',
-  'progress.legend.split': 'saturated, split',
-  'progress.legend.lost': 'saturated at the floor — clips missing',
+  'progress.legend.split': 'split',
+  'progress.legend.lost': 'lost',
   'progress.periods': 'Periods',
   'progress.requests': 'Requests',
   'progress.log': 'Log',
   'progress.logEmpty': 'Standing by.',
+
+  // ── Statistics drawer ────────────────────────────────────────────────────
+  'stats.toggle': 'Sweep statistics',
+  'stats.hide': 'Hide',
+  'stats.peekPeriods': { one: '{n} period', other: '{n} periods' },
+  'stats.peekRequests': { one: '{n} request', other: '{n} requests' },
+  'stats.peekSplit': { one: '{n} window split', other: '{n} windows split' },
+  'stats.topCreators': 'Top creators',
+  'stats.topGames': 'Top games',
+  'stats.total': { one: '{n} total', other: '{n} total' },
+  'stats.others': { one: '{n} other', other: '{n} others' },
+  'stats.rankingEmpty': 'Nothing to rank.',
+  'stats.zeroViews': 'Zero-view clips',
+  'stats.windowsSplit': 'Windows split',
+  'stats.friezeSub': { one: '{n} period', other: '{n} periods' },
+  'stats.logSub': { one: '{n} request · full trace', other: '{n} requests · full trace' },
+
+  // ── The floating sweep banner ────────────────────────────────────────────
+  'sweep.tidy': 'Tidy away — the sweep goes on',
+  'sweep.reopen': 'Bring the sweep readout back',
+  'sweep.label': 'Sweep progress',
+  'sweep.percent': '{n}%',
+  'sweep.window': '{from} → {to}',
+
+  // ── The connect screen ───────────────────────────────────────────────────
+  'hero.badge': 'Every window, split until nothing is missing',
+  'hero.titleLead': 'Every clip a channel ever had.',
+  'hero.titleEm': 'Yes, that one too.',
+  'hero.lede':
+    'Twitch only ever hands out the thousand most-watched clips of a period. ClipSweep splits the period until each slice fits under that ceiling — then hands you the whole list.',
+  'hero.fact.storage': 'Nothing stored',
+  'hero.fact.storageNote': 'The token lives in your browser, revoked on disconnect.',
+  'hero.fact.exports': 'Exports as you like',
+  'hero.fact.exportsNote': 'CSV, JSON, a URL list, or a ready-to-run download script.',
+  'hero.fact.zero': 'Zero-view clips',
+  'hero.fact.zeroNote': 'The ones no listing will ever show you.',
 
   // ── Frieze ───────────────────────────────────────────────────────────────
   'frieze.empty': 'Each explored period will appear here, its height giving the clip count.',
@@ -150,8 +223,8 @@ export const en: Catalogue = {
     other: '{n} periods · hover for detail · logarithmic height',
   },
   'frieze.kind.done': 'complete',
-  'frieze.kind.split': 'saturated, split',
-  'frieze.kind.lost': 'saturated at the floor — clips missing',
+  'frieze.kind.split': 'split',
+  'frieze.kind.lost': 'lost',
 
   // ── Export ───────────────────────────────────────────────────────────────
   'export.download.title': 'Download the videos',

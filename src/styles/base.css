@@ -1,111 +1,250 @@
-/* Tokens, reset, bare elements. Nothing that belongs to a component. */
-
-/* ---- the two worlds ----
-   One `light-dark()` per token: a single declaration, and it is the CSS itself
-   that resolves the system preference. The first paint is therefore already
-   right, which a `data-theme` set from JavaScript cannot promise — the sheet is
-   linked in the `<head>` and paints the body before the module runs.
-
-   `data-theme` does nothing more than narrow `color-scheme`: every token
-   follows on its own, and with them the scrollbars and the native date picker,
-   which would stay dark otherwise.
-
-   Naming: no token carries a word of absolute lightness. "bright" and "deep"
-   point opposite ways from one theme to the other — emphasis is lighter in
-   dark, darker in light. Hence `-strong` (what insists), `-press` (what is
-   pushed in) and `-fill` (the flat that carries the ink). */
+/* Tokens, reset, bare elements. Nothing that belongs to a component.
+   Bleu franc — the design system of `design/clipsweep-design-system.html`,
+   which is the authority on every value below. */
 
 :root {
   color-scheme: light dark;
 
-  /* Light: warm paper, graphite hairlines. Dark: cold graphite tinted
-     blue-violet — the chassis, not Twitch's background.
-     In both cases depth runs from the page ground towards the work surface:
-     `--ground` is the furthest back, `--surface` carries the readout. */
-  --ground: light-dark(#f3f1ed, #090b12);
-  --chassis: light-dark(#f9f8f5, #0f121c);
-  --surface: light-dark(#ffffff, #141824);
-  --surface-raised: light-dark(#ffffff, #1b2030);
-  --surface-hover: light-dark(#ebe8e2, #212739);
-  /* A pressed button sinks: in light it cannot do so by climbing towards
-     white, it needs its own notch below hover. */
-  --surface-sunken: light-dark(#ded9d1, #141824);
-
-  /* Two levels of hairline: the separating stroke and the structural seam. */
-  --rule: light-dark(#ddd8d0, #262c3d);
-  --rule-strong: light-dark(#b6ada0, #39415c);
-
-  --text: light-dark(#1b1d24, #e7e9f1);
-  --text-dim: light-dark(#5b6070, #a2a9bd);
-  /* The dimmest of the three must still hold 4.5:1 on the hovered row, not
-     only on the resting background: that is where a date gets read.
-     It is that constraint which fixes the light value, not the reverse. */
-  --text-faint: light-dark(#62677a, #8d97b0);
-
-  /* Three inks, three meanings. Nothing else takes colour.
-     violet = the normal trace · amber = split · red = lost
-
-     The dark values have no light equivalent by simple inversion: none of the
-     three holds 4.5:1 on paper (violet 2.9:1, amber 2.1:1, red 3.0:1). The
-     light world therefore has its own inks, chosen to hold that threshold on
-     the hovered row — not to resemble the others. */
-  --violet: light-dark(#6b3fd4, #a481ff);
-  --violet-strong: light-dark(#4e2ba0, #c3aaff);
-  --violet-press: light-dark(#3d2080, #6a45c8);
-  --violet-fill: light-dark(#ded0fa, #6a45c8);
-  /* The half-drawn trace, in `<Mark />`: the notch between the neutral hairline
-     and the full ink. The slab flat cannot hold it — pale on paper, it would
-     fade off the plate. */
-  --violet-half: light-dark(#8f6ae8, #6a45c8);
-  --violet-wash: light-dark(rgb(107 63 212 / 10%), rgb(164 129 255 / 14%));
-  --amber: light-dark(#925506, #f0a63c);
-  --amber-fill: light-dark(#f5e0c0, #6a4611);
-  --red: light-dark(#cf2b2b, #ff5d5d);
-  --red-strong: light-dark(#a81b1b, #ff9494);
-  --red-fill: light-dark(#e0a0a0, #6d1f28);
-  --red-wash: light-dark(rgb(207 43 43 / 6%), rgb(255 93 93 / 7%));
-
-  /* The only text that is not a shade of `--text`: the label set on the full
-     violet flat, which has to stand out against it. */
-  --on-violet: light-dark(#f7f4ff, #17102c);
-  /* No `light-dark()`, and that is the point: the pressed flat is dark in both
-     worlds, so its label is light in both. */
-  --on-violet-press: #e7e9f1;
-
-  /* What is neither flat nor hairline: lamp glows, the table zebra, the
-     floating panel's shadow. Each of them hangs on a ratio to the background,
-     not on a hue — which is what makes them unable to cross a theme change
-     without being named.
-
-     The glow keeps its geometry in light: a saturated ink diffusing into paper
-     is ink that bleeds, not a blot. It is the pale glow on a pale background
-     that would have turned to mush. */
-  --glow-violet: light-dark(rgb(107 63 212 / 45%), rgb(164 129 255 / 55%));
-  --glow-red: light-dark(rgb(207 43 43 / 45%), rgb(255 93 93 / 55%));
-  --zebra: light-dark(rgb(0 0 0 / 3%), rgb(255 255 255 / 2.2%));
-  --shadow-panel: light-dark(rgb(58 48 36 / 18%), rgb(0 0 0 / 65%));
-  /* What puts the page behind the player. Dark in both worlds — a scrim's job is
-     to push back, and paper pushed back with paper pushes nothing. It is read
-     from `::backdrop`, which inherits the custom properties of its originating
-     element in every browser that can resolve `light-dark()` at all. */
-  --scrim: light-dark(rgb(38 32 24 / 52%), rgb(0 0 0 / 66%));
+  /* ---- layer 0 · type faces ------------------------------------------ */
 
   --sans:
     system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
   --mono: ui-monospace, 'Cascadia Mono', 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 
-  --s-1: 4px;
-  --s-2: 8px;
-  --s-3: 12px;
-  --s-4: 16px;
-  --s-5: 24px;
-  --s-6: 32px;
-  --s-7: 48px;
+  /* ---- layer 1 · primitives -------------------------------------------
+     Ramps. No component may name one of these; they exist only to be
+     assigned to a semantic token below. Bootstrap 5's scales, extended at
+     the dark end where a dashboard needs steps Bootstrap never cut.
 
-  /* An instrument facade has no soft corners. */
-  --r: 2px;
+     Six steps carry no semantic of their own — `--b-100`, `--n-300`,
+     `--n-500`, `--n-600`, `--n-750`, and the two ends of the blue ramp. They
+     stay: a ramp is a continuum, and amputating one forces the palette back
+     open the day a step is wanted. A semantic token with no taker is a debt;
+     a reserve step on a ramp is not. */
 
-  --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+  --n-0: #ffffff;
+  --n-50: #f8f9fa;
+  --n-75: #eef0f2;
+  --n-100: #e9ecef;
+  --n-200: #dee2e6;
+  --n-300: #ced4da;
+  --n-400: #adb5bd;
+  --n-450: #98a0a8;
+  --n-500: #868e96;
+  --n-525: #828a92;
+  --n-550: #7f878f;
+  --n-600: #6c757d;
+  --n-650: #5b6470;
+  --n-700: #495057;
+  --n-750: #3d444b;
+  --n-800: #31373d;
+  --n-850: #2e3338;
+  --n-870: #282d32;
+  --n-900: #212529;
+
+  --b-100: #cfe2ff;
+  --b-300: #6ea8fe;
+  --b-500: #0d6efd;
+  --b-600: #0b5ed7;
+  --b-700: #0a58ca;
+  --b-750: #0a4fb0;
+  --b-800: #084298;
+
+  --c-500: #0dcaf0;
+  --c-800: #096175;
+
+  --y-500: #ffc107;
+  --y-800: #845c00;
+
+  --red-300: #ea868f;
+  --red-500: #dc3545;
+  --red-700: #b02a37;
+
+  /* ---- layer 2 · semantics · colour -----------------------------------
+     One `light-dark()` per token: a single declaration, and it is the CSS
+     itself that resolves the system preference. The first paint is therefore
+     already right, which a `data-theme` set from JavaScript cannot promise —
+     the sheet is linked in the `<head>` and paints the body before the module
+     runs. The light world comes first: that is the function's order, and
+     getting it backwards silently swaps the two worlds.
+
+     `data-theme` does nothing more than narrow `color-scheme`: every token
+     follows on its own, and with them the scrollbars and the native date
+     picker, which would stay dark otherwise. */
+
+  --ground: light-dark(var(--n-75), var(--n-900));
+  --surface: light-dark(var(--n-0), var(--n-870));
+  --surface-raised: light-dark(var(--n-50), var(--n-800));
+  --surface-hover: light-dark(var(--n-100), var(--n-850));
+  --surface-sunken: light-dark(var(--n-75), var(--n-900));
+
+  /* Two hairlines: the separating stroke, and the one a control needs to hold
+     3:1 against its surface (WCAG 1.4.11). `--rule` alone measured 2.22 on the
+     panel and 1.30 on white — a border nobody could see was doing the work of
+     a boundary. */
+  --rule: light-dark(var(--n-200), var(--n-700));
+  --rule-control: light-dark(var(--n-550), var(--n-525));
+
+  --tx: light-dark(var(--n-900), var(--n-100));
+  --tx2: light-dark(var(--n-700), var(--n-400));
+  /* The dimmest of the three is measured on the surfaces that actually carry
+     text, not on the bare ground: #868e96 held 4.64 on the ground and 3.62 to
+     4.32 everywhere a word is really set. */
+  --tx3: light-dark(var(--n-650), var(--n-450));
+
+  /* The accent has three roles, and they are not interchangeable.
+     `--accent` is the flat that carries a white label — identical in both
+     worlds. `--accent-mark` is the flat that has to be *seen*: view bar, ring,
+     rule, checkbox border, focus ring; 3:1 everywhere, 4.92 at worst.
+     `--accent-ink` is what writes. Any text set in the accent takes the ink,
+     or it falls to 2.2:1. */
+  --accent: var(--b-600);
+  --accent-ink: light-dark(var(--b-750), var(--b-300));
+  --accent-mark: light-dark(var(--b-600), var(--b-300));
+  --accent-press: var(--b-800);
+  --accent-wash: light-dark(#dde8f9, #223651);
+  --accent-edge: light-dark(#99bbee, #456188);
+  /* No `light-dark()`, and that is the point: the accent flat is the same in
+     both worlds, so its label is white in both. */
+  --on-accent: #ffffff;
+
+  /* The one thing the sweep exists to promise — is the list whole? — has its
+     own hue, never the accent: the accent means "this is chosen", and a
+     readout is not a choice. */
+  --verdict: light-dark(var(--c-800), var(--c-500));
+  /* Amber and red are reserved for window states, split and lost. They are
+     never data colours here, whatever a dashboard palette usually does with
+     them. */
+  --window-split: light-dark(var(--y-800), var(--y-500));
+  --window-lost: light-dark(var(--red-700), var(--red-500));
+  --window-lost-ink: light-dark(var(--red-700), var(--red-300));
+  /* Split from the fill on the model of `--accent-mark`: no single value holds
+     3:1 on every surface of both worlds. */
+  --window-lost-mark: light-dark(var(--red-500), var(--red-300));
+
+  /* Flattened, not mixed. A `color-mix` against `transparent` composes with
+     whatever is behind it, so no surface was ever citable and no contrast
+     figure could be checked. These four are computed on `--surface`, the only
+     ground a verdict pill is ever set on. */
+  --verdict-wash: light-dark(#ebf2f4, #263a41);
+  --verdict-edge: light-dark(#abc9d0, #1f6273);
+  --lost-wash: light-dark(#f9eeef, #362e34);
+  --lost-edge: light-dark(#dfaaaf, #70303a);
+
+  --shadow-key: light-dark(rgb(38 48 58 / 22%), rgb(0 0 0 / 55%));
+
+  /* The one gradient the system tolerates: the stand-in for a thumbnail that
+     never arrived. Two stops rather than one `light-dark()`, because the
+     function takes colours and a gradient is not one. */
+  --thumb-a: light-dark(#c3ccd6, #3c4550);
+  --thumb-b: light-dark(#8e9aa8, #202832);
+
+  /* What is set on an image rather than on a surface of the system: no token
+     knows the colour underneath, and neither world changes it. The exception
+     is written rather than hidden — as it is for the duration badge and the
+     player's glyph. */
+  --on-image: #ffffff;
+  --on-image-ground: rgb(0 0 0 / 72%);
+
+  /* Dark in both worlds: a scrim's job is to push back, and paper pushed back
+     with paper pushes nothing. */
+  --scrim: rgb(5 6 14 / 66%);
+
+  /* ---- layer 2 · semantics · geometry (world-independent) ------------- */
+
+  --text-3xs: 10px;
+  --text-2xs: 11px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 15px;
+  --text-xl: 17px;
+  --text-2xl: 20px;
+  --text-display: 46px;
+
+  --lead-none: 1;
+  --lead-tight: 1.25;
+  --lead-snug: 1.4;
+  --lead-body: 1.5;
+  --lead-loose: 1.7;
+
+  --track-display: -0.037em;
+  --track-title: -0.02em;
+  --track-tight: -0.01em;
+  /* The single silkscreen step. Monospace digits at 600 close up more than
+     text does, and a segment's label is not silkscreen — 11px lowercase, not
+     10px capitals — so both get their own. */
+  --track-silk: 0.12em;
+  --track-num: -0.03em;
+  --track-seg: 0.04em;
+
+  --w-regular: 400;
+  --w-medium: 500;
+  --w-semi: 600;
+  --w-bold: 700;
+
+  /* Base 4 rules the space *between* objects; the two tight steps rule what is
+     measured *inside* one — the gap between a glyph and its label, the padding
+     of a compact control, the inset of a chrome laid over something, the close
+     rhythm of a block. */
+  --sp-1: 2px;
+  --sp-2: 4px;
+  --sp-3: 6px;
+  --sp-4: 8px;
+  --sp-5: 12px;
+  --sp-6: 16px;
+  --sp-7: 20px;
+  --sp-8: 24px;
+  --sp-9: 32px;
+  --sp-10: 48px;
+  --sp-11: 64px;
+
+  --r-mark: 2px;
+  --r-xs: 6px;
+  --r-sm: 10px;
+  --r-md: 12px;
+  --r-lg: 14px;
+  --r-xl: 18px;
+  --r-2xl: 22px;
+  --r-pill: 999px;
+
+  --ctrl-2xs: 26px;
+  --ctrl-xs: 28px;
+  --ctrl-sm: 32px;
+  --ctrl-md: 36px;
+  --ctrl-lg: 40px;
+  --ctrl-xl: 44px;
+  --ctrl-2xl: 48px;
+  --row-head: 40px;
+  /* Buys the eleven visible rows the layout was rebuilt for. Duplicated as
+     `ROW_HEIGHT` in ClipTable.tsx — change one, change the other. */
+  --row: 52px;
+  /* Duplicated as `OPTION_HEIGHT` in MultiSelect.tsx, same pact. */
+  --opt-row: 32px;
+  --bar: 56px;
+  --topbar: 68px;
+  --frieze: 118px;
+
+  --elev-1: 0 18px 44px -12px var(--shadow-key);
+  --elev-2: 0 22px 54px -16px var(--shadow-key);
+  --elev-3: 0 40px 90px -20px var(--shadow-key);
+  --glow-lamp: 0 0 10px 1px;
+  --halo-overlay: 0 0 0 3px rgb(0 0 0 / 35%);
+
+  /* Three durations and two curves, all of them with takers. One orchestrated
+     moment — the drawer — caps everything else at 160ms. An indicator borrows
+     the duration of what it indicates: the drawer's chevron announces a panel
+     and takes 240ms, the sort arrow announces only itself and takes 160ms.
+     `linear` is not a fallback: a curve on a progress fill would lie about the
+     rate. */
+  --dur-instant: 90ms;
+  --dur-quick: 160ms;
+  --dur-panel: 240ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-rate: linear;
+
+  --focus-ring: 2px;
+  --focus-offset: 2px;
 }
 
 /* The explicit choice, set on `<html>` by `applyTheme`. It rewrites no token:
@@ -126,33 +265,52 @@
 body {
   margin: 0;
   background: var(--ground);
-  color: var(--text);
-  font:
-    14px/1.55 var(--sans),
-    sans-serif;
+  color: var(--tx);
+  font: var(--text-md) / var(--lead-body) var(--sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
+/* Controls carry their own state now, so several of them are real buttons —
+   which means they no longer inherit the sheet's type unless told to. */
+button {
+  font: inherit;
+}
+
 a {
-  color: var(--violet);
+  color: var(--accent-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--violet-fill);
+  text-decoration-color: var(--accent-edge);
 }
 
 a:hover {
-  color: var(--violet-strong);
   text-decoration-color: currentcolor;
 }
 
+/* The focus is drawn outside, never inside: offset by 2px it lands back on the
+   surface behind, where it holds. The field is no exception — an inner ring on
+   top of the outer one would make three concentric strokes, and would leave
+   nothing to answer with when a field is both wrong and focused. The inner
+   ring stays reserved for the error. */
 :focus-visible {
-  outline: 2px solid var(--violet-strong);
-  outline-offset: 2px;
+  outline: var(--focus-ring) solid var(--accent-ink);
+  outline-offset: var(--focus-offset);
+}
+
+/* Every glyph of the set. It carries its side as an attribute, so this rule has
+   only to keep it from being squeezed: a flex line that runs out of room shrinks
+   an `<svg>` before it shrinks a word, and the glyph is the half that cannot be
+   read once it is narrower than it was drawn. Families that want another size
+   set it on their own selector, which outranks the attribute. */
+.icon {
+  flex: none;
 }
 
 /* A label that only the keyboard and the screen reader reach. Not
-   `display: none`, which would also pull it out of the accessibility tree. */
+   `display: none`, which would also pull it out of the accessibility tree.
+   `clip-path` rather than a 1px clip: it survives a transform on an ancestor,
+   which `clip` does not. */
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -162,11 +320,20 @@ a:hover {
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+  border: 0;
 }
 
+/* Durations fall to 1ms, they are not removed: `transition: none` breaks the
+   transition-end events JavaScript listens for, where 1ms lets them fire
+   without perceptible movement. Only the loops actually stop. */
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 1ms !important;
+  }
+
   * {
     animation: none !important;
-    transition: none !important;
   }
 }

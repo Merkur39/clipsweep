@@ -4,30 +4,71 @@ import type { ClipSort, SortKey } from '../domain/sort'
 import { formatDay, formatDuration } from '../i18n/format'
 import { useTranslation } from '../i18n/LocaleProvider'
 import type { Clip } from '../twitch/types'
-import { CaretIcon, PlayIcon } from './Icon'
+import { Icon } from './Icon'
 import { ResultsEmpty } from './ResultsEmpty'
 import { SORT_COLUMNS } from './sortColumns'
 import { gridMetrics, gridRange } from './virtual'
 
 /**
- * The geometry of a tile. The thumbnail's height is computed and then applied,
- * so the sheet has nothing left to decide about it; `META_HEIGHT`, on the other
- * hand, is the one figure the sheet still owns — the exact height of the block
- * under the thumbnail, its two hairlines included: 1 + 6 + 32 (two lines of
- * title) + 15 (the readout) + 5 + 1. Change a rule in `clip-grid.css` without
- * changing it here and the placed rows land beside the drawn ones.
+ * The half of a tile's geometry that TypeScript owns, and that `clip-grid.css`
+ * draws. Change one without the other and the placed rows land beside the
+ * drawn ones.
+ *
+ * `META_HEIGHT` is the block under the thumbnail: 8 + 34 + 2 + 16 + 8. The
+ * title box is two lines of 17px written in pixels on purpose — a relative
+ * leading is a ratio of a font size, and a ratio cannot promise the 34px this
+ * figure counts on. The tile's two hairlines are *not* in it: they come off the
+ * column as well as adding to the row, so `gridMetrics` takes them as their own
+ * input.
+ *
+ * `GAP` is `--sp-6`, and it is the same figure at every tier. The design files
+ * tighten the gutter on a phone; here it stays put, because this number is
+ * written twice — once here, once in the sheet — and a value that moved at a
+ * breakpoint could only stay honest by being read back out of the DOM. The
+ * tiers move the padding instead, and the column count follows on its own.
  */
-const TILE_MIN = 230
-const GAP = 12
-const META_HEIGHT = 60
+const META_HEIGHT = 68
+const GAP = 16
+const TILE_BORDER = 1
 const OVERSCAN = 2
+
+/** The width the design draws a tile at, and the floor on a board with room. */
+const TILE_WIDTH = 190
+
 /** Before the first measurement; a plausible stage rather than a blank one. */
 const INITIAL_SIZE = { width: 900, height: 560 }
+
+/**
+ * Three keys, not the table's four. The creator is written on every tile but
+ * heads none of them: the strip is a plate of silkscreen keys, not a set of
+ * column headers, and the fourth would push it past what a phone has to spare.
+ */
+const GRID_SORT_KEYS = SORT_COLUMNS.filter((column) => column.key !== 'creator')
+
+/**
+ * The narrowest a tile may be drawn on a board this wide.
+ *
+ * On a board with room the floor is the width the design draws a tile at, and
+ * the columns divide what is left without ever going under it. A phone has no
+ * such room — 360px of viewport leaves about 300px of board — and the design
+ * asks for two tiles up there all the same, so below twice the design width the
+ * floor is simply half the board.
+ *
+ * The tiers then fall out of the measurement rather than out of a breakpoint:
+ * two up on every phone and up to a 600px window, three from 768, five at
+ * 1440. One rule, and no figure in this file has to know what a viewport is.
+ */
+function tileMin(width: number): number {
+  return Math.min(TILE_WIDTH, Math.max(0, (width - GAP) / 2))
+}
 
 export interface ClipGridProps {
   clips: Clip[]
   emptyMessage: string
   emptyAction?: { label: string; onClick: () => void }
+  /** A sweep is under way and has yet to deliver: the empty state waits rather
+   *  than reporting nothing. */
+  busy?: boolean
   selected: ReadonlySet<string>
   onToggle: (id: string) => void
   onPlay: (id: string) => void
@@ -45,6 +86,7 @@ export function ClipGrid({
   clips,
   emptyMessage,
   emptyAction,
+  busy,
   selected,
   onToggle,
   onPlay,
@@ -84,9 +126,10 @@ export function ClipGrid({
 
   const { perRow, thumbHeight, rowHeight } = gridMetrics({
     width: size.width,
-    tileMin: TILE_MIN,
+    tileMin: tileMin(size.width),
     gap: GAP,
     metaHeight: META_HEIGHT,
+    border: TILE_BORDER,
   })
   const { firstIndex, endIndex, offsetTop, totalHeight } = gridRange({
     scrollTop,
@@ -98,29 +141,47 @@ export function ClipGrid({
   })
 
   return (
-    <div className="grid">
-      <div className="grid-head" role="group" aria-label={t('grid.sortBy')}>
-        {SORT_COLUMNS.map((column) => (
-          <button
-            key={column.key}
-            type="button"
-            className="sort-key"
-            aria-pressed={sort.key === column.key}
-            onClick={() => onSortChange(column.key)}
-          >
-            {t(column.label)}
-            <span aria-hidden="true" className="sort-key-arrow">
-              {sort.key === column.key && <CaretIcon turn={sort.direction === 'asc' ? 0 : 180} />}
-            </span>
-          </button>
-        ))}
+    <>
+      {/* No visible "Sort" label: three silkscreen keys with one of them
+          pressed say what they are by being the only thing on the strip. The
+          group carries the name for whoever cannot see that. */}
+      <div className="sort-row" role="group" aria-label={t('grid.sortBy')}>
+        {GRID_SORT_KEYS.map((column) => {
+          const active = sort.key === column.key
+
+          return (
+            <button
+              key={column.key}
+              type="button"
+              className="sort-key"
+              aria-pressed={active}
+              onClick={() => onSortChange(column.key)}
+            >
+              {t(column.label)}
+              {/* The slot is drawn whether it holds a chevron or not, so turning
+                  a key on shifts no label. The direction is a class on the slot
+                  and never a character in a string: `.asc` turns the glyph over,
+                  `.desc` is where it already points. */}
+              <span
+                aria-hidden="true"
+                className={active ? `sort-key-arrow ${sort.direction}` : 'sort-key-arrow'}
+              >
+                {active && <Icon name="chevron" size={12} />}
+              </span>
+            </button>
+          )
+        })}
       </div>
 
-      <div className="grid-body" ref={scrollerRef} onScroll={onScroll}>
-        {clips.length === 0 && <ResultsEmpty message={emptyMessage} action={emptyAction} />}
+      <div className="tiles-scroll" ref={scrollerRef} onScroll={onScroll}>
+        {clips.length === 0 && (
+          <ResultsEmpty message={emptyMessage} action={emptyAction} busy={busy} />
+        )}
+        {/* The spacer holds the whole board's height so the scrollbar tells the
+            truth about a list only a slice of which exists. */}
         <div style={{ height: totalHeight, position: 'relative' }}>
           <div
-            className="grid-rows"
+            className="tiles"
             style={{
               top: offsetTop,
               gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))`,
@@ -139,13 +200,13 @@ export function ClipGrid({
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
 
 interface TileProps {
   clip: Clip
-  /** Measured, not declared: see `gridMetrics`. */
+  /** Computed, not declared: see `gridMetrics`. */
   thumbHeight: number
   checked: boolean
   onToggle: (id: string) => void
@@ -160,7 +221,7 @@ function Tile({ clip, thumbHeight, checked, onToggle, onPlay }: TileProps) {
   const [broken, setBroken] = useState(false)
 
   return (
-    <div className={checked ? 'tile is-picked' : 'tile'}>
+    <div className={checked ? 'tile picked' : 'tile'}>
       {/*
         Everything but the box opens the player, and it is one single button:
         nesting the checkbox inside it would be invalid markup as much as an
@@ -169,6 +230,9 @@ function Tile({ clip, thumbHeight, checked, onToggle, onPlay }: TileProps) {
         title, the length, the counts and the date together into one breath —
         and would say all that without ever saying what a click does. The
         content stays readable in browse mode, where nothing is lost.
+        Its children are spans and not paragraphs for the same reason the box
+        sits outside: a button takes phrasing content, and the sheet gives the
+        two lines the `display` their heights need anyway.
       */}
       <button
         type="button"
@@ -176,10 +240,12 @@ function Tile({ clip, thumbHeight, checked, onToggle, onPlay }: TileProps) {
         aria-label={t('table.play', { title: clip.title || t('table.untitledClip') })}
         onClick={() => onPlay(clip.id)}
       >
-        <span className="tile-frame" style={{ height: thumbHeight }}>
+        {/* The ratio is in the sheet, the pixel height is set here: both say
+            16:9, but only the one the virtualiser rounded can be the one the
+            row was placed for. */}
+        <span className="thumb" style={{ height: thumbHeight }}>
           {clip.thumbnail_url && !broken ? (
             <img
-              className="tile-thumb"
               src={clip.thumbnail_url}
               alt=""
               loading="lazy"
@@ -187,31 +253,34 @@ function Tile({ clip, thumbHeight, checked, onToggle, onPlay }: TileProps) {
               onError={() => setBroken(true)}
             />
           ) : (
-            <span className="tile-thumb tile-thumb-missing" aria-hidden="true">
-              <PlayIcon />
-            </span>
+            <span className="thumb-missing" />
           )}
-          <span className="tile-duration">{formatDuration(clip.duration)}</span>
+          <span className="dur">{formatDuration(clip.duration)}</span>
         </span>
-        <span className="tile-title">{title}</span>
-        <span className="tile-meta">
+        <span className="tt">{title}</span>
+        <span className="tm">
           {/* Zero views: the case the sweep exists to unearth, painted here as
               it is in the table. */}
-          <span className={clip.view_count === 0 ? 'tile-views zero' : 'tile-views'}>
+          <span className={clip.view_count === 0 ? 'z' : undefined}>
             {t('results.views', { n: clip.view_count })}
           </span>
           {` · ${formatDay(clip.created_at, locale)} · ${clip.creator_name || '—'}`}
         </span>
       </button>
 
-      <label className="tile-pick">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={() => onToggle(clip.id)}
-          aria-label={clip.title || t('table.untitledClip')}
-        />
-      </label>
+      {/* A button with the checkbox role, not an `<input>`: the state lives in
+          `aria-checked`, which is what the sheet hangs off. `.on-image` is the
+          halo it needs to hold against a thumbnail of any colour. */}
+      <button
+        type="button"
+        className="box on-image"
+        role="checkbox"
+        aria-checked={checked ? 'true' : 'false'}
+        aria-label={clip.title || t('table.untitledClip')}
+        onClick={() => onToggle(clip.id)}
+      >
+        <Icon name="check" />
+      </button>
     </div>
   )
 }

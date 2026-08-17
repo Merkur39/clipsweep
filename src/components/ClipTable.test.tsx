@@ -47,8 +47,19 @@ const setup = (
 
 const header = (name: string) => screen.getByRole('button', { name })
 
+/**
+ * The height a row is drawn at, read off a mounted row rather than restated
+ * here: the virtualiser places rows at multiples of it, so a scroll offset
+ * expressed in rows survives the sheet changing its mind about `--row`.
+ */
+const rowHeight = () =>
+  Number.parseInt(document.querySelector<HTMLElement>('.trow')!.style.height, 10)
+
+/** The scroller is the table's one row group, and the only thing that scrolls. */
+const scroller = () => screen.getByRole('rowgroup')
+
 describe('ClipTable, row selection', () => {
-  const row = (title: string) => screen.getByTitle(title).closest('.table-row')!
+  const row = (title: string) => screen.getByTitle(title).closest('.trow')!
 
   // Nothing is checked by default: the box reads the selection, it does not
   // read its complement.
@@ -143,8 +154,8 @@ describe('ClipTable, tri', () => {
     const clips = Array.from({ length: 500 }, (_, index) => clip(`c${index}`, index))
     const { view } = setup({ clips, sort: { key: 'views', direction: 'asc' } })
 
-    const scroller = document.querySelector('.table-body')!
-    scroller.scrollTop = 4000
+    const body = scroller()
+    body.scrollTop = rowHeight() * 80
 
     view.rerender(
       <ClipTable
@@ -159,7 +170,7 @@ describe('ClipTable, tri', () => {
       />,
     )
 
-    expect(scroller.scrollTop).toBe(0)
+    expect(body.scrollTop).toBe(0)
   })
 
   it('leaves the scroll alone when only the content changes', () => {
@@ -167,8 +178,9 @@ describe('ClipTable, tri', () => {
     const sort: ClipSort = { key: 'views', direction: 'asc' }
     const { view } = setup({ clips, sort })
 
-    const scroller = document.querySelector('.table-body')!
-    scroller.scrollTop = 4000
+    const body = scroller()
+    const deep = rowHeight() * 80
+    body.scrollTop = deep
 
     view.rerender(
       <ClipTable
@@ -183,6 +195,6 @@ describe('ClipTable, tri', () => {
       />,
     )
 
-    expect(scroller.scrollTop).toBe(4000)
+    expect(body.scrollTop).toBe(deep)
   })
 })

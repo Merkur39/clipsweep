@@ -91,3 +91,21 @@ export function formatDuration(seconds: number): string {
   const total = Math.max(0, Math.round(seconds))
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`
 }
+
+/**
+ * How long a sweep has been running, or how long it took.
+ *
+ * Takes no locale either, and for the same reason as [formatDuration]: "min"
+ * and "s" are spelled and abbreviated identically in both catalogues, so
+ * threading a language through would announce a choice that does not exist. It
+ * reads as `1 min 12 s` rather than `1:12` because this is a duration one
+ * compares against a patience, not a position one seeks to.
+ *
+ * Two readouts share it — the rail's footer and the drawer's counters — and
+ * they must agree to the second: they are on screen at the same time, one
+ * above the other.
+ */
+export function formatElapsed(ms: number): string {
+  const total = Math.max(0, Math.round(ms / 1000))
+  return `${Math.floor(total / 60)} min ${String(total % 60).padStart(2, '0')} s`
+}

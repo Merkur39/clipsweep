@@ -1,279 +1,378 @@
-/* FiltersBar.tsx, NumberField.tsx, MultiSelect.tsx — the filter row.
-   It is welded to the top of the table (bottom border removed, radius cut):
-   the two form a single panel, not two stacked cards. */
+/* FiltersBar.tsx, MultiSelect.tsx, NumberField.tsx, DateField.tsx — the row of
+   filter pills, and what a pill opens.
 
-.result-count {
-  margin: 0 0 var(--s-3);
-  font-family: var(--mono);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-dim);
-}
+   A pill is the closed state of a filter: it carries the facet's name and its
+   current value, so the whole row can be read without opening anything. Six
+   filters and three natures — two view thresholds, two date bounds, two lists
+   to tick — collapse into four pills, the paired ones being halves of a single
+   statement rather than two filters that happen to be adjacent.
 
-/* The blanket check, filed at the end of the counts it acts on. In the sans, on
-   a line otherwise set in the mono: the counts are a readout, this is an
-   action, and `button.link` would inherit the readout's family. Its bottom
-   padding — meant for links stacked in a panel — would push the line apart. */
-.result-count .link {
-  margin-left: var(--s-2);
-  padding: 0;
-  font-family: var(--sans);
-  font-size: 12px;
-}
+   The controls inside a panel — `.field`, `.date`, `.numfield` and its `.clear`,
+   `.box`, `.quiet`, `.fieldset`, `.flabel` — come from `controls.css`. Only
+   what the filter row does *with* them is written here. */
 
-/* Six controls hold on one line provided they are not given the same template:
-   a views field houses six digits, a date field does not go below 137px (its
-   segments, its calendar and its cross), and the facets want everything that
-   is left — they are the ones that truncate ("SpiZ, Ori +3"). Each basis is
-   therefore calibrated on its content, each growth capped: it is the cap that
-   keeps a wrapped control from stretching alone across the full width, which
-   is what the row did before. */
+/* The bar. `align-items: center` and not `end`: a pill has one line and no
+   label above it to line up on, which is what the old row of fields needed. */
 .filters {
+  /* The panel hovers, it does not push — opening one must not move the table
+     under the cursor — so it is taken out of the flow, and the results card,
+     which comes later in the document, would paint over it. A z-index only
+     compares between siblings: the lift therefore goes on the whole bar, the
+     card's own sibling, and not on the panel.
+
+     3, and the exact value matters: the only thing this has to beat is a
+     sibling at `auto`, so any positive number does — while the sweep banner
+     overlays the whole work surface and has to beat *this*. At 7 it did not,
+     and the banner came out painted behind the filter row. The ladder is
+     written once, in `chassis.css`. */
+  position: relative;
+  z-index: 3;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-3);
-  align-items: end;
-  padding: var(--s-3) var(--s-4);
-  border: 1px solid var(--rule);
-  border-bottom: 0;
-  border-radius: var(--r) var(--r) 0 0;
-  background: var(--chassis);
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-6);
 }
 
-.field,
-.multiselect {
-  margin: 0;
-  min-width: 0;
+/* The blanket reset, at the end of the row it acts on. It was filed at the end
+   of the "Results" label for want of a column here; four pills leave one, and
+   the undo belongs beside what it undoes. Each pill still carries its own way
+   back — an inline clear, "Uncheck all" — this one spends them all at once.
+
+   A direct child, and it has to be: "Uncheck all" is a `.quiet` too, and it
+   lives inside a panel which lives inside this bar. Two auto margins in the
+   same flex line would share the free space between them instead of pushing
+   one control to the end. */
+.filters > .quiet {
+  margin-left: auto;
 }
 
-.filters .field {
-  flex: 1 1 90px;
-  max-width: 130px;
+/* ---- the pill --------------------------------------------------------
+   Three readings in one pass: the glyph gives the facet's nature, `em` its
+   name, `b` its current value. */
+
+.fpill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--ctrl-md);
+  padding: 0 var(--sp-5);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-pill);
+  background: var(--surface-raised);
+  color: var(--tx2);
+  font-size: var(--text-sm);
+  /* A pill that wrapped would break the pair it reads as: "0 – ∞" on two
+     lines is two numbers, not a range. The row wraps instead. */
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--dur-instant) var(--ease-out),
+    border-color var(--dur-instant) var(--ease-out),
+    color var(--dur-instant) var(--ease-out);
 }
 
-/* `min-width` as much as `flex-basis`: below 137px the date segments would get
-   clipped by the native calendar. */
-.filters .field.date {
-  flex: 1 1 137px;
-  min-width: 137px;
-  max-width: 148px;
+.fpill svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--tx3);
 }
 
-/* Low basis, high cap: a facet needs no more than 73px for its minimal
-   content, and it is the one that takes back all the space available. */
-.filters .multiselect {
-  flex: 1 1 110px;
-  max-width: 240px;
+.fpill em {
+  font-style: normal;
+  color: var(--tx3);
 }
 
-/* Three native controls, three intrinsic heights under Chromium (33px for a
-   number field, 34 for the button, 35 for a date field, which yields neither to
-   `line-height` nor to styling its shadow DOM). Without a common height, the
-   labels of the row do not line up. */
-.filters .field-control input,
-.filters .multiselect-button {
-  height: 35px;
+/* In the mono, and figured: the value is most often a count or a pair of dates,
+   and it changes under the eye as the other filters move — proportional digits
+   would make the pill breathe on every keystroke. */
+.fpill b {
+  font: var(--w-medium) var(--text-sm) / var(--lead-none) var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--tx);
 }
 
-/* The clear button is overlaid, not inserted: its appearing must move neither
-   the field nor its neighbours. */
-.field-control {
+.fpill:hover:not([aria-disabled='true']) {
+  background: var(--surface-hover);
+}
+
+/* Active means "this facet restricts something", which is exactly what the
+   pill's value already says — the accent only makes it findable in a row of
+   four. `--accent-mark` on the border, which has to be seen; `--accent-ink` on
+   everything that writes. */
+.fpill[aria-pressed='true'] {
+  border-color: var(--accent-mark);
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+.fpill[aria-pressed='true'] svg,
+.fpill[aria-pressed='true'] b {
+  color: var(--accent-ink);
+}
+
+/* Nothing to offer yet — no sweep, or a facet the sweep never filled. The pill
+   stays in place rather than disappearing: a row that loses a column between
+   two sweeps has to be relearnt each time. */
+.fpill[aria-disabled='true'] {
+  border-color: var(--rule);
+  background: var(--surface);
+  color: var(--tx3);
+  cursor: not-allowed;
+}
+
+.fpill[aria-disabled='true'] b {
+  color: var(--tx3);
+}
+
+/* ---- what a pill opens -----------------------------------------------
+   Anchored under its own pill, never centred: a filter belongs to the pill
+   just clicked, and a sheet in the middle of the screen would make the reader
+   work out which one it came from. */
+
+.anchored {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + var(--sp-3));
+  left: 0;
+  /* Its own pill and every pill after it are positioned siblings laid down in
+     document order: without a step up, the panel would slide under the two
+     pills to its right. One step is all it needs — the bar already carries the
+     lift that clears the results card. */
+  z-index: 1;
   display: block;
+  width: 252px;
+  /* The list scrolls under the panel's rounded edge; without this it would be
+     drawn square across the corners. */
+  overflow: hidden;
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  box-shadow: var(--elev-2);
 }
 
-.field-control input {
-  padding-right: 30px;
+.popover-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--rule);
 }
 
-/* A date field already carries its calendar indicator on the right: the clear
-   button files to its left rather than over it. Hiding the indicator would cost
-   the opening of the picker by mouse, the only route that opens it. */
-.field-control.date input {
-  padding-right: 26px;
+/* Three readings on one line: the facet's size, what is taken of it, and the
+   way back. `space-between` alone would strand the middle one in the void; the
+   count and the undo are the same subject and travel together, to the right. */
+.popover-top .n {
+  margin-left: auto;
+  font: var(--w-medium) var(--text-xs) / var(--lead-none) var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--tx3);
 }
 
-.field-control.date .field-clear {
-  right: 4px;
+/* Seven options, then it scrolls. The cap is written as its own multiple
+   rather than as the 224px it comes to: change the pitch and the panel follows
+   instead of showing six rows and a sliver of a seventh.
+
+   `overflow-y` is what does the scrolling, and `overflow-x` is written beside
+   it on purpose — set alone, the vertical axis would take the other one from
+   `visible` to `auto` by ricochet and hand the panel a second scrollbar. */
+.opts {
+  max-height: calc(7 * var(--opt-row));
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: var(--sp-2) 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-control) transparent;
 }
 
-/* The native arrows steal the button's place. */
-.field-control input::-webkit-outer-spin-button,
-.field-control input::-webkit-inner-spin-button {
+/* The height is applied by `OPTION_HEIGHT`, in `MultiSelect.tsx`, at the 32px
+   `--opt-row` holds: the window places the options at that pitch. Change the
+   token here without changing the constant there and they land beside their own
+   places. `margin: 0` because the row is a `<label>`, and a label stacked in a
+   panel carries a bottom margin that would break the pitch by six pixels.
+
+   The first column is the box's own 17px, so the names line up whatever the
+   ticks below them do. */
+.opt {
+  display: grid;
+  grid-template-columns: 17px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--opt-row);
+  margin: 0;
+  padding: 0 var(--sp-5);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.opt:hover {
+  background: var(--surface-hover);
+}
+
+.opt-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.opt-count {
+  font: var(--w-medium) var(--text-xs) / var(--lead-none) var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--tx3);
+}
+
+/* An option the other filters have emptied: it falls back to the ink its own
+   count already uses, one step under a live name and still perfectly legible —
+   one has to be able to read what one is unticking. Drawn back, never disabled:
+   a checked value can fall to zero, and this panel is the only place it can be
+   unchecked from. */
+.opt.spent .opt-name,
+.opt.spent .opt-count {
+  color: var(--tx3);
+}
+
+/* The id an unresolved category is named by, inside the name it stands in for:
+   set apart so a number doing a name's work does not read as one. */
+.opt-name .id {
+  color: var(--tx3);
+}
+
+.popover-empty {
+  margin: 0;
+  padding: var(--sp-6) var(--sp-5);
+  font-size: var(--text-sm);
+  color: var(--tx3);
+  text-align: center;
+}
+
+/* ---- the panels that hold fields -------------------------------------
+   The padded counterpart of `.opts`, for views and range. The list brings its
+   own inset because it scrolls under the panel's edge; a pair of fields sits
+   still and must not touch it. */
+
+.popover-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding: var(--sp-5);
+}
+
+/* The gap above is the only spacing between the two fields: nothing a `<label>`
+   inherits from the control sheet may add to it. */
+.popover-body .fieldset {
+  margin: 0;
+}
+
+/* The catalogued width of a threshold field is the one a row of controls gives
+   it. Stacked in a 252px panel there is no row to share, and two fields of
+   unequal width would read as two different controls. */
+.popover-body .numfield {
+  display: block;
+  width: auto;
+}
+
+/* The native steppers stand exactly where the inline clear does, and one of the
+   two has to go: the arrows nudge by one view, which is not a unit anybody
+   filters by. */
+.popover-body input[type='number'] {
+  appearance: textfield;
+}
+
+.popover-body input::-webkit-outer-spin-button,
+.popover-body input::-webkit-inner-spin-button {
   appearance: none;
   margin: 0;
 }
 
-.field-control input[type='number'] {
-  appearance: textfield;
+/* A date field draws its own picker indicator hard against its right edge, and
+   hiding it would cost the only route a mouse has to the picker. The clear
+   therefore files to its left rather than over it, and the field reserves the
+   room for both. */
+.popover-body .date {
+  padding-right: var(--sp-10);
 }
 
-.field-clear {
-  position: absolute;
-  top: 50%;
-  right: 4px;
-  transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
-  padding: 0;
-  background: none;
-  border: none;
-  border-radius: var(--r);
-  color: var(--text-faint);
+.popover-body .date + .clear {
+  right: var(--sp-8);
 }
 
-.field-clear:hover:not(:disabled) {
-  background: var(--surface-raised);
-  border-color: transparent;
-  color: var(--text);
-}
+/* ---- under 768 -------------------------------------------------------
+   The row becomes a strip that really scrolls. `.scroll-filters` and the pills'
+   `.sm` are on the elements at every width and are declared only here: the
+   components render no media query, so a breakpoint held in JavaScript would
+   have to be kept in step with this one — two places to change, one of them
+   silent when it drifts. */
 
-/* Set at the end of the "Results" label, after the hairline its `::after`
-   draws — hence the `order`, without which the hairline would run to the right
-   of the button instead of pushing it. */
-.section-label .filters-reset {
-  order: 1;
-  width: auto;
-  padding: 0;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
+@media (max-width: 767.98px) {
+  .scroll-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    /* Written beside its neighbour, and hiding rather than scrolling: the axis
+       the strip does not use must not acquire a scrollbar of its own. */
+    overflow-y: hidden;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    /* Exactly what a focus outline overflows — its weight plus its offset —
+       given back on the block axis and taken off again by the margin. Bound to
+       its cause rather than to the scale step that happens to equal it. Without
+       the pair, `overflow-x` turns the block axis to `auto` by ricochet and
+       clips the ring of a focused pill. */
+    padding-block: calc(var(--focus-ring) + var(--focus-offset));
+    margin-block: calc(-1 * (var(--focus-ring) + var(--focus-offset)));
+    /* No surface of its own at this width: a strip that slides under a card's
+       radius is clipped by it, and the phone layout sets the pills straight on
+       the canvas. */
+    padding-inline: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+  }
 
-/* ---- multiselect ---- */
+  .scroll-filters::-webkit-scrollbar {
+    display: none;
+  }
 
-.multiselect {
-  position: relative;
-}
+  /* A pill that takes focus from off-screen comes to rest whole rather than
+     flush against the edge, where its outline would end up under its
+     neighbour. The anchor is the flex item — `.anchored` is what the row lays
+     out — not the pill inside it. */
+  .scroll-filters > * {
+    flex: none;
+    scroll-snap-align: start;
+    scroll-margin-inline: var(--sp-6);
+  }
 
-.multiselect-button {
-  gap: var(--s-2);
-  width: 100%;
-  padding: 8px 10px;
-  background: var(--ground);
-  border: 1px solid var(--rule);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 400;
-  text-align: left;
-  justify-content: flex-start;
-}
+  /* A panel hangs below the strip, and the very overflow that lets the strip
+     scroll would cut it off. While one is open the row stops scrolling and
+     wraps instead: every pill stays reachable either way, and the panel is
+     what is being read. */
+  .scroll-filters:has(.popover) {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
 
-.multiselect-button:hover:not(:disabled) {
-  background: var(--ground);
-  border-color: var(--rule-strong);
-}
+  /* The reduced pill. It keeps its name and its value — a glyph and a bare
+     number would leave the reader guessing which facet is which, which is the
+     one thing the pill exists to spare. */
+  .fpill.sm {
+    height: var(--ctrl-sm);
+    padding: 0 var(--sp-4);
+    font-size: var(--text-xs);
+  }
 
-.multiselect-button[aria-expanded='true'] {
-  border-color: var(--violet);
-}
+  .fpill.sm svg {
+    width: 13px;
+    height: 13px;
+  }
 
-.multiselect-button .icon {
-  color: var(--text-faint);
-  transition: transform 0.16s var(--ease);
-}
-
-.multiselect-button[aria-expanded='true'] .icon {
-  transform: rotate(180deg);
-}
-
-.multiselect-value {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* The panel holds the cap; the list inside it is what scrolls. */
-.multiselect-panel {
-  position: absolute;
-  z-index: 10;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  min-width: 230px;
-  max-height: 280px;
-  overflow: hidden;
-  padding: 5px;
-  background: var(--surface-raised);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r);
-  box-shadow: 0 12px 28px -6px var(--shadow-panel);
-}
-
-.multiselect-panel .link {
-  flex: none;
-  width: 100%;
-  padding: 4px 8px 8px;
-}
-
-/* `min-height: 0` is what lets the list shrink under the spacer standing in for
-   the options not mounted — without it the flex item would take the height of
-   the whole catalogue and the panel would scroll nothing. */
-.multiselect-options {
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
-}
-
-/* The height is applied by `OPTION_HEIGHT`, in `MultiSelect.tsx`, at the 32px
-   these rules already came to on their own: the window places the options at
-   that pitch. Change the padding or the font size here without changing it
-   there and they land beside their own places. */
-.multiselect-option {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  margin: 0;
-  padding: 5px 8px;
-  border-radius: var(--r);
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.multiselect-option:hover {
-  background: var(--surface-hover);
-}
-
-/* An option's name is content, not a field label, and it has to say so twice:
-   the option is a `<label>` and its name a `<span>`, which `controls.css` reads
-   as a nameplate — 11px, 600, uppercase, letterspaced, in faint ink. Twitch
-   returns "Special Events"; the panel was drawing SPECIAL EVENTS, in the ink
-   reserved for what is secondary, and paying 13% of the column's width for the
-   privilege. Same escape `.remember` had to make in `search-panel.css`.
-
-   The specificity is what carries it: two classes against the nameplate's one
-   class and two elements. */
-.multiselect-option .multiselect-option-name {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 13px;
-  font-weight: 400;
-  letter-spacing: normal;
-  text-transform: none;
-  color: var(--text);
-}
-
-.multiselect-option-count {
-  font-family: var(--mono);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-faint);
-}
-
-/* An option the other filters have emptied: it falls back to the ink the count
-   beside it already uses, one step under a live name and still legible — one
-   has to be able to read what one is unchecking.
-
-   Deliberately not `.zero`, which this sheet spends on the opposite errand:
-   amber, for the clip at zero views that the sweep exists to unearth. There the
-   eye is called; here it is meant to pass over. */
-.multiselect-option.is-spent .multiselect-option-name {
-  color: var(--text-faint);
+  .fpill.sm b {
+    font-size: var(--text-xs);
+  }
 }

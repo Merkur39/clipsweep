@@ -1,232 +1,242 @@
 /* ClipGrid.tsx — the second readout: the same clips, given their images.
 
-   Careful: the geometry is settled in `ClipGrid.tsx`, which places the rows
-   from it. The thumbnail's height comes from there, applied on `.tile-frame` —
-   which is why no `aspect-ratio` is written here: two sources for one height
-   round differently, and half a pixel per row becomes a visible step.
+   Careful: half the geometry is settled in `ClipGrid.tsx`, which places the
+   rows from it, and the two files are one contract:
 
-   What this sheet still owns is the block underneath, and it must come to
-   exactly `META_HEIGHT` (60px): 1 (hairline) + 6 + 32 (two lines of title) + 15
-   (the readout) + 5 + 1. A rule changed here without being changed there puts
-   the placed rows beside the drawn ones. */
+   - the block under the thumbnail must come to exactly `META_HEIGHT` (68px) —
+     8 + 34 + 2 + 16 + 8, drawn below by `.tt` and `.tm`. The title box is two
+     lines of 17px written in pixels on purpose: a relative leading is a ratio
+     of a font size, and no ratio promises the 34px the virtualiser counts on;
+   - `.tile` draws one hairline, and `gridMetrics` takes both of them off the
+     column before it works out the thumbnail — under `box-sizing: border-box`
+     a 190px tile hands its image 188px;
+   - the gutter is `--sp-6` here and `GAP` over there, at every tier. Only the
+     padding moves at a breakpoint, which is why nothing below sets a column
+     count: that comes from `perRow`, inline.
 
-.grid {
-  border: 1px solid var(--rule);
-  border-radius: 0 0 var(--r) var(--r);
-  overflow: hidden;
-  background: var(--surface);
-}
+   A rule changed here without being changed there puts the placed rows beside
+   the drawn ones. */
 
-/* The same silkscreen strip as the table's head, minus the columns: nothing
-   here is a column header, so the pressed key says what `aria-sort` says over
-   there. */
-.grid-head {
+/* ---- the sort strip ----
+   Above the plate rather than on it: nothing here is a column header, so there
+   is no cell to hang `aria-sort` from and the pressed key is what says which
+   order is in force. Flush under the results head, whose own padding already
+   opened the space — the keys are `--ctrl-sm` tall and carry their own air. */
+
+.sort-row {
   display: flex;
   align-items: center;
-  gap: var(--s-4);
-  height: 34px;
-  padding: 0 var(--s-4);
-  background: var(--chassis);
-  border-bottom: 1px solid var(--rule-strong);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+  gap: var(--sp-2);
+  padding: 0 var(--sp-6) var(--sp-4);
 }
 
-.grid-head .sort-key {
-  width: auto;
-}
+/* ---- the scrolling board ----
+   Takes what the results panel has left and scrolls inside itself: the page
+   never scrolls a board of tens of thousands of tiles. It therefore counts on
+   its parent being a flex column, which is what `.results` is.
 
-.grid-head .sort-key[aria-pressed='true'] {
-  color: var(--text);
-}
+   The padding sits here and not on `.tiles`, for two reasons. The plate is
+   placed absolutely at the offset the virtualiser computed, and a padding on it
+   would push the first row that far off the row it was placed for. And measured
+   from here the padding is already out of `contentRect.width` — which is
+   exactly the width the columns have to divide.
 
-.grid-body {
-  height: clamp(300px, 62vh, 860px);
-  padding: var(--s-3) var(--s-4);
-  overflow: auto;
+   `overflow-y` is written beside `overflow-x` because setting one axis to
+   something other than `visible` silently takes the other off it too. */
+
+.tiles-scroll {
+  flex: 1;
+  min-height: 0;
+  padding: var(--sp-6);
+  overflow-x: hidden;
+  overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
+  scrollbar-color: var(--rule-control) transparent;
 }
 
-.grid-rows {
+/* The plate itself. Its columns are set inline, from `gridMetrics`: the sheet
+   and the virtualiser must agree to the column, and `auto-fill` would let the
+   browser decide alone — one column of disagreement puts every placed row
+   beside its tiles. What the sheet keeps is the gutter. */
+.tiles {
   position: absolute;
   left: 0;
   right: 0;
   display: grid;
-  gap: 12px;
+  gap: var(--sp-6);
 }
 
 /* ---- the tile ----
-   Its own frame, because a board of images needs a grid to hold it: the flat
-   carries the thumbnail, the hairline separates two neighbours whose images
-   would otherwise touch. */
+   Its own frame, because a board of images needs a grid to hold it: the raised
+   flat carries the block of type, the hairline separates two neighbours whose
+   images would otherwise touch. `--surface-raised` and not `--surface`: the
+   readout panel underneath is already the flat surface. */
 
 .tile {
   position: relative;
   border: 1px solid var(--rule);
-  border-radius: var(--r);
-  background: var(--chassis);
+  border-radius: var(--r-lg);
   overflow: hidden;
+  background: var(--surface-raised);
+}
+
+/* Hover marks the tile and not its title: on a board the pointer is already on
+   the thing it means, and the hairline is the only edge the tile has to raise. */
+.tile:hover {
+  border-color: var(--rule-control);
 }
 
 /* Kept: marked in the positive, never by dimming its neighbours. Nothing is
    checked by default here, so extinguishing what is not kept would put the
    whole board out at rest.
 
-   An outline, not an inset shadow: a shadow is painted under the element's
-   children, so the thumbnail covered the very edge meant to mark the tile — two
-   pixels around the block of type, one around the image, which read as a frame
-   the image was biting into. The outline paints above everything, follows the
-   radius, and costs no layout, which the virtualiser demands: a kept tile has
-   to measure exactly what an unkept one measures. */
-.tile.is-picked {
-  border-color: var(--violet);
-  outline: 1px solid var(--violet);
+   A ring outside the border box, not a thicker border and not an inset shadow.
+   An inset shadow is painted under the element's children, so the thumbnail
+   covered the very edge meant to mark the tile; a thicker border would change
+   what the tile measures, and the virtualiser demands that a kept tile measure
+   exactly what an unkept one measures. `--accent-mark` is the accent's role for
+   what has to be *seen*. */
+.tile.picked {
+  border-color: var(--accent-mark);
+  box-shadow: 0 0 0 1px var(--accent-mark);
 }
 
-.tile.is-picked .tile-title {
-  color: var(--violet-strong);
-}
-
-/* The whole tile save the box: a button, hence every bare-button rule undone. */
+/* The whole tile save the box: one button, hence every bare-button rule undone.
+   `text-align: left` because a button centres its content and a title is read
+   from its left edge. */
 .tile-open {
   display: block;
   width: 100%;
   padding: 0;
+  border: 0;
   background: none;
-  border: none;
-  border-radius: 0;
   color: inherit;
   font: inherit;
   text-align: left;
   cursor: pointer;
 }
 
-.tile-open:hover:not(:disabled) {
-  background: none;
-  border-color: transparent;
-}
+/* ---- the thumbnail ----
+   The ratio is declared and the height is nevertheless set inline, from
+   `gridMetrics`. Both say 16:9; only one of them is the figure the row was
+   placed for. Left to the ratio alone the browser rounds its own box and the
+   virtualiser rounded another, half a pixel away, which five rows turn into a
+   visible step. The ratio stays because it is what documents the piece, and
+   because it is what draws before the first measurement lands. */
 
-/* Its height is set inline, from `gridMetrics`: 16:9 of the column granted. */
-.tile-frame {
+.thumb {
   position: relative;
   display: block;
+  aspect-ratio: 16 / 9;
   background: var(--surface-sunken);
 }
 
-.tile-thumb {
+/* Cropped rather than letterboxed: Helix serves 480x272, which is not 16:9, and
+   two bars of ground around every image would read as the frame of the tile. */
+.thumb img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-/* No image to show: the hole is drawn rather than left to the broken-image
-   glyph, which says nothing about the clip behind it. */
-.tile-thumb-missing {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-faint);
-  opacity: 0.4;
-}
-
-/* On the image, so it holds its own ground whatever the image carries. */
-.tile-duration {
-  position: absolute;
-  right: 5px;
-  bottom: 5px;
-  padding: 1px 5px;
-  border-radius: var(--r);
-  background: rgb(0 0 0 / 72%);
-  color: #fff;
-  font-family: var(--mono);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  line-height: 15px;
-}
-
-/* The two lines are reserved whether the title fills them or not: a tile one
-   line shorter than its neighbour would break the row the virtualiser places. */
-.tile-title {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-  height: 32px;
-  margin: 6px 8px 0;
-  font-size: 12.5px;
-  line-height: 16px;
-  color: var(--text);
-}
-
-.tile-open:hover .tile-title {
-  color: var(--violet-strong);
-}
-
-.tile-meta {
+/* No image to show — expired, or never served. The stand-in is the one gradient
+   the system tolerates, composed here from its two stops rather than written
+   once per world: that way it follows `color-scheme` like every other token. */
+.thumb-missing {
   display: block;
-  height: 15px;
-  margin: 0 8px 5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--mono);
-  font-size: 11px;
-  line-height: 15px;
-  color: var(--text-faint);
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--thumb-a), var(--thumb-b));
 }
 
-.tile-views {
-  color: var(--text-dim);
-}
-
-/* Zero views: the case the sweep exists to unearth. */
-.tile-views.zero {
-  color: var(--amber);
+/* Chrome laid on an image, not on a surface of the system — the one written
+   exception. No token knows what colour is under a thumbnail, and neither world
+   changes it, so this takes `--on-image` on `--on-image-ground` instead of the
+   text and surface tokens, which would both be legible only half the time. */
+.dur {
+  position: absolute;
+  right: var(--sp-3);
+  bottom: var(--sp-3);
+  padding: var(--sp-1) var(--sp-3);
+  border-radius: var(--r-xs);
+  background: var(--on-image-ground);
+  color: var(--on-image);
+  font: var(--w-regular) var(--text-2xs) / var(--lead-tight) var(--mono);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---- the box ----
    Always drawn, never revealed on hover: there is no hover on a touch screen,
    and a board whose only control appears under the cursor has no control at
-   all. It sits on its own chip so it holds against any thumbnail. */
+   all. It sits beside the opening button rather than inside it — nesting would
+   be invalid markup as much as an ambiguous target — and `.on-image` is what
+   gives it the halo it needs to hold against a thumbnail of any colour. */
 
-.tile-pick {
+.tile .box {
   position: absolute;
-  top: 0;
-  left: 0;
-  display: flex;
-  padding: 6px;
+  top: var(--sp-4);
+  left: var(--sp-4);
 }
 
-.tile-pick input {
-  margin: 0;
-  box-shadow: 0 0 0 3px rgb(0 0 0 / 45%);
+/* ---- the block of type: 8 + 34 + 2 + 16 + 8 = META_HEIGHT ---- */
+
+/* Two lines are reserved whether the title fills them or not: a tile one line
+   shorter than its neighbour would break the row the virtualiser placed. 34px
+   is 2 x 17px exactly. The clamp is what makes the cut readable — a height with
+   `overflow: hidden` alone slices a third line through its middle, where the
+   clamp ends the second one on an ellipsis. */
+.tt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  height: 34px;
+  margin: var(--sp-4) var(--sp-5) 0;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  line-height: 17px;
+  color: var(--tx);
 }
 
-/* Checked, the shared box fills with a wash — which counts on something opaque
-   behind it. Over a thumbnail there is nothing: the image showed through, and
-   the tick, drawn a shade away from that wash, all but vanished. Here the box
-   is a full violet flat and the tick takes the ink meant for that flat. */
-.tile-pick input:checked {
-  background: var(--violet);
-  border-color: var(--violet);
+/* One line of 16, and the ellipsis rather than a wrap: a second line would take
+   the block past the 68px the row was placed for. Monospace, like every readout
+   in the application — its digits are already tabular, so three clips in a
+   column compare at a glance. */
+.tm {
+  display: block;
+  margin: var(--sp-1) var(--sp-5) var(--sp-4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--w-regular) var(--text-2xs) / 16px var(--mono);
+  color: var(--tx3);
 }
 
-.tile-pick input:checked::after {
-  border-color: var(--on-violet);
+/* Zero views — what the sweep exists to unearth, and the one figure on the tile
+   worth reading before the others. `--window-split` rather than a hue of its
+   own: the amber of a split window and this say the same thing, that here is
+   the part of the sweep to go and look at. */
+.tm .z {
+  color: var(--window-split);
 }
 
-@media (max-width: 700px) {
-  .grid-body {
-    padding: var(--s-2);
+/* ---- 768 – 1079 ------------------------------------------------------
+   Nothing to write. The column count comes from `perRow`, which follows the
+   width the rail left behind on its own. */
+
+/* ---- under 768 -------------------------------------------------------
+   Only the padding moves — the gutter is duplicated in `ClipGrid.tsx` and may
+   not disagree with it, and the column count is not the sheet's to set. Four
+   pixels of inset given back on each side is what lets a 360px phone divide its
+   board in two: `tileMin` drops to half the board there, and two tiles is what
+   the design asks for under this breakpoint. */
+
+@media (max-width: 767.98px) {
+  .sort-row {
+    padding: 0 var(--sp-5) var(--sp-3);
   }
 
-  .grid-head {
-    gap: var(--s-3);
-    padding: 0 var(--s-3);
+  .tiles-scroll {
+    padding: var(--sp-5);
   }
 }
