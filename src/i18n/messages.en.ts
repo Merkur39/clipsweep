@@ -35,7 +35,6 @@ export const en: Catalogue = {
   'panel.remember': 'Remember this channel',
   'panel.since': 'From',
   'panel.until': 'Until',
-  'panel.backToCreation': 'Back to channel creation ({date})',
   'panel.run': 'Start the sweep',
   'panel.stop': 'Stop the sweep',
 

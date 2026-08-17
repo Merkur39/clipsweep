@@ -247,35 +247,27 @@ export function SearchPanel({
     </div>
   )
 
-  /* Both paragraphs are always rendered and their height reserved in CSS: the
-     message and the link appear with whatever channel and period are typed, and
-     must push neither the sweep button nor the tally below it.
+  /* Always rendered and its height reserved in CSS: the message appears with
+     whatever period is typed, and must push neither the sweep button nor the
+     tally below it.
 
      The permanent live region is also what makes screen readers announce the
      error — a `role="alert"` inserted at the moment of the fault often goes
-     unnoticed. */
+     unnoticed.
+
+     It used to be joined by a link back to the channel's creation date. The
+     "All time" preset writes that same date, so the link was a second control
+     for one action — and it cost a reserved line in a column that had none to
+     spare. */
   const periodNotice = (
-    <>
-      <p className="field-err" role="alert">
-        {periodError && (
-          <>
-            <Icon name="alert" />
-            <span>{periodError}</span>
-          </>
-        )}
-      </p>
-      {/* Offered only when it genuinely widens the period asked for. "of the
-        channel" is implied by the field above and by the label: the long
-        wording left 9px of margin in the rail and wrapped onto two lines on a
-        wider interface font, exceeding the height reserved for it. */}
-      <p className="field-hint">
-        {channelCreatedAt && channelCreatedAt < since && (
-          <button type="button" className="link" onClick={() => onSinceChange(channelCreatedAt)}>
-            {t('panel.backToCreation', { date: formatDay(channelCreatedAt, locale) })}
-          </button>
-        )}
-      </p>
-    </>
+    <p className="field-err" role="alert">
+      {periodError && (
+        <>
+          <Icon name="alert" />
+          <span>{periodError}</span>
+        </>
+      )}
+    </p>
   )
 
   /* A sweep that has not started has no figures to state, and states so — the

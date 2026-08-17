@@ -68,7 +68,6 @@ export const fr = {
   'panel.remember': 'Se souvenir de cette chaîne',
   'panel.since': 'Depuis',
   'panel.until': 'Jusqu’au',
-  'panel.backToCreation': 'Remonter à la création ({date})',
   'panel.run': 'Lancer le scan',
   'panel.stop': 'Arrêter le scan',
 
