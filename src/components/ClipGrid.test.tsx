@@ -57,7 +57,7 @@ describe('ClipGrid, the tiles', () => {
 
   it('carries the thumbnail, deferred until it is needed', () => {
     setup({ clips: [clip('a')] })
-    const image = document.querySelector('.tile-thumb') as HTMLImageElement
+    const image = document.querySelector('.thumb img') as HTMLImageElement
 
     expect(image.src).toContain('a-preview-480x272.jpg')
     // The attribute, not the property: jsdom does not implement `loading`.
@@ -77,7 +77,8 @@ describe('ClipGrid, the tiles', () => {
   it('stands in for a thumbnail it cannot show', () => {
     setup({ clips: [clip('a', { thumbnail_url: '' })] })
 
-    expect(document.querySelector('.tile-thumb-missing')).toBeInTheDocument()
+    expect(document.querySelector('.thumb-missing')).toBeInTheDocument()
+    expect(document.querySelector('.thumb img')).toBeNull()
   })
 })
 
@@ -109,17 +110,21 @@ describe('ClipGrid, watching and choosing', () => {
 
     expect(screen.getByRole('checkbox', { name: 'Titre a' })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: 'Titre b' })).not.toBeChecked()
-    expect(document.querySelectorAll('.tile.is-picked')).toHaveLength(1)
+    expect(document.querySelectorAll('.tile.picked')).toHaveLength(1)
   })
 })
 
 describe('ClipGrid, ordering', () => {
-  it('offers the same four keys as the table', () => {
+  // The strip is a plate of silkscreen keys, not a set of column headers: the
+  // creator is written on every tile but heads none of them, so the grid offers
+  // three of the table's four keys and drops that one.
+  it('offers three of the four keys, the creator heading nothing here', () => {
     setup()
 
-    for (const name of ['Vues', 'Date', 'Titre', 'Créateur']) {
+    for (const name of ['Vues', 'Date', 'Titre']) {
       expect(screen.getByRole('button', { name })).toBeInTheDocument()
     }
+    expect(screen.queryByRole('button', { name: 'Créateur' })).not.toBeInTheDocument()
   })
 
   it('requests the order asked for', () => {

@@ -110,13 +110,20 @@ describe('ClipPlayer, moving through the clips', () => {
     expect(onPlayingIdChange).toHaveBeenCalledWith('a')
   })
 
+  // `disabled` is what refuses the click; the mirrored ARIA attribute is what
+  // the sheet draws the unavailable state from. Both, or the button stops one
+  // of the two.
   it('stops at both ends of the list', () => {
     setup({ playingId: 'a' })
-    expect(screen.getByRole('button', { name: 'Clip précédent' })).toBeDisabled()
+    const previous = screen.getByRole('button', { name: 'Clip précédent' })
+    expect(previous).toBeDisabled()
+    expect(previous).toHaveAttribute('aria-disabled', 'true')
 
     cleanup()
     setup({ playingId: 'c' })
-    expect(screen.getByRole('button', { name: 'Clip suivant' })).toBeDisabled()
+    const next = screen.getByRole('button', { name: 'Clip suivant' })
+    expect(next).toBeDisabled()
+    expect(next).toHaveAttribute('aria-disabled', 'true')
   })
 
   // The arrows serve the eye still on our chrome; once the focus enters the
@@ -131,10 +138,12 @@ describe('ClipPlayer, moving through the clips', () => {
 })
 
 describe('ClipPlayer, selection', () => {
+  // No `aria-pressed` to read the state from: the keep button renames itself,
+  // so the name it answers to is the assertion on which state it is in.
   it('checks the clip being watched', () => {
     const { onToggle } = setup()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Sélectionner' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Garder ce clip' }))
 
     expect(onToggle).toHaveBeenCalledWith('b')
   })
@@ -142,7 +151,7 @@ describe('ClipPlayer, selection', () => {
   it('offers to drop a clip already checked', () => {
     const { onToggle } = setup({ selected: new Set(['b']) })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retirer' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ne plus garder' }))
 
     expect(onToggle).toHaveBeenCalledWith('b')
   })

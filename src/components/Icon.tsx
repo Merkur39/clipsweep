@@ -1,166 +1,154 @@
 /**
- * The whole icon vocabulary, drawn on one 16-unit grid with one stroke weight.
+ * The whole icon vocabulary, drawn on one 24-unit grid with one stroke weight.
+ *
  * Unicode glyphs (▲ ▾ ×) render at whatever weight and baseline the visitor's
- * font stack happens to carry, which is not a decision anyone made.
+ * font stack happens to carry, which is not a decision anyone made — so none
+ * appears here or in any string.
+ *
+ * Every glyph is decoration: the control next to it carries the name. Hiding
+ * them all at the source is the only way that stays true as glyphs are added.
+ * A name that is not in the table renders nothing at all and raises no error,
+ * which is why the union type is the table's own keys.
  */
 
-interface IconProps {
-  /** Rotation in degrees, for the carets that point four ways. */
-  turn?: number
-  /** Drawn side, in pixels. The default is the size the glyph was drawn for. */
-  size?: number
-}
-
-const base = {
-  className: 'icon',
-  width: 12,
-  height: 12,
-  viewBox: '0 0 16 16',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 2,
-  strokeLinecap: 'round',
-  strokeLinejoin: 'round',
-  'aria-hidden': true,
+const PATHS = {
+  sun: 'M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+  moon: 'M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z',
+  out: 'M9.5 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4.5M16 17l5-5-5-5M21 12H9',
+  radar: 'M12 3a9 9 0 1 0 9 9M12 8a4 4 0 1 0 4 4M12 12 21 4',
+  chevron: 'm5 9 7 7 7-7',
+  x: 'M5 5l14 14M19 5 5 19',
+  down: 'M12 3v12M7 11l5 5 5-5M4 20h16',
+  check: 'm4 12.5 5 5L20 6.5',
+  rows: 'M4 6h16M4 12h16M4 18h16',
+  eye: 'M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z',
+  external: 'M14 4h6v6M20 4l-9 9M18 14v4.5a2 2 0 0 1-2 2H5.5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2H10',
+  left: 'M19 12H5M11 6l-6 6 6 6',
+  right: 'M5 12h14M13 6l6 6-6 6',
+  bookmark: 'M6 3.5h12a1 1 0 0 1 1 1v16l-7-4-7 4v-16a1 1 0 0 1 1-1z',
+  rotate: 'M3.5 12a8.5 8.5 0 1 1 2.8 6.3M3.5 19v-5h5',
+  alert: 'M12 3 2 20h20zM12 10v4M12 17h.01',
+  filter: 'M3 5h18l-7 8v6l-4 2v-8z',
+  search: 'm16.5 16.5 4.5 4.5',
 } as const
 
-export function CaretIcon({ turn = 0 }: IconProps) {
+/** Glyphs the single-path table cannot express: circles, rectangles, fills. */
+const SHAPES: Partial<Record<IconName, React.ReactNode>> = {
+  sun: <circle cx="12" cy="12" r="4" />,
+  monitor: (
+    <>
+      <rect x="2.5" y="4" width="19" height="12.5" rx="2" />
+      <path d="M8 20.5h8M12 16.5v4" />
+    </>
+  ),
+  /* The one solid glyph of the set, and it has to be: a triangle drawn as an
+     outline at this size reads as a caret, which already means "sort" here. */
+  play: <path d="M6.5 4.8v14.4l12-7.2z" fill="currentColor" stroke="none" />,
+  stop: <rect x="6" y="6" width="12" height="12" rx="2" />,
+  grid: (
+    <>
+      <rect x="3" y="3" width="7.5" height="7.5" rx="1.5" />
+      <rect x="13.5" y="3" width="7.5" height="7.5" rx="1.5" />
+      <rect x="3" y="13.5" width="7.5" height="7.5" rx="1.5" />
+      <rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" />
+    </>
+  ),
+  cal: (
+    <>
+      <rect x="3" y="5" width="18" height="16" rx="2.5" />
+      <path d="M3 10h18M8 3v4M16 3v4" />
+    </>
+  ),
+  users: (
+    <>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M17 5.2a3.5 3.5 0 0 1 0 5.6M18.5 20a6.4 6.4 0 0 0-2.2-4.8" />
+    </>
+  ),
+  gamepad: (
+    <>
+      <rect x="2.5" y="7" width="19" height="10.5" rx="4" />
+      <path d="M7 10.5v3M5.5 12h3M15.5 11.4v.1M18 13.4v.1" />
+    </>
+  ),
+  eye: <circle cx="12" cy="12" r="2.75" />,
+  sliders: (
+    <>
+      <path d="M4 7h10M18 7h2M4 17h4M12 17h8" />
+      <circle cx="16" cy="7" r="2.2" />
+      <circle cx="10" cy="17" r="2.2" />
+    </>
+  ),
+  search: <circle cx="11" cy="11" r="7" />,
+}
+
+export type IconName =
+  | keyof typeof PATHS
+  | 'monitor'
+  | 'play'
+  | 'stop'
+  | 'grid'
+  | 'cal'
+  | 'users'
+  | 'gamepad'
+  | 'sliders'
+
+/**
+ * The side a glyph is drawn at when nobody says otherwise.
+ *
+ * There has to be one. An `<svg>` carrying only a `viewBox` resolves to 100% of
+ * its containing block, so a glyph the sheet forgot to size does not come out
+ * slightly wrong — it fills the button. The attribute is the floor and the sheet
+ * still wins over it, a rule on `.box svg` or `.cta svg` beating a presentational
+ * attribute in the cascade; what this buys is that the failure mode of a missing
+ * rule is a glyph one pixel off its family, not a page-high calendar.
+ */
+const GLYPH = 15
+
+interface IconProps {
+  name: IconName
+  /** Drawn side in pixels, when neither the default nor the sheet is right. */
+  size?: number
+  /** Rotation in degrees, for the chevron that points four ways. */
+  turn?: number
+}
+
+export function Icon({ name, size = GLYPH, turn }: IconProps) {
+  const path = PATHS[name as keyof typeof PATHS]
+
   return (
     <svg
-      {...base}
-      width={9}
-      height={9}
+      className="icon"
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
       style={turn ? { transform: `rotate(${turn}deg)` } : undefined}
     >
-      <path d="M3 10.5 8 5.5l5 5" />
-    </svg>
-  )
-}
-
-export function ChevronIcon({ turn = 0 }: IconProps) {
-  return (
-    <svg {...base} style={turn ? { transform: `rotate(${turn}deg)` } : undefined}>
-      <path d="M4 6.5 8 10.5l4-4" />
-    </svg>
-  )
-}
-
-/** 11 px in the fields it clears; the player asks for a bigger one. */
-export function CloseIcon({ size = 11 }: IconProps = {}) {
-  return (
-    <svg {...base} width={size} height={size}>
-      <path d="M4 4l8 8M12 4l-8 8" />
+      {path && <path d={path} />}
+      {SHAPES[name]}
     </svg>
   )
 }
 
 /**
- * The one solid glyph of the set, and it has to be: a triangle drawn as an
- * outline at this size reads as a caret, which already means "sort" here.
+ * The brand mark: three bars of a growing sweep in a rounded flat. Drawn in
+ * elements rather than SVG because the design system draws it that way — the
+ * bars take `--on-accent` and the plate takes `--accent`, so it follows the
+ * accent's three roles instead of freezing a hex.
  */
-export function PlayIcon() {
+export function Mark({ small = false }: { small?: boolean } = {}) {
   return (
-    <svg {...base} width={13} height={13} fill="currentColor" stroke="none">
-      <path d="M4.6 3.1 12.4 8l-7.8 4.9Z" />
-    </svg>
-  )
-}
-
-/** An arrow leaving the panel: you are leaving, nothing is being deleted. */
-export function LogoutIcon() {
-  return (
-    <svg {...base} width={13} height={13}>
-      <path d="M9 2.5H3.5v11H9" />
-      <path d="M7.5 8H14M11.5 5.5 14 8l-2.5 2.5" />
-    </svg>
-  )
-}
-
-/* ---- the two readouts ----
-   Each glyph is its own layout seen from above: lines that run the width, or
-   cells that tile it. Nothing here names a clip — what is being chosen is a
-   shape, not a content. */
-
-export function RowsIcon() {
-  return (
-    <svg {...base} width={13} height={13}>
-      <path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h11" />
-    </svg>
-  )
-}
-
-export function GridIcon() {
-  return (
-    <svg {...base} width={13} height={13} strokeWidth={1.6}>
-      <rect x="2.4" y="2.4" width="4.8" height="4.8" rx="0.6" />
-      <rect x="8.8" y="2.4" width="4.8" height="4.8" rx="0.6" />
-      <rect x="2.4" y="8.8" width="4.8" height="4.8" rx="0.6" />
-      <rect x="8.8" y="8.8" width="4.8" height="4.8" rx="0.6" />
-    </svg>
-  )
-}
-
-/* ---- the three themes ----
-   Sun and moon are the two assertions; the panel is the act of
-   n'en faire aucune et de suivre la machine. */
-
-export function SunIcon() {
-  return (
-    <svg {...base} width={13} height={13}>
-      <circle cx="8" cy="8" r="3.1" />
-      <path d="M8 1.4v1.3M8 13.3v1.3M1.4 8h1.3M13.3 8h1.3M3.3 3.3l.9.9M11.8 11.8l.9.9M12.7 3.3l-.9.9M4.2 11.8l-.9.9" />
-    </svg>
-  )
-}
-
-export function MoonIcon() {
-  return (
-    <svg {...base} width={13} height={13}>
-      <path d="M13 9.6A5.6 5.6 0 0 1 6.4 3a5.7 5.7 0 1 0 6.6 6.6Z" />
-    </svg>
-  )
-}
-
-/** An instrument panel: whatever the machine decides, the tool takes up. */
-export function SystemIcon() {
-  return (
-    <svg {...base} width={13} height={13}>
-      <rect x="2" y="3" width="12" height="8.5" rx="1" />
-      <path d="M6 14h4" />
-    </svg>
-  )
-}
-
-export function AlertIcon() {
-  return (
-    <svg {...base} width={14} height={14}>
-      <path d="M8 2.5v6.2M8 12.4v.6" />
-    </svg>
-  )
-}
-
-/**
- * The mark is the mechanism: one span of time, halved, halved again — and one
- * segment that stayed saturated at the floor, which the tool declares rather
- * than hides. It is the frieze's legend, compressed.
- */
-export function Mark() {
-  return (
-    <svg
-      className="masthead-mark"
-      width={20}
-      height={20}
-      viewBox="0 0 16 16"
-      fill="none"
-      aria-hidden="true"
-    >
-      <rect x="1" y="2.4" width="14" height="2.2" rx="0.6" fill="var(--rule-strong)" />
-      <rect x="1" y="6.9" width="6.4" height="2.2" rx="0.6" fill="var(--rule-strong)" />
-      <rect x="8.6" y="6.9" width="6.4" height="2.2" rx="0.6" fill="var(--violet-half)" />
-      <rect x="1" y="11.4" width="2.8" height="2.2" rx="0.6" fill="var(--violet-half)" />
-      <rect x="5" y="11.4" width="2.4" height="2.2" rx="0.6" fill="var(--violet)" />
-      <rect x="8.6" y="11.4" width="2.4" height="2.2" rx="0.6" fill="var(--violet)" />
-      <rect x="12.2" y="11.4" width="2.8" height="2.2" rx="0.6" fill="var(--red)" />
-    </svg>
+    <span className={small ? 'mark sm' : 'mark'} aria-hidden="true">
+      <s />
+      <s />
+      <s />
+    </span>
   )
 }

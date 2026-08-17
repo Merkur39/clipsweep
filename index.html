@@ -4,8 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f3f1ed" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#090b12" media="(prefers-color-scheme: dark)" />
+    <!-- `--ground` in either world, copied because a meta tag cannot read a
+         custom property. The browser paints the chrome with it before the sheet
+         is fetched, so a stale value here shows as a flash of the old palette. -->
+    <meta name="theme-color" content="#eef0f2" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#212529" media="(prefers-color-scheme: dark)" />
     <!-- The masthead mark. PNG first, SVG second: at equal support the last
          declaration wins, so browsers that read SVG prefer it — crisp at every
          density, and it follows the tab's theme. Safari ignores the SVG type and

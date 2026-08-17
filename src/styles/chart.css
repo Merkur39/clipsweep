@@ -1,133 +1,111 @@
-/* Frieze.tsx — the graduated strip, plus its legend rendered by SearchProgress.
-   A slab's height is logarithmic: without labelled decades, two slabs of
-   different aspect can be worth 100 or 10,000 clips. The graticule is half the
+/* The two charts of the statistics drawer: the frieze of windows drawn by
+   `Frieze.tsx`, and the rankings drawn by `SearchProgress.tsx`.
+
+   A bar's height is logarithmic: without labelled decades, two bars of
+   different aspect can be worth 100 or 10 000 clips. The graticule is half the
    information.
 
-   Careful: the plot height and the decade step are computed in `Frieze.tsx`
-   (PLOT_HEIGHT, BASELINE, DECADE). Changing `grid-template-rows` here without
-   following them over there shifts the graduations. */
+   Careful: the plot's height and the decade step are computed in `Frieze.tsx`
+   (PLOT_HEIGHT, BASELINE, DECADE) from `--frieze` minus the axis. Changing
+   either here without following it over there shifts the graduations. */
 
 .chart {
   margin: 0;
 }
 
+/* ---- the frieze of windows ---- */
+
 .frieze {
   position: relative;
-  display: grid;
-  grid-template-columns: 42px minmax(0, 1fr);
-  grid-template-rows: 176px 24px;
-  background: var(--surface);
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  overflow: hidden;
+  height: var(--frieze);
+  width: 100%;
 }
 
-.frieze-empty {
+/* The gutter on the left is the y labels', and the strip at the bottom is the
+   axis'. Both are subtracted here rather than by nesting boxes, so the plot
+   stays one positioning context and every bar is placed against the same
+   rectangle. */
+.plot {
   position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  padding: 0 var(--s-6);
-  text-align: center;
-  font-size: 12px;
-  color: var(--text-faint);
+  inset: 0 0 22px 30px;
 }
 
-.frieze-scale {
-  position: relative;
-  border-right: 1px solid var(--rule);
-  background: var(--chassis);
-}
-
-.frieze-decade-label {
+/* No `overflow: hidden` on the plot, deliberately: the y labels are hung out to
+   its left through `right: 100%`, and clipping would eat them. */
+.ylab {
   position: absolute;
-  right: 6px;
+  right: 100%;
+  margin-right: var(--sp-4);
   transform: translateY(50%);
-  font-family: var(--mono);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-faint);
-  white-space: nowrap;
+  font: var(--w-regular) var(--text-3xs) / var(--lead-none) var(--mono);
+  color: var(--tx3);
 }
 
-.frieze-plot {
-  position: relative;
-  overflow: hidden;
-}
-
-.frieze-decade,
-.frieze-year {
+.decade {
   position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--rule);
   pointer-events: none;
 }
 
-.frieze-decade {
-  left: 0;
-  right: 0;
-  height: 0;
-  border-top: 1px dashed var(--rule);
-}
-
-.frieze-year {
-  top: 0;
-  bottom: 0;
-  width: 0;
-  border-left: 1px solid var(--rule);
-}
-
-.slab {
+.bar {
   position: absolute;
   bottom: 0;
+  /* The cap belongs to the top of the bar alone: rounding the foot too would
+     lift it off the axis it is measured from. */
+  border-radius: var(--r-mark) var(--r-mark) 0 0;
   transform-origin: bottom;
-  animation: trace 0.28s var(--ease);
+  /* The bars are drawn one by one as the sweep writes them, which no static
+     mockup has to answer for. Capped at the quick step — the one long duration
+     of the sheet belongs to the drawer that opens. */
+  animation: trace var(--dur-quick) var(--ease-out);
 }
 
-/* Each state carries a texture on top of its hue: the frieze stays readable in
-   greyscale and in deuteranopia. */
-.slab.done {
-  background: var(--violet-fill);
-  border-top: 1.5px solid var(--violet);
+/* Each state carries a texture as well as a hue. In the light world amber and
+   red sit ΔE 3.0 apart for a deutan reader — indistinguishable —, and they are
+   the two states the product exists to report. Hence the 45° and 135° hatchings:
+   they are not decoration, they are the state. */
+.bar.done {
+  background: color-mix(in srgb, var(--accent-mark) 32%, transparent);
+  border-top: 2px solid var(--accent-mark);
 }
 
-.slab.split {
-  background: var(--amber-fill);
-  background-image: repeating-linear-gradient(-45deg, transparent 0 3px, var(--amber) 3px 4.5px);
-  border-top: 1.5px solid var(--amber);
+.bar.split {
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--window-split) 34%, transparent) 0 3px,
+    transparent 3px 6px
+  );
+  border-top: 2px solid var(--window-split);
 }
 
-/* The only real gap: full red, and the trace escapes off the top. */
-.slab.lost {
-  background: var(--red-fill);
-  border-top: 2px solid var(--red);
+.bar.lost {
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--window-lost) 46%, transparent) 0 2px,
+    transparent 2px 5px
+  );
+  border-top: 2px solid var(--window-lost);
 }
 
-.slab.lost::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 100%;
-  height: 15px;
-  background: repeating-linear-gradient(to top, var(--red) 0 2px, transparent 2px 5px);
-}
-
-.slab.active {
-  outline: 1px solid var(--text);
+/* The bar the readout is currently speaking about. A window can be two pixels
+   wide on a long sweep, so the readout alone would leave the reader guessing
+   which one it read. */
+.bar.active {
+  outline: 1px solid var(--tx);
   outline-offset: 0;
   z-index: 2;
 }
 
 /* The stylus: where the recorder is writing right now. */
-.frieze-pen {
+.pen {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: 1px;
-  background: var(--violet-strong);
-  box-shadow: 0 0 8px 1px var(--glow-violet);
-  animation: pen 1.4s ease-in-out infinite;
+  width: 2px;
+  background: var(--accent-mark);
+  box-shadow: var(--glow-lamp) color-mix(in srgb, var(--accent-mark) 70%, transparent);
   pointer-events: none;
   z-index: 3;
 }
@@ -139,90 +117,170 @@
   }
 }
 
-@keyframes pen {
-  50% {
-    opacity: 0.35;
-  }
-}
-
-.frieze-axis {
-  position: relative;
-  grid-column: 2;
-  border-top: 1px solid var(--rule-strong);
-  background: var(--chassis);
+/* Aligned on the plot, not on the frieze: a tick has to fall on the date its
+   bar starts at, and the plot is what the percentages are resolved against. */
+.xaxis {
+  position: absolute;
+  left: 30px;
+  right: 0;
+  bottom: 0;
+  height: 22px;
+  border-top: 1px solid var(--rule);
 }
 
 .tick {
   position: absolute;
-  bottom: 5px;
+  top: 5px;
   transform: translateX(-50%);
-  font-family: var(--mono);
-  font-size: 10px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-faint);
+  font: var(--w-regular) var(--text-3xs) / var(--lead-none) var(--mono);
+  color: var(--tx3);
   white-space: nowrap;
 }
 
-/* The numeric readout of a window used to be shut inside a `title` attribute. */
+/* The numeric readout of a window, which used to be shut inside a `title`
+   attribute. Its one line is reserved — at `--lead-none` a line is exactly its
+   font size — so the card does not jolt as the pointer enters and leaves the
+   plot. */
 .chart-readout {
   display: flex;
   align-items: center;
-  gap: var(--s-2);
-  min-height: 26px;
-  margin: 6px 0 0;
-  font-family: var(--mono);
-  font-size: 11.5px;
+  gap: var(--sp-4);
+  min-height: var(--text-2xs);
+  margin: var(--sp-3) 0 0;
+  font: var(--w-regular) var(--text-2xs) / var(--lead-none) var(--mono);
   font-variant-numeric: tabular-nums;
-  color: var(--text-dim);
+  color: var(--tx2);
 }
 
 .chart-readout .muted {
-  color: var(--text-faint);
+  color: var(--tx3);
 }
 
-/* The swatches take up the textures of the slabs exactly: a legend that shows
-   only the hue lies about what it captions. */
+/* Before any sweep. The dashed frame holds the graph's place at its full
+   height, so opening the drawer twice does not move everything under it. */
+.frieze-empty {
+  display: grid;
+  place-items: center;
+  height: var(--frieze);
+  margin: 0;
+  padding: var(--sp-7);
+  border: 1px dashed var(--rule);
+  border-radius: var(--r-md);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--tx3);
+}
+
+/* The swatches take up the bars' textures exactly: a legend that shows only the
+   hue lies about what it captions. */
 .legend {
   display: flex;
-  gap: var(--s-4);
   flex-wrap: wrap;
-  margin-top: var(--s-2);
-  font-size: 11.5px;
-  color: var(--text-dim);
+  gap: var(--sp-6);
+  margin-top: var(--sp-5);
 }
 
 .legend span {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 7px;
+  gap: var(--sp-3);
+  font-size: var(--text-xs);
+  color: var(--tx3);
 }
 
-.legend b {
-  width: 14px;
-  height: 11px;
-  border-radius: 1px;
+.legend u {
+  display: block;
+  width: 16px;
+  height: 10px;
+  flex: none;
+  border-radius: var(--r-mark);
+  text-decoration: none;
 }
 
 .legend .done {
-  background: var(--violet-fill);
-  border-top: 1.5px solid var(--violet);
+  background: color-mix(in srgb, var(--accent-mark) 32%, transparent);
+  border-top: 2px solid var(--accent-mark);
 }
 
 .legend .split {
-  background: var(--amber-fill);
-  background-image: repeating-linear-gradient(-45deg, transparent 0 3px, var(--amber) 3px 4.5px);
-  border-top: 1.5px solid var(--amber);
+  background: repeating-linear-gradient(
+    45deg,
+    color-mix(in srgb, var(--window-split) 34%, transparent) 0 3px,
+    transparent 3px 6px
+  );
+  border-top: 2px solid var(--window-split);
 }
 
 .legend .lost {
-  background: var(--red-fill);
-  border-top: 2px solid var(--red);
+  background: repeating-linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--window-lost) 46%, transparent) 0 2px,
+    transparent 2px 5px
+  );
+  border-top: 2px solid var(--window-lost);
 }
 
-@media (max-width: 960px) {
-  /* The plot height is computed in JS and graduated in decades: reducing it
-     here would cut off the 1 k decade. Only the label gutter tightens. */
-  .frieze {
-    grid-template-columns: 34px minmax(0, 1fr);
+/* ---- the rankings ----
+   Creators and games read the same way on purpose: same bars, same scale, so
+   the eye compares them without relearning the chart. */
+
+.bars {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  width: 100%;
+}
+
+/* Three fixed tracks, and the middle one is the only elastic thing here: the
+   name column and the figure column keep their width from row to row, which is
+   what makes the bars start and stop on the same two verticals. */
+.bars div {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: var(--sp-5);
+}
+
+/* A long game name is cut, never wrapped: a row that grew to two lines would
+   break the comb the five bars are read against. */
+.bars i {
+  font-style: normal;
+  font-size: var(--text-sm);
+  color: var(--tx2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* One hue for every ranked bar — length carries the value. Painting by rank
+   would repaint all five at every keystroke of the filters, without the colour
+   ever designating anything. */
+.bars s {
+  display: block;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--accent-mark);
+  text-decoration: none;
+}
+
+/* The aggregate is the remainder, not a ranked entity: it does not wear the
+   ranking's hue. */
+.bars s.rest {
+  background: var(--rule-control);
+}
+
+.bars b {
+  font: var(--w-medium) var(--text-xs) / var(--lead-none) var(--mono);
+  color: var(--tx3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Below the full layout the drawer's cards halve in width, and 118px of name
+   would leave the bars too short to be compared. The name yields first: it is
+   cut by ellipsis, where a bar shortened is a value misread. */
+@media (max-width: 1079.98px) {
+  .bars div {
+    grid-template-columns: 92px minmax(0, 1fr) 46px;
   }
 }

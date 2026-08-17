@@ -21,12 +21,17 @@ const NAMES: Record<Locale, { full: string; short: string }> = {
  *
  * "Automatic" is not a language but the absence of a choice — it follows the
  * browser, and therefore stays pressed even while the interface is in French.
+ *
+ * Plain `.seg`, not the `icons` variant its neighbour takes: the code *is* the
+ * visible text, and a word needs the padding that houses a word. Two segments
+ * side by side in the bar therefore differ in width, which is correct — one
+ * carries three glyphs, the other three labels.
  */
 export function LocaleToggle() {
   const { choice, setChoice, t } = useTranslation()
 
   return (
-    <div className="segmented" role="group" aria-label={t('locale.label')}>
+    <div className="seg" role="group" aria-label={t('locale.label')}>
       {LOCALE_CHOICES.map((option) => {
         const { full, short } =
           option === 'auto' ? { full: t('locale.auto'), short: 'Auto' } : NAMES[option]

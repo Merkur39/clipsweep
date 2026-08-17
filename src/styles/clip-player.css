@@ -1,143 +1,198 @@
 /* ClipPlayer.tsx — the clip on screen, and the two gestures that follow it:
    keep or drop, then next.
 
-   A panel lifted off the chassis, not a floating card: the same hairlines, the
-   same flats, the same square corners. What sets it apart is the scrim behind
-   it, which is the only thing that says the rest of the page is on hold. */
+   The only modal of the interface, and it is spent as such: `--elev-3` is
+   assigned to this panel and to nothing else, and the scrim behind it is the
+   one thing that says the rest of the page is on hold. The controls it is built
+   from — `.ghost`, `.keep`, `.iconbtn` — come from `controls.css`; this sheet
+   places them and never restates them. */
 
 .player {
+  /* The width the 16/9 letterbox was composed at; under that the viewport
+     rules, with 8% left over so the scrim stays visible all the way round and
+     the modal reads as laid over the page rather than as the page. */
   width: min(1040px, 92vw);
-  max-height: 92vh;
+  /* A `<dialog>` arrives with 1em of padding and a 2px inset border of its own:
+     both are user-agent decoration, and both have to go before the head can sit
+     on the panel's edge. */
   padding: 0;
+  /* The letterbox and the sunken plate have square corners; only the panel
+     rounds them. */
   overflow: hidden;
-  background: var(--surface-raised);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r);
-  color: var(--text);
-  box-shadow: 0 24px 60px -12px var(--shadow-panel);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-2xl);
+  background: var(--surface);
+  /* The user agent writes `canvastext` here, which belongs to neither world of
+     ours — the panel says what it is set in. */
+  color: var(--tx);
+  box-shadow: var(--elev-3);
+  /* No `display`: the user-agent rule that hides a closed `<dialog>` is what
+     keeps this panel off screen for the frame between mount and `showModal`,
+     and an author `display` would beat it. */
 }
 
+/* `::backdrop` inherits the custom properties of its originating element, so
+   `--scrim` reaches it from `.player` — settled alongside the rest of the
+   modern cascade, which means every engine able to resolve `light-dark()` at
+   all resolves this too. The blur is one of the four the system kept: it
+   detaches the veil from what it covers where the page underneath is close to
+   it in value. */
 .player::backdrop {
   background: var(--scrim);
+  backdrop-filter: blur(2px);
 }
 
 /* ---- what is being watched ---- */
 
 .player-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 0 var(--s-3);
-  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-5);
+  /* Wider on the title side than on the control side: the title starts on the
+     panel's own inset, the controls end on the tighter inset a control keeps,
+     and the two would not otherwise line up with the bar below. */
+  padding: var(--sp-5) var(--sp-5) var(--sp-5) var(--sp-7);
   border-bottom: 1px solid var(--rule);
 }
 
-.player-title {
+.player-head .t {
+  flex: 1;
+  /* A flex item refuses to shrink below its content by default, so without this
+     the title pushes the two controls off the edge instead of ellipsing. */
+  min-width: 0;
+}
+
+.player-head h4 {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  /* One line: a five-line title would push the video off a short screen. */
+  font-size: var(--text-lg);
+  font-weight: var(--w-semi);
+  /* One line, always: a five-line title would push the video off a short
+     screen, and the title is not what the modal was opened for. */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.player-meta {
-  margin: 2px 0 0;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--text-faint);
+/* The catalogue writes this line on a `<span>` and only needs a top margin;
+   here it is a `<p>`, which arrives with a margin on all four sides. */
+.player-head .m {
+  margin: 3px 0 0;
+  font: var(--w-regular) var(--text-xs) / var(--lead-none) var(--mono);
+  color: var(--tx3);
 }
 
-/* The way out of a modal: the one control the eye looks for without reading,
-   and the one it must not have to aim at. A 34 px square, framed from the
-   start — the head is a busy corner, an unframed glyph reads as decoration. */
-.player-close {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  background: none;
-  border: 1px solid var(--rule);
-  color: var(--text-dim);
+/* The way out towards Twitch wears `.ghost`, but it is a link and carries the
+   sheet's underline — a second edge drawn inside a bordered control. */
+.player-head .ghost {
+  text-decoration: none;
 }
 
-.player-close:hover:not(:disabled) {
-  background: var(--surface-hover);
-  border-color: var(--rule-strong);
-  color: var(--text);
-}
-
-/* The player itself. Black behind it, in both worlds: it is the letterbox of a
-   video, not a surface of the interface. */
-.player-frame {
+/* The letterbox of a video, not a surface of the interface: black in both
+   worlds, and one of the two places a literal colour is the right answer. The
+   catalogue draws this box as a frame around a play glyph; here the `<iframe>`
+   is the box itself, so it also has to undo what an iframe brings. */
+.player-video {
+  /* An iframe is inline: its line box would leave a strip of panel under the
+     video, and the ratio below only holds on a block. */
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: calc(92vh - 140px);
   border: 0;
   background: #000;
 }
 
+/* Embed refused, or clip deleted. The same ratio as the video it replaces, so
+   the panel does not change size between one clip and the next, on a sunken
+   plate — nothing is playing there, and nothing will. */
 .player-unavailable {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 9;
   margin: 0;
-  padding: var(--s-7) var(--s-4);
+  padding: var(--sp-7);
+  background: var(--surface-sunken);
   text-align: center;
-  font-size: 13px;
-  color: var(--text-dim);
+  font-size: var(--text-sm);
+  color: var(--tx3);
+}
+
+/* Height is what runs out first on a laptop: 16/9 of 1040px is 585px, and the
+   two bars want their own. The letterbox gives the height back rather than
+   letting `overflow: hidden` cut the keep off the bottom of the panel. The
+   figure is derived, not measured: each bar is a `--ctrl-lg` control between
+   two `--sp-5` paddings, plus its hairline. */
+.player-video,
+.player-unavailable {
+  max-height: calc(92vh - 2 * (var(--ctrl-lg) + 2 * var(--sp-5) + 1px));
 }
 
 /* ---- the two gestures ----
-   Moving through the list on the left, the choice on the right: the hand that
-   sorts stays on one side, the hand that browses on the other. */
+   Moving through the list on the left, the decision on the right: the hand that
+   browses stays on one side, the hand that sorts on the other. */
 
 .player-actions {
   display: flex;
   align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-3) var(--s-4);
-  background: var(--chassis);
+  gap: var(--sp-4);
+  padding: var(--sp-5) var(--sp-6);
   border-top: 1px solid var(--rule);
 }
 
-.player-step {
-  padding: 7px 10px;
-}
-
-.player-position {
-  min-width: 74px;
-  font-family: var(--mono);
-  font-size: 12px;
+/* The counter is read between two arrows that are being pressed in turn: a
+   reserved width and figures on a single advance keep it from shifting under
+   the eye as the numbers change. */
+.player-actions .pos {
+  /* A `<span>` is inline, and an inline box ignores a width. The flex parent
+     blockifies it in fact — the rule must not depend on that. */
+  display: block;
+  min-width: 72px;
+  font: var(--w-regular) var(--text-sm) / var(--lead-none) var(--mono);
   font-variant-numeric: tabular-nums;
   text-align: center;
-  color: var(--text-dim);
+  color: var(--tx3);
 }
 
-/* Filed at the far end: it is the reason the clip is on screen at all. */
-.player-keep {
-  margin-left: auto;
+.player-actions .spacer {
+  flex: 1;
 }
 
-.player-away {
-  font-size: 12px;
-  white-space: nowrap;
-}
+/* Under 768px the row of four no longer holds on one line, in either bar, and
+   the first thing a wrap sacrifices is whichever item happens to be longest in
+   the current language. Both bars are told where to break instead. */
+@media (max-width: 767.98px) {
+  .player-head {
+    flex-wrap: wrap;
+  }
 
-@media (max-width: 700px) {
-  .player {
-    width: 96vw;
+  /* The title takes the line to itself and the two controls the next one:
+     wrapped the other way round, the ellipsis would eat the title down to
+     nothing to make room for a link and a cross. */
+  .player-head .t {
+    flex-basis: 100%;
   }
 
   .player-actions {
     flex-wrap: wrap;
-    padding: var(--s-3);
+    row-gap: var(--sp-5);
   }
 
-  /* Wrapped, the away link would sit alone on its line under a stretched
-     button: the choice comes back to the left with the rest. */
-  .player-keep {
-    margin-left: 0;
+  /* The decision takes a full line rather than trailing the arrows. The basis
+     is what forces the break: left to the natural wrap it would depend on what
+     the three items before it measure once translated. */
+  .player-actions .keep {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+
+  /* On its own line it has nothing left to be pushed away from. */
+  .player-actions .spacer {
+    display: none;
+  }
+
+  /* Both bars can now take two lines: the letterbox gives up that height too,
+     rather than pushing the keep past the bottom edge of a phone. */
+  .player-video,
+  .player-unavailable {
+    max-height: calc(92vh - 2 * (2 * var(--ctrl-lg) + 3 * var(--sp-5) + 1px));
   }
 }

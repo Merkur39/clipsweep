@@ -1,5 +1,5 @@
 import { useTranslation } from '../i18n/LocaleProvider'
-import { CloseIcon } from './Icon'
+import { Icon } from './Icon'
 
 export interface NumberFieldProps {
   label: string
@@ -9,19 +9,26 @@ export interface NumberFieldProps {
 }
 
 /**
- * A number input with an inline clear button. The button is absolutely
- * positioned inside the field: showing and hiding it must not move anything,
- * which is exactly what a conditionally rendered sibling would do.
+ * A view threshold, with an inline clear.
+ *
+ * The clear is overlaid inside the field rather than filed beside it: showing
+ * and hiding it must move neither the field nor the one under it, which is
+ * exactly what a conditionally rendered sibling in the flow would do — and the
+ * two thresholds sit one above the other in a panel barely wider than they are.
+ *
+ * The `<label>` wraps the field rather than pointing at it: no id has to be
+ * minted, and the whole block — silkscreen name included — becomes the target.
  */
 export function NumberField({ label, value, onChange, placeholder }: NumberFieldProps) {
   const { t } = useTranslation()
   const clear = t('filters.clearField', { label })
 
   return (
-    <label className="field">
-      <span className="field-label">{label}</span>
-      <span className="field-control">
+    <label className="fieldset">
+      <span className="flabel">{label}</span>
+      <span className="numfield">
         <input
+          className="field"
           type="number"
           min={0}
           inputMode="numeric"
@@ -32,12 +39,12 @@ export function NumberField({ label, value, onChange, placeholder }: NumberField
         {value !== '' && (
           <button
             type="button"
-            className="field-clear"
+            className="clear"
             onClick={() => onChange('')}
             aria-label={clear}
             title={clear}
           >
-            <CloseIcon />
+            <Icon name="x" />
           </button>
         )}
       </span>

@@ -1,5 +1,5 @@
 import { useTranslation } from '../i18n/LocaleProvider'
-import { CloseIcon } from './Icon'
+import { Icon } from './Icon'
 
 export interface DateFieldProps {
   label: string
@@ -14,7 +14,12 @@ export interface DateFieldProps {
 /**
  * The dated counterpart of [NumberField], down to the overlaid clear button — a
  * native date field offers none, and emptying it from the keyboard means
- * selecting each segment.
+ * selecting each segment in turn.
+ *
+ * It shares `.numfield` with the threshold rather than getting a class of its
+ * own: what that class names is a field carrying an inline clear, and this is
+ * one. Only the room made on the right differs, the native picker indicator
+ * already sitting there — the sheet settles that.
  *
  * The bounds grey out the impossible in the picker, nothing more: they call no
  * `clamp`, unlike the sweep's own. A date typed outside the extent spends no
@@ -25,10 +30,11 @@ export function DateField({ label, value, onChange, min, max }: DateFieldProps) 
   const clear = t('filters.clearField', { label })
 
   return (
-    <label className="field date">
-      <span className="field-label">{label}</span>
-      <span className="field-control date">
+    <label className="fieldset">
+      <span className="flabel">{label}</span>
+      <span className="numfield">
         <input
+          className="date"
           type="date"
           min={min}
           max={max}
@@ -38,12 +44,12 @@ export function DateField({ label, value, onChange, min, max }: DateFieldProps) 
         {value !== '' && (
           <button
             type="button"
-            className="field-clear"
+            className="clear"
             onClick={() => onChange('')}
             aria-label={clear}
             title={clear}
           >
-            <CloseIcon />
+            <Icon name="x" />
           </button>
         )}
       </span>

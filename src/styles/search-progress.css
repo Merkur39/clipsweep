@@ -1,162 +1,438 @@
-/* SearchProgress.tsx — status line, completeness alert, technical fold,
-   counters and log. The frieze itself lives in `chart.css`. */
+/* Two pieces live here, and they answer two different questions.
 
-.progress-block {
-  margin-bottom: var(--s-2);
+   The **statistics drawer** (`.stats-drawer`) answers "how was this fetched?" —
+   full width under the table, shut by default, never opened on its own.
+
+   The **sweep banner** (`.float`, folded `.mini`) answers "where is it up to?" —
+   pinned over the work surface while a sweep runs.
+
+   The frieze and the ranking bars they contain live in `chart.css`. */
+
+/* ==========================================================================
+   The statistics drawer
+   ========================================================================== */
+
+.stats-drawer {
+  display: block;
 }
 
-.search-status {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 550;
-  letter-spacing: -0.005em;
-  color: var(--text);
-}
-
-.search-status.running {
-  color: var(--violet-strong);
-}
-
-.alert {
-  display: flex;
-  gap: 10px;
-  margin: var(--s-3) 0 0;
-  padding: 10px 13px;
-  border: 1px solid var(--red-fill);
-  border-radius: var(--r);
-  background: var(--red-wash);
-  color: var(--red-strong);
-  font-size: 13px;
-}
-
-.alert .icon {
-  margin-top: 2px;
-  color: var(--red);
-}
-
-/* ---- repli technique ---- */
-
-.technical {
-  margin: var(--s-3) 0 0;
-}
-
-.technical > summary {
+.stats-bar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: fit-content;
-  padding: 6px 11px 6px 8px;
+  gap: var(--sp-5);
+  width: 100%;
+  height: var(--bar);
+  padding: 0 var(--sp-6);
   border: 1px solid var(--rule);
-  border-radius: var(--r);
-  background: var(--chassis);
-  color: var(--text-dim);
-  font-size: 12px;
-  font-weight: 550;
+  border-radius: var(--r-xl);
+  background: var(--surface);
+  color: var(--tx);
+  text-align: left;
+  font: inherit;
   cursor: pointer;
-  list-style: none;
-  transition:
-    color 0.12s var(--ease),
-    border-color 0.12s var(--ease);
+  transition: background-color var(--dur-instant) var(--ease-out);
 }
 
-.technical > summary::-webkit-details-marker {
-  display: none;
+.stats-bar:hover {
+  background: var(--surface-hover);
 }
 
-.technical > summary:hover {
-  color: var(--text);
-  border-color: var(--rule-strong);
-}
-
-.technical > summary .icon {
-  color: var(--text-faint);
-  transform: rotate(90deg);
-  transition: transform 0.16s var(--ease);
-}
-
-.technical[open] > summary .icon {
-  transform: rotate(180deg);
-}
-
-.technical > summary .summary-aside {
-  color: var(--text-faint);
-  font-weight: 400;
-}
-
-.technical .section-label:first-of-type {
-  margin-top: var(--s-5);
-}
-
-/* ---- compteurs ---- */
-
-.tally {
+.stats-bar .chev {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  margin: var(--s-5) 0 0;
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
+  place-items: center;
+  width: var(--ctrl-2xs);
+  height: var(--ctrl-2xs);
+  flex: none;
+  border-radius: var(--r-sm);
+  background: var(--accent-wash);
+  color: var(--accent-ink);
+}
+
+/* The chevron turns on the attribute, not on a swapped container: the drawer is
+   one component that opens, not two that replace each other — which is what
+   lets the turn be animated at all. It borrows the panel's duration because it
+   announces the panel; nothing else here is allowed to be that slow except the
+   panel itself. */
+.stats-bar .chev svg {
+  width: 14px;
+  height: 14px;
+  transition: transform var(--dur-panel) var(--ease-out);
+}
+
+.stats-bar[aria-expanded='false'] .chev svg {
+  transform: rotate(-90deg);
+}
+
+.stats-bar b {
+  font-size: var(--text-md);
+  font-weight: var(--w-semi);
+}
+
+.stats-bar .sb-sub {
+  font-size: var(--text-sm);
+  color: var(--tx3);
+}
+
+/* What is behind the drawer, said plainly — the reason to open it. */
+.stats-bar .sb-peek {
+  margin-left: auto;
+  font: var(--w-regular) var(--text-xs) / var(--lead-none) var(--mono);
+  color: var(--tx3);
+}
+
+/* The verdict has no piece of its own in the bar: it wears the catalogue's, and
+   only its shape changes — a pill instead of a card, pushed to the right edge.
+   Its ground, its border and its ink stay the ones `controls.css` gives it. */
+.stats-bar .verdict {
+  margin: 0 0 0 auto;
+  flex: none;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--r-pill);
+}
+
+.stats-bar .verdict svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* One track, and it is written `minmax(0, 0fr)` rather than `0fr`: bare `0fr`
+   reads as `minmax(auto, 0fr)`, and that `auto` takes the child's min-content —
+   padding included, which `min-height: 0` does not remove. Measured: the track
+   stopped at 24px, exactly the child's two 12px paddings. */
+.stats-body {
+  display: grid;
+  grid-template-rows: minmax(0, 0fr);
+  overflow: hidden;
+  transition: grid-template-rows var(--dur-panel) var(--ease-out);
+}
+
+.stats-bar[aria-expanded='true'] + .stats-body {
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* And the single child has to consent to being cropped. */
+.stats-body > * {
+  min-height: 0;
   overflow: hidden;
 }
 
-.tally div {
-  padding: 11px 15px;
-  border-right: 1px solid var(--rule);
-  background: var(--surface);
+/* The panel inside the track. It exists because the track is one row: four
+   siblings would open four implicit `auto` rows and the drawer would never
+   close. Top-down it reads from "who and what" to "how it was fetched". */
+.stats-inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  margin-top: var(--sp-5);
+  padding: var(--sp-6);
 }
 
-.tally div:last-child {
-  border-right: 0;
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-6);
 }
 
-.tally dt {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+.counters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--sp-5);
+}
+
+.counter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-5) var(--sp-6);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface-raised);
+}
+
+.counter i {
+  font-style: normal;
+  font: var(--w-semi) var(--text-3xs) / var(--lead-none) var(--sans);
+  letter-spacing: var(--track-silk);
   text-transform: uppercase;
-  color: var(--text-faint);
-  margin: 0 0 5px;
+  color: var(--tx3);
 }
 
-.tally dd {
-  margin: 0;
-  font-family: var(--mono);
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: -0.02em;
+/* Tabular, because these figures change under the eye while the sweep runs. */
+.counter b {
+  font: var(--w-semi) var(--text-2xl) / var(--lead-none) var(--mono);
+  letter-spacing: var(--track-num);
   font-variant-numeric: tabular-nums;
 }
 
-/* ---- journal ---- */
+/* Only the window states take a colour, and amber and red mean exactly that
+   here — split, and lost. They are never used for data. */
+.counter.warn b {
+  color: var(--window-split);
+}
 
+.counter.bad b {
+  color: var(--window-lost-ink);
+}
+
+/* A well dug into the panel, not a card laid on it: the one use of
+   `--surface-sunken` in the system.
+
+   A trace line does not wrap — `white-space: pre` keeps its columns aligned —
+   and the longest lines are the lost windows'. So it scrolls sideways rather
+   than being cut with no recourse. Both axes are written out: `overflow-x: auto`
+   turns the other one from `visible` to `auto` behind your back, and this one
+   has a fixed height and really does scroll. */
 .log {
-  height: 180px;
+  height: 186px;
+  overflow-x: auto;
   overflow-y: auto;
-  background: var(--ground);
+  padding: var(--sp-6);
   border: 1px solid var(--rule);
-  border-radius: var(--r);
-  padding: 11px 13px;
-  font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.65;
-  color: var(--text-dim);
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
+  border-radius: var(--r-xl);
+  background: var(--surface-sunken);
+  font: var(--w-regular) var(--text-xs) / var(--lead-loose) var(--mono);
+  color: var(--tx2);
 }
 
 .log p {
   margin: 0;
-  white-space: pre-wrap;
+  white-space: pre;
 }
 
 .log .good {
-  color: var(--violet-strong);
+  color: var(--accent-ink);
 }
 
 .log .warn {
-  color: var(--amber);
+  color: var(--window-split);
 }
 
-.log .err {
-  color: var(--red-strong);
+.log .bad {
+  color: var(--window-lost-ink);
+}
+
+.log .dim {
+  color: var(--tx3);
+}
+
+/* ==========================================================================
+   The floating sweep banner
+   ========================================================================== */
+
+/* `fixed`, not `absolute`: a sweep runs for a minute or more and its progress
+   has to stay readable wherever the page has been scrolled to. It overlays the
+   work surface instead of pushing it — a banner in the flow would displace every
+   row the moment it appeared, and again when it left. Offset from the top bar it
+   hangs under, rather than from a coincidental number. */
+.float {
+  position: fixed;
+  z-index: 6;
+  left: 50%;
+  top: calc(var(--topbar) + var(--sp-6));
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  width: min(760px, calc(100vw - var(--sp-9)));
+  padding: var(--sp-4) var(--sp-7);
+  transform: translateX(-50%);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-pill);
+  /* One of the four places a backdrop blur earns its cost: something really does
+     pass behind this one. */
+  background: color-mix(in srgb, var(--surface-raised) 92%, transparent);
+  backdrop-filter: blur(20px);
+  box-shadow: var(--elev-2);
+}
+
+/* Tidying it away does not stop the sweep. The control is the catalogue's
+   `.iconbtn`, which brings its own 44px target; only the placement is local. */
+.float .iconbtn {
+  flex: none;
+  margin-left: var(--sp-1);
+}
+
+/* The folded form: a hairline of progress welded under the header, and a target
+   the whole width of the page to bring the banner back. */
+.mini {
+  position: fixed;
+  z-index: 6;
+  top: var(--topbar);
+  left: 0;
+  right: 0;
+  display: block;
+  height: 4px;
+  padding: 0;
+  border: 0;
+  background: var(--surface-hover);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+/* Full width and slid, never resized — see `.track i` below. The cap is rounded
+   on the leading edge only: the other end is welded to the left of the page. */
+.mini i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 0 var(--r-pill) var(--r-pill) 0;
+  background: var(--accent-mark);
+  transition: transform var(--dur-panel) var(--ease-rate);
+}
+
+.ring {
+  display: block;
+  position: relative;
+  flex: none;
+  width: 62px;
+  height: 62px;
+}
+
+/* Twelve o'clock is where a progress arc starts; SVG's zero is three o'clock. */
+.ring svg {
+  transform: rotate(-90deg);
+}
+
+.ring .pct {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  font: var(--w-semi) var(--text-lg) / var(--lead-none) var(--mono);
+  letter-spacing: var(--track-num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A named modifier, not a parent override: the ring is a piece of the catalogue,
+   and a descendant selector would stop biting the moment it is used elsewhere. */
+.ring.sm {
+  width: 44px;
+  height: 44px;
+}
+
+.ring.sm .pct {
+  font-size: var(--text-xs);
+}
+
+.runtext {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  flex: 1;
+  min-width: 0;
+}
+
+.runtext h4 {
+  margin: 0;
+  font-size: var(--text-xl);
+  font-weight: var(--w-semi);
+  letter-spacing: var(--track-title);
+}
+
+/* The ratio, and only the ratio: the accent marks the figure that moves. */
+.runtext h4 em {
+  font-style: normal;
+  color: var(--accent-ink);
+}
+
+.runtext .track {
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--surface-hover);
+  overflow: hidden;
+}
+
+/* The fill is full width and is slid: animating `width` would put a layout pass
+   on the one element that moves while rows are appending to the table, and it
+   would flatten the leading cap against the edge as the radius got compressed.
+   `--ease-rate` is linear on purpose — a curve on a progress fill would lie
+   about the rate. */
+.runtext .track i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--accent-mark);
+  transform: translateX(-100%);
+  transition: transform var(--dur-panel) var(--ease-rate);
+}
+
+/* The line is held open before the first window comes back: filled in, an empty
+   span would lift the whole banner by its own height. */
+.runtext .meta {
+  display: block;
+  min-height: 1em;
+  font: var(--w-regular) var(--text-xs) / var(--lead-none) var(--mono);
+  color: var(--tx3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Inside the banner the block is read at a glance, not studied: it tightens. */
+.float .runtext {
+  gap: var(--sp-2);
+}
+
+.float .runtext h4 {
+  font-size: var(--text-lg);
+}
+
+.float .runtext .track {
+  height: 5px;
+}
+
+.float .runtext .meta {
+  font-size: var(--text-2xs);
+}
+
+/* ==========================================================================
+   Narrower than the full layout
+   ========================================================================== */
+
+@media (max-width: 1079.98px) {
+  /* Two ranking cards side by side leave the bars too short to compare; stacked,
+     they keep the full width and the same scale. */
+  .stats-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .counters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* The bar keeps its name and its chevron. The subtitle and the peek go: they
+     are the reasons to open it, and at this width they would push the name off
+     the edge, which is the reason to find it. */
+  .stats-bar {
+    height: var(--ctrl-2xl);
+    border-radius: var(--r-xl);
+  }
+
+  .stats-bar .sb-sub,
+  .stats-bar .sb-peek {
+    display: none;
+  }
+
+  .stats-inner {
+    padding: var(--sp-5);
+  }
+
+  .counters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* The ring is the redundant half of the banner — the same percentage is in the
+     heading — so it is what yields when the text has nowhere left to go. */
+  .float {
+    gap: var(--sp-5);
+    padding: var(--sp-4) var(--sp-5);
+    width: min(760px, calc(100vw - var(--sp-6)));
+  }
+
+  .float .ring {
+    display: none;
+  }
 }

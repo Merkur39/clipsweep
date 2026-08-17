@@ -1,114 +1,323 @@
-/* SearchPanel.tsx — the access state. */
+/* SearchPanel.tsx — the rail, the two pieces that replace it when the window
+   is too narrow to carry a column, and the connect screen it gives way to.
 
-/* An instrument panel signals its state with a lamp, not with a coloured strip
-   stuck on the edge of a box. */
-.status {
+   The pieces the rail is built from — `.lbl`, `.fieldset`, `.flabel`, `.field`,
+   `.dates`, `.date`, `.chip`, `.switch`, `.cta`, `.field-err`, `.field-hint`,
+   `.verdict` — belong to `controls.css` and are consumed here, never restated.
+   What is left is the composition: where the two blocks sit, how the tally
+   reads, and what stands in for the column when there is none. */
+
+/* The rail is the whole left column now. `space-between` is the whole layout:
+   the sweep's controls hold the top, the tally holds the floor, and the slack
+   of a tall window opens between them rather than under the last chip. Nothing
+   sits above the table any more — that is what buys it eleven visible rows. */
+.rail {
   display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.5;
-  padding: 9px 11px;
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  margin-bottom: var(--s-3);
-  color: var(--text-dim);
-  background: var(--chassis);
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--sp-8) var(--sp-7);
 }
 
-.status::before {
-  content: '';
-  flex: none;
-  width: 7px;
-  height: 7px;
-  margin-top: 6px;
-  border-radius: 50%;
-  background: var(--rule-strong);
-}
-
-.status.ok::before {
-  background: var(--violet);
-  box-shadow: 0 0 7px 1px var(--glow-violet);
-}
-
-.status.bad {
-  border-color: var(--red-fill);
-  background: var(--red-wash);
-  color: var(--red-strong);
-}
-
-.status.bad::before {
-  background: var(--red);
-  box-shadow: 0 0 7px 1px var(--glow-red);
-}
-
-/* Placed under the offending fields: the error reads where it gets fixed.
-
-   The space is permanently reserved — a one-line `min-height`, taken from
-   `line-height` — so the message appears without pushing the sweep button
-   down. The paragraph is always rendered, empty the rest of the time. */
-
-.field-error {
+/* Two rhythms, and the difference is deliberate: `--sp-6` separates things one
+   acts on, `--sp-5` things one only reads. The looser step in the top block is
+   what keeps a fieldset from reading as a continuation of the one above it. */
+.rail-top {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  min-height: 1.45em;
-  margin: 0 0 var(--s-3);
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--red-strong);
+  flex-direction: column;
+  gap: var(--sp-6);
 }
 
-.field-error .icon {
-  margin-top: 2px;
-  color: var(--red);
+.rail-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
 }
 
-/* A footnote to the channel field, not a control of the panel's own standing:
-   it is pulled back up against the field it speaks about, and reads in the
-   dimmer ink of an annotation. The bare label text escapes the silkscreen
-   treatment `controls.css` gives to `label > span`. */
-.remember {
+/* The presets belong to the dates above them, not beside them: they sit inside
+   the same fieldset and take a tighter step than the gap that separates
+   fieldsets. The design file writes 3px, which is off the scale and equidistant
+   between two steps — so it tightens, per the rule, to `--sp-1`.
+
+   They wrap rather than overflow. Four chips measure 234px inside the rail's
+   260px of usable width in English; nothing guarantees that margin in a
+   language whose words are longer, and a chip pushed past the edge would be
+   unreachable. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  padding-top: var(--sp-1);
+}
+
+/* Label left, figure right, four times: the eye reads down the right edge and
+   compares four values without reading a single word twice. */
+.stat-row {
   display: flex;
   align-items: center;
-  gap: var(--s-2);
-  margin-top: -6px;
-  font-size: 12px;
-  color: var(--text-dim);
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+/* An `<i>` for the name of a slot rather than a `<dt>`: these are not terms
+   being defined, they are four rows that exist whether or not a sweep has
+   filled them. */
+.stat-row i {
+  font-style: normal;
+  font-size: var(--text-xs);
+  color: var(--tx3);
+}
+
+/* Mono and tabular, because all four change under the eye while the sweep runs
+   — a proportional figure would make the right edge dance on every tick. */
+.stat-row b {
+  font: var(--w-medium) var(--text-sm) / var(--lead-none) var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--tx2);
+}
+
+/* ---- the narrow tiers · what stands in for the rail ----------------------
+   Below 1080px the rail has no column to live in, so its two blocks are laid
+   flat instead: the search on one line, the tally on another. The component
+   renders one shape or the other on a prop — never both, which would put two
+   channel inputs in the document under the same name. Nothing here is hidden
+   by a media query, so nothing here can be reached by the wrong tier. */
+
+.mobile-search {
+  display: flex;
+  gap: var(--sp-4);
+}
+
+/* Shorter and smaller than the rail's field: a line of chrome across the top of
+   the page, not the subject of a column. `--ctrl-xl` is the touch target the
+   narrow tiers hold everywhere. */
+.mobile-search .field {
+  flex: 1;
+  height: var(--ctrl-xl);
+  font-size: var(--text-sm);
+}
+
+/* The sweep's call to action reduced to its glyph — square, so it reads as the
+   field's twin rather than as a button that lost its label. It carries the name
+   the rail's `.cta` writes out. */
+.mobile-search .go {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--ctrl-xl);
+  border: 0;
+  border-radius: var(--r-md);
+  background: var(--accent);
+  color: var(--on-accent);
   cursor: pointer;
 }
 
-/* Same reservation as `.field-error`, for the same reason: the link appears
-   with whatever channel and period are typed, and must push neither the sweep
-   button nor the rest of the panel. One line plus the indent the link carries
-   itself. */
-.channel-hint {
-  display: flex;
-  min-height: calc(1.55em + var(--s-3));
-  margin: 0;
-  font-size: 12px;
+.mobile-search .go svg {
+  width: 18px;
+  height: 18px;
 }
 
-/* A rare action, so discreet — but discreet in colour, not in size: the rail
-   lines up full-width buttons, and an off-template one would break the column's
-   rhythm and make the layout jump from one state to the next. */
-.disconnect {
-  color: var(--text-dim);
-  border-color: var(--rule);
-  background: transparent;
-}
-
-.disconnect:hover:not(:disabled) {
+/* Unavailable, and still legible: the flat drops to `--surface-raised` and the
+   glyph to `--tx3`, the same ratio as any tertiary text of the system. No
+   opacity — at 45% a label falls under 2:1 — and `pointer-events` are kept, so
+   the control can still say why it is unavailable. */
+.mobile-search .go[aria-disabled='true'] {
+  border: 1px solid var(--rule);
   background: var(--surface-raised);
-  border-color: var(--red);
-  color: var(--red-strong);
+  color: var(--tx3);
+  cursor: not-allowed;
 }
 
-.disconnect .icon {
-  color: var(--text-faint);
+/* The period does not leave with the column: without these, a narrow window
+   could only ever sweep whatever the fields were last left on. Stacked rather
+   than inline — the two dates already fill a narrow line on their own. */
+.mobile-period {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
 }
 
-.disconnect:hover .icon {
-  color: var(--red);
+/* The rail's footer on one line. The piece carries its own border, ground and
+   radius — it is not laid on `.glass`, which would have left two radii to
+   reconcile for the sake of a shadow nothing here casts.
+
+   It wraps for the same reason the chips do: three readings and their labels
+   exceed 375px, and a summary that pushes the page sideways is worse than one
+   that takes two lines. */
+.msum {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-4) var(--sp-5);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  font-size: var(--text-sm);
+  color: var(--tx3);
+}
+
+/* The two counts read as whole sentences here, not as the rail's figure-plus-
+   label pairs, so there is no `<b>` to bring forward: a phrase that agrees with
+   its own number cannot be cut into a figure and a word without losing the
+   agreement. What the rail gains in scanning, this line gains in reading. */
+.msum span {
+  color: var(--tx2);
+}
+
+/* The verdict closes the line, pushed to the far end so it reads as the
+   conclusion of the two figures rather than as a third one. */
+.msum .ok {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-left: auto;
+  color: var(--verdict);
+}
+
+.msum .ok svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+/* The two states the catalogued piece does not draw, taking the same tokens as
+   the rail's verdict does for them: a sweep in flight cannot answer "is the
+   list whole?", so it borrows the accent until it can, and a loss takes the red
+   reserved for window states. */
+.msum .ok.pending {
+  color: var(--accent-ink);
+}
+
+.msum .ok.broken {
+  color: var(--window-lost-ink);
+}
+
+/* ---- the connect screen --------------------------------------------------
+   What the stage carries while there is no session to sweep with. Centred in
+   the panel rather than stacked at its top: there is one action on this screen,
+   and everything else on it exists to justify that action. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-7);
+  height: 100%;
+  padding: 0 var(--sp-11);
+  text-align: center;
+}
+
+/* A claim, not a control: the pill shape is the one the chips use, but with a
+   rule instead of an accent and no pointer of any kind. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-6);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font: var(--w-medium) var(--text-xs) / var(--lead-none) var(--sans);
+  color: var(--tx2);
+  white-space: nowrap;
+}
+
+.badge svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--accent-ink);
+}
+
+/* The one display-sized type in the product, and the one line height off the
+   scale: `--lead-none` is exactly 1, which at 46px sets the descenders of one
+   line against the ascenders of the next. 1.04 is the smallest step that keeps
+   them apart, and it comes from the system rather than from here.
+
+   The measure is the composition's, not the piece's: 22ch holds the sentence on
+   two lines in the panel it is centred in, where the catalogue's isolated 15ch
+   would break it into four. */
+.hero h2 {
+  max-width: 22ch;
+  margin: 0;
+  font-size: var(--text-display);
+  font-weight: var(--w-bold);
+  letter-spacing: var(--track-display);
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+/* The second sentence of the title, not an aside: the emphasis is the accent's
+   ink, and the italic the tag would bring is dropped. */
+.hero h2 em {
+  font-style: normal;
+  color: var(--accent-ink);
+}
+
+.hero p {
+  max-width: 52ch;
+  margin: 0;
+  font-size: var(--text-lg);
+  color: var(--tx2);
+}
+
+/* Wider than a rail button: it stands alone in the middle of a panel, where the
+   default padding would leave it looking like a control that lost its row. */
+.hero .cta {
+  padding: 0 var(--sp-8);
+}
+
+/* Three cards, and they wrap: 168px each plus their gaps needs 528px, which no
+   narrow window has. The design file's 10px is off the scale and equidistant
+   between two steps, so it tightens to `--sp-4`. */
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--sp-5);
+  margin-top: var(--sp-4);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 168px;
+  padding: var(--sp-5) var(--sp-6);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+}
+
+/* Ranged left inside a hero that centres everything: three cards of centred
+   prose would have three ragged edges and no column to read down. */
+.hero .fact {
+  text-align: left;
+}
+
+.fact b {
+  font: var(--w-semi) var(--text-3xs) / var(--lead-none) var(--sans);
+  letter-spacing: var(--track-silk);
+  text-transform: uppercase;
+  color: var(--tx3);
+}
+
+.fact span {
+  font-size: var(--text-sm);
+  color: var(--tx2);
+}
+
+/* The design files scale fixed-width frames, so their hero never meets a window
+   narrower than its own padding. Here it does. */
+@media (max-width: 767.98px) {
+  /* 64px either side leaves 247px of text on a 375px window. */
+  .hero {
+    padding: 0 var(--sp-6);
+  }
+
+  /* One line is a promise only a frame wider than the sentence can keep. */
+  .badge {
+    white-space: normal;
+  }
 }

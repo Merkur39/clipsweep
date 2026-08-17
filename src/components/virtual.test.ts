@@ -60,17 +60,30 @@ describe('gridMetrics', () => {
   })
 
   /**
-   * 16:9 on the column actually granted, plus the fixed block and the gap. The
-   * thumbnail's height comes back out to be applied: leaving it to an
-   * `aspect-ratio` would have the browser round a slightly different box, and
-   * the half-pixel between the two becomes a visible step down a slice.
+   * 16:9 on the column actually granted, plus the fixed block, the hairlines
+   * and the gap. The thumbnail's height comes back out to be applied: leaving
+   * it to an `aspect-ratio` would have the browser round a slightly different
+   * box, and the half-pixel between the two becomes a visible step down a
+   * slice.
    */
   it('derives the row height from the column it computed', () => {
     const { thumbHeight, rowHeight } = gridMetrics({ ...tile, width: 958 })
 
-    // (958 - 3 x 12) / 4 = 230.5 wide, so 130 high.
-    expect(thumbHeight).toBe(130)
-    expect(rowHeight).toBe(130 + 58 + 12)
+    // (958 - 3 x 12) / 4 = 230.5 of column, less the two hairlines = 228.5 of
+    // thumbnail, so 129 high.
+    expect(thumbHeight).toBe(129)
+    expect(rowHeight).toBe(129 + 2 + 58 + 12)
+  })
+
+  /**
+   * Under `box-sizing: border-box` the tile's hairlines are taken out of the
+   * column, so the thumbnail is never as wide as the track it sits in. Applying
+   * the ratio to the column instead put every thumbnail a pixel and a quarter
+   * too tall, and a placed row landed beside the tiles it was placed for.
+   */
+  it('takes the tile hairlines off the column before applying the ratio', () => {
+    expect(gridMetrics({ ...tile, width: 958, border: 0 }).thumbHeight).toBe(130)
+    expect(gridMetrics({ ...tile, width: 958, border: 1 }).thumbHeight).toBe(129)
   })
 })
 

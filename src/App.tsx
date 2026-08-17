@@ -7,9 +7,10 @@ import { Colophon } from './components/Colophon'
 import { ExportPanel } from './components/ExportPanel'
 import { FiltersBar } from './components/FiltersBar'
 import { SearchPanel } from './components/SearchPanel'
-import { Mark } from './components/Icon'
+import { Icon, Mark } from './components/Icon'
 import { LocaleToggle } from './components/LocaleToggle'
 import { SearchProgress } from './components/SearchProgress'
+import { SweepBanner } from './components/SweepBanner'
 import { gameLabeller } from './components/selectionLabel'
 import { ThemeToggle } from './components/ThemeToggle'
 import { ViewToggle } from './components/ViewToggle'
@@ -25,6 +26,8 @@ import { DEFAULT_SORT, nextSort, sortClips, type ClipSort, type SortKey } from '
 import { useTranslation } from './i18n/LocaleProvider'
 import { useChannelLookup } from './hooks/useChannelLookup'
 import { useClipSearch } from './hooks/useClipSearch'
+import { useElapsed } from './hooks/useElapsed'
+import { useMediaQuery } from './hooks/useMediaQuery'
 import { usePersistedState } from './hooks/usePersistedState'
 import { useRememberedChannel } from './hooks/useRememberedChannel'
 import { useUnloadGuard } from './hooks/useUnloadGuard'
@@ -40,6 +43,30 @@ import {
 import type { AccessKind } from './domain/access'
 import type { MessageKey } from './i18n/messages.fr'
 import type { Clip } from './twitch/types'
+
+/**
+ * Where the rail stops fitting. Below it the rail's two blocks are replaced by
+ * their compact counterparts rather than squeezed: at 768px a three-hundred
+ * pixel column would leave the title nothing at all.
+ *
+ * Read in JavaScript, exceptionally. Everything a breakpoint *paints* belongs
+ * in the sheet, but this one changes which elements are mounted, and a media
+ * query cannot do that — the rail and the compact line hold the same fields, so
+ * rendering both and hiding one would give the channel two inputs carrying one
+ * accessible name.
+ */
+const WIDE = '(min-width: 1080px)'
+
+/**
+ * Where the top bar still has room for the two display preferences.
+ *
+ * A second threshold rather than a reuse of [WIDE], because the two questions
+ * have different answers between 768 and 1080: the rail no longer fits there,
+ * but the bar has some five hundred pixels to spare. Folding them into one flag
+ * demoted the toggles to the page foot on a tablet that had ample room for
+ * them.
+ */
+const ROOMY_BAR = '(min-width: 768px)'
 
 const day = (date: Date) => date.toISOString().slice(0, 10)
 
@@ -108,6 +135,7 @@ export default function App({ authError }: { authError: string | null }) {
     ? t('access.connectedFor', { life: describeTokenLife(session.expiresInSeconds, t) })
     : (notice && t(notice.key)) || access.message
   const authKind: AccessKind = session ? 'ok' : (notice?.kind ?? access.kind)
+  const connected = session !== null || presumedConnected
 
   // Already set on `<html>` by `main.tsx` before the first render; the effect
   // only serves the changes that follow.
@@ -120,6 +148,9 @@ export default function App({ authError }: { authError: string | null }) {
   // clips, not which clips were being read.
   const [storedView, setView] = usePersistedState('view', 'table')
   const view = parseView(storedView)
+
+  const wide = useMediaQuery(WIDE)
+  const roomyBar = useMediaQuery(ROOMY_BAR)
 
   // The target and the period live for the tab's lifetime, unlike the theme:
   // they are the parameters of a sweep, not preferences. Finding them again
@@ -171,6 +202,7 @@ export default function App({ authError }: { authError: string | null }) {
 
   const search = useClipSearch(session, onTokenRejected, t)
   const { clips, reports, incomplete, progress, span, logEntries, gameNames, running } = search
+  const elapsedMs = useElapsed(running)
 
   // A running sweep, or its results on screen, live in the application's memory
   // alone: leaving the page loses them and forces a full re-sweep, Helix quota
@@ -366,152 +398,252 @@ export default function App({ authError }: { authError: string | null }) {
 
   const stamp = `${channel || 'clips'}_${day(new Date())}`
 
+  // ── what the rail's footer reports ────────────────────────────────────────
+  const totalViews = useMemo(() => clips.reduce((sum, clip) => sum + clip.view_count, 0), [clips])
+  /**
+   * The one thing the sweep exists to promise, in four states. A sweep still
+   * running is *pending* and wears the accent, never `--verdict`: the question
+   * is "is the list whole?", and while windows are still open it cannot be
+   * answered either way.
+   */
+  const verdict = running
+    ? {
+        kind: 'pending' as const,
+        done: progress?.windowsDone ?? 0,
+        total: progress?.windowsTotal ?? 0,
+      }
+    : progress === null
+      ? { kind: 'idle' as const }
+      : incomplete.length > 0
+        ? { kind: 'broken' as const, lost: incomplete.length }
+        : { kind: 'complete' as const }
+
+  const panel = (
+    <SearchPanel
+      compact={!wide}
+      channel={channel}
+      onChannelChange={setChannel}
+      remember={remember}
+      onRememberChange={setRemember}
+      since={effectiveSince}
+      onSinceChange={setSince}
+      until={effectiveUntil}
+      onUntilChange={setUntil}
+      today={today}
+      periodError={periodError}
+      channelCreatedAt={channelCreatedAt}
+      running={running}
+      onRun={run}
+      clipsFound={clips.length}
+      totalViews={totalViews}
+      coveredFrom={span ? day(new Date(span.from)) : null}
+      coveredTo={span ? day(new Date(span.to)) : null}
+      elapsedMs={elapsedMs}
+      verdict={verdict}
+    />
+  )
+
+  // Nothing swept and nobody connected: the one screen where the tool is
+  // allowed to introduce itself. It takes the work surface rather than being
+  // pushed above it — there is nothing above the table, here as everywhere.
+  const introducing = !connected && progress === null && clips.length === 0
+
   return (
-    <div className="page">
-      {/* Plaque d'identification, pas bandeau d'accueil : l'outil se consulte
-          tous les jours, son nom n'a pas besoin de 46 px. */}
-      <header className="masthead">
-        <h1 className="masthead-name">
+    <div className="app">
+      <header className="topbar">
+        <div className="brand">
           <Mark />
-          ClipSweep
-        </h1>
-        <p className="lede">{t('app.tagline')}</p>
-        {/* Two display preferences of equal standing, hence of equal shape,
-            filed together at the end of the masthead. */}
-        <div className="masthead-prefs">
-          <LocaleToggle />
-          <ThemeToggle theme={theme} onChange={setTheme} />
+          <div className="wordmark">
+            <b>ClipSweep</b>
+            <span>{t('app.tagline')}</span>
+          </div>
+        </div>
+
+        {/* Two display preferences of equal standing, hence of equal shape, and
+            the access state beside them — a global state, not a parameter of
+            the sweep, which is why it left the rail. */}
+        <div className="bar-right">
+          {/* Five control groups do not fit a 390px bar — measured, the row ran
+              288px past the edge. The design's phone screen simply drops these
+              two; they go to the foot of the page instead, because a preference
+              one cannot reach is worse than one that is not to hand. Rendered
+              in one place or the other, never both: two segments carrying one
+              accessible name would be two answers to the same question. */}
+          {roomyBar && <LocaleToggle />}
+          {roomyBar && <ThemeToggle theme={theme} onChange={setTheme} />}
+          <div className="session">
+            <span className={connected ? 'lamp' : 'lamp off'} />
+            <b>{t(connected ? 'session.connected' : 'session.disconnected')}</b>
+            {/* The remaining life only once a session has actually been
+                confirmed: the optimistic bet knows the token exists, not how
+                long it has left. */}
+            {session && <span>{describeTokenLife(session.expiresInSeconds, t)}</span>}
+            {connected ? (
+              <button
+                type="button"
+                className="iconbtn"
+                aria-label={t('panel.disconnect')}
+                title={t('panel.disconnect')}
+                onClick={disconnect}
+              >
+                <Icon name="out" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="dbtn primary"
+                onClick={connect}
+                disabled={!BUILD_TIME_CLIENT_ID}
+                aria-disabled={BUILD_TIME_CLIENT_ID ? 'false' : 'true'}
+              >
+                {t('panel.connect')}
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
-      <div className="layout">
-        <SearchPanel
-          authMessage={authMessage}
-          authKind={authKind}
-          connected={session !== null || presumedConnected}
-          canConnect={Boolean(BUILD_TIME_CLIENT_ID)}
-          onConnect={connect}
-          onDisconnect={disconnect}
-          channel={channel}
-          onChannelChange={setChannel}
-          remember={remember}
-          onRememberChange={setRemember}
-          since={effectiveSince}
-          onSinceChange={setSince}
-          until={effectiveUntil}
-          onUntilChange={setUntil}
-          today={today}
-          periodError={periodError}
-          channelCreatedAt={channelCreatedAt}
-          running={running}
-          onRun={run}
-        />
+      <div className="canvas-col">
+        {/* The rail's replacements sit above the work grid, not inside it: at
+            this width there is no second column to sit in. */}
+        {!wide && panel}
 
-        <main className="stage">
-          <SearchProgress
-            reports={reports}
-            span={span}
-            progress={progress}
-            incomplete={incomplete}
-            clipsFound={clips.length}
-            logEntries={logEntries}
-            running={running}
-          />
+        <div className="body">
+          {wide && panel}
 
-          {/* The blanket reset lives at the end of the label, not in the row:
-              there it stole a column, while every control already carries its
-              own reset. Always rendered — its appearing would shift the label's
-              rule.
+          <main className="stage">
+            {/* Alerts open the work area, above the filters: they bear on the
+                whole sweep, not on the filtered view. */}
+            {authKind === 'bad' && (
+              <p className="alert bad" role="alert">
+                <Icon name="alert" />
+                <span>{authMessage}</span>
+              </p>
+            )}
+            {incomplete.length > 0 && (
+              <p className="alert">
+                <Icon name="alert" />
+                <span>{t('progress.incomplete', { n: incomplete.length })}</span>
+              </p>
+            )}
 
-              A `<div>`, unlike every other label of the facade: this one hosts
-              the readout toggle, itself a `<div role="group">`, and no paragraph
-              may contain one. The class carries the whole appearance — its own
-              margins included — so the element it sits on changes nothing on
-              screen. */}
-          <div className="section-label">
-            {t('results.label')}
-            <button
-              type="button"
-              className="link filters-reset"
-              onClick={resetFilters}
-              disabled={!filtersActive}
-            >
-              {t('results.reset')}
-            </button>
-            <ViewToggle view={view} onChange={setView} />
-          </div>
-          {clips.length > 0 && (
-            <p className="result-count">
-              {describeResultCount(
-                {
-                  found: clips.length,
-                  shown: shown.length,
-                  selected: selected.length,
-                },
-                t,
-              )}{' '}
-              {/* A sweep ends with nothing checked, and every export stays dead
-                  until something is: the blanket check needs a target wider
-                  than the head checkbox, and it belongs on the line that gives
-                  the count it acts on. */}
-              <button
-                type="button"
-                className="link"
-                onClick={checkAll}
-                disabled={shown.length === 0}
-              >
-                {t(allChecked ? 'results.deselectAll' : 'results.selectAll')}
-              </button>
-            </p>
-          )}
+            {introducing ? (
+              <div className="glass hero">
+                <span className="badge">
+                  <Icon name="radar" />
+                  {t('hero.badge')}
+                </span>
+                <h2>
+                  {t('hero.titleLead')} <em>{t('hero.titleEm')}</em>
+                </h2>
+                <p>{t('hero.lede')}</p>
+                <button
+                  type="button"
+                  className="cta"
+                  onClick={connect}
+                  disabled={!BUILD_TIME_CLIENT_ID}
+                  aria-disabled={BUILD_TIME_CLIENT_ID ? 'false' : 'true'}
+                >
+                  <Icon name="radar" />
+                  {t('panel.connect')}
+                </button>
+                <div className="facts">
+                  <div className="fact">
+                    <b>{t('hero.fact.storage')}</b>
+                    <span>{t('hero.fact.storageNote')}</span>
+                  </div>
+                  <div className="fact">
+                    <b>{t('hero.fact.exports')}</b>
+                    <span>{t('hero.fact.exportsNote')}</span>
+                  </div>
+                  <div className="fact">
+                    <b>{t('hero.fact.zero')}</b>
+                    <span>{t('hero.fact.zeroNote')}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <FiltersBar
+                  minViews={minViewsInput}
+                  onMinViewsChange={setMinViewsInput}
+                  maxViews={maxViewsInput}
+                  onMaxViewsChange={setMaxViewsInput}
+                  from={fromDate}
+                  onFromChange={setFromDate}
+                  to={toDate}
+                  onToChange={setToDate}
+                  dateBounds={dateBounds}
+                  creatorFacets={creatorFacets}
+                  creators={creators}
+                  onCreatorsChange={setCreators}
+                  gameFacets={gameFacets}
+                  gameIds={gameIds}
+                  onGameIdsChange={setGameIds}
+                  gameLabel={gameLabel}
+                  filtersActive={filtersActive}
+                  onReset={resetFilters}
+                />
 
-          <FiltersBar
-            minViews={minViewsInput}
-            onMinViewsChange={setMinViewsInput}
-            maxViews={maxViewsInput}
-            onMaxViewsChange={setMaxViewsInput}
-            from={fromDate}
-            onFromChange={setFromDate}
-            to={toDate}
-            onToChange={setToDate}
-            dateBounds={dateBounds}
-            creatorFacets={creatorFacets}
-            creators={creators}
-            onCreatorsChange={setCreators}
-            gameFacets={gameFacets}
-            gameIds={gameIds}
-            onGameIdsChange={setGameIds}
-            gameLabel={gameLabel}
-          />
+                <section className="results glass">
+                  <div className="res-head">
+                    <span className="count">
+                      {describeResultCount(
+                        { found: clips.length, shown: shown.length, selected: selected.length },
+                        t,
+                      )}
+                    </span>
+                    {/* A sweep ends with nothing checked, and every export stays
+                        dead until something is: the blanket check needs a target
+                        wider than the head checkbox, and it belongs on the line
+                        that gives the count it acts on. */}
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={checkAll}
+                      disabled={shown.length === 0}
+                    >
+                      {t(allChecked ? 'results.deselectAll' : 'results.selectAll')}
+                    </button>
+                    <ViewToggle view={view} onChange={setView} />
+                  </div>
 
-          {/* One readout at a time: the same clips shown twice would cost two
-              virtualisers and a page twice as long, the selection being shared
-              anyway. */}
-          {view === 'table' ? (
-            <ClipTable
-              clips={shown}
-              selected={selectedIds}
-              onToggle={toggleClip}
-              onToggleAll={checkAll}
-              onPlay={setPlayingId}
-              emptyMessage={emptyMessage}
-              emptyAction={emptyAction}
-              sort={sort}
-              onSortChange={changeSort}
-            />
-          ) : (
-            <ClipGrid
-              clips={shown}
-              selected={selectedIds}
-              onToggle={toggleClip}
-              onPlay={setPlayingId}
-              emptyMessage={emptyMessage}
-              emptyAction={emptyAction}
-              sort={sort}
-              onSortChange={changeSort}
-            />
-          )}
+                  {/* One readout at a time: the same clips shown twice would cost
+                      two virtualisers and a page twice as long, the selection
+                      being shared anyway. */}
+                  {view === 'table' ? (
+                    <ClipTable
+                      clips={shown}
+                      selected={selectedIds}
+                      onToggle={toggleClip}
+                      onToggleAll={checkAll}
+                      onPlay={setPlayingId}
+                      emptyMessage={emptyMessage}
+                      emptyAction={emptyAction}
+                      busy={running && clips.length === 0}
+                      sort={sort}
+                      onSortChange={changeSort}
+                    />
+                  ) : (
+                    <ClipGrid
+                      clips={shown}
+                      selected={selectedIds}
+                      onToggle={toggleClip}
+                      onPlay={setPlayingId}
+                      emptyMessage={emptyMessage}
+                      emptyAction={emptyAction}
+                      busy={running && clips.length === 0}
+                      sort={sort}
+                      onSortChange={changeSort}
+                    />
+                  )}
+                </section>
+              </>
+            )}
+          </main>
+        </div>
 
+        {clips.length > 0 && (
           <ExportPanel
             selected={selected}
             clipsFound={clips.length}
@@ -540,12 +672,43 @@ export default function App({ authError }: { authError: string | null }) {
               )
             }
           />
-        </main>
+        )}
+
+        {/* Everything technical, folded away: the result is what the page is
+            for. Only offered once there is a sweep to describe. */}
+        {(progress !== null || clips.length > 0) && (
+          <SearchProgress
+            clips={clips}
+            gameLabel={gameLabel}
+            reports={reports}
+            span={span}
+            progress={progress}
+            incomplete={incomplete}
+            clipsFound={clips.length}
+            elapsedMs={elapsedMs}
+            logEntries={logEntries}
+            running={running}
+          />
+        )}
+
+        {/* Where the two display preferences live once the top bar is too narrow
+            to carry them. Filed with the colophon rather than dropped into the
+            work area: they are what the page is set in, not part of the task. */}
+        {!roomyBar && (
+          <div className="prefs">
+            <LocaleToggle />
+            <ThemeToggle theme={theme} onChange={setTheme} />
+          </div>
+        )}
+
+        {/* Outside the work grid: it runs under the rail as under the stage. */}
+        <Colophon />
       </div>
 
-      {/* Outside `.layout`: it runs under the rail as under the stage, with the
-          masthead answering it at the top of the page. */}
-      <Colophon />
+      {/* Pinned over the work surface rather than pushing it: a sweep runs for a
+          minute, and its progress must stay readable wherever the page has been
+          scrolled to. */}
+      {running && <SweepBanner progress={progress} clipsFound={clips.length} reports={reports} />}
 
       {/* Last of the page, and it does not matter where: `showModal` lifts it
           into the top layer, above everything, whatever the DOM order says. */}

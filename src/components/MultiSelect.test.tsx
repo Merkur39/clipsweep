@@ -13,10 +13,15 @@ const options = [
   { value: 'Garami', count: 2 },
 ]
 
+/**
+ * The panel alone: the pill that opens it, and the deciding when, belong to
+ * `FiltersBar` now. Mounting it is therefore all it takes to have it open.
+ */
 const setup = (selected: string[] = [], props: Partial<Parameters<typeof MultiSelect>[0]> = {}) => {
   const onChange = vi.fn()
   render(
     <MultiSelect
+      id="creators-panel"
       label="Créateurs"
       options={options}
       selected={selected}
@@ -24,158 +29,115 @@ const setup = (selected: string[] = [], props: Partial<Parameters<typeof MultiSe
       {...props}
     />,
   )
-  return { onChange, button: screen.getByRole('button', { name: /^Créateurs/ }) }
+  return { onChange }
 }
 
-// An option's accessible name includes its count: "SpiZ 12".
-const option = (name: string) => within(panel()!).getByRole('checkbox', { name: new RegExp(name) })
+// The box is a glyph-only button, named after the value it stands for: the
+// count sits beside it, in the option's own row, not in its accessible name.
+const option = (name: string) => within(panel()).getByRole('checkbox', { name })
 
-const panel = () => screen.queryByRole('group', { name: 'Créateurs' })
+const panel = () => screen.getByRole('group', { name: 'Créateurs' })
 
-const list = () => document.querySelector('.multiselect-options') as HTMLElement
+const list = () => document.querySelector('.opts') as HTMLElement
 
 describe('MultiSelect', () => {
-  it('stays closed until it is opened', () => {
+  it('lists the options with their count', () => {
     setup()
 
-    expect(panel()).toBeNull()
-  })
-
-  it('announces "All" when nothing is checked', () => {
-    const { button } = setup()
-
-    expect(button).toHaveTextContent('Tous')
-  })
-
-  it('lists the options with their count on opening', () => {
-    const { button } = setup()
-
-    fireEvent.click(button)
-
-    const options = within(panel()!).getAllByRole('checkbox')
-    expect(options).toHaveLength(3)
+    expect(within(panel()).getAllByRole('checkbox')).toHaveLength(3)
     expect(panel()).toHaveTextContent('SpiZ')
     expect(panel()).toHaveTextContent('12')
   })
 
-  it('reports the checked value without touching the others', () => {
-    const { button, onChange } = setup(['Ori'])
+  it('marks the checked options, and only those', () => {
+    setup(['Ori'])
 
-    fireEvent.click(button)
+    expect(option('Ori')).toHaveAttribute('aria-checked', 'true')
+    expect(option('SpiZ')).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('reports the checked value without touching the others', () => {
+    const { onChange } = setup(['Ori'])
+
     fireEvent.click(option('SpiZ'))
 
     expect(onChange).toHaveBeenCalledWith(['Ori', 'SpiZ'])
   })
 
   it('removes a value already checked', () => {
-    const { button, onChange } = setup(['Ori', 'SpiZ'])
+    const { onChange } = setup(['Ori', 'SpiZ'])
 
-    fireEvent.click(button)
     fireEvent.click(option('Ori'))
 
     expect(onChange).toHaveBeenCalledWith(['SpiZ'])
   })
 
   it('empties the selection in one go', () => {
-    const { button, onChange } = setup(['Ori', 'SpiZ'])
+    const { onChange } = setup(['Ori', 'SpiZ'])
 
-    fireEvent.click(button)
-    fireEvent.click(within(panel()!).getByRole('button', { name: 'Tout décocher' }))
+    fireEvent.click(within(panel()).getByRole('button', { name: 'Tout décocher' }))
 
     expect(onChange).toHaveBeenCalledWith([])
   })
 
   it('offers "Uncheck all" only when there is something to uncheck', () => {
-    const { button } = setup()
+    setup()
 
-    fireEvent.click(button)
-
-    expect(within(panel()!).queryByRole('button', { name: 'Tout décocher' })).toBeNull()
+    expect(within(panel()).queryByRole('button', { name: 'Tout décocher' })).toBeNull()
   })
 
-  it('closes on a click outside', () => {
-    const { button } = setup()
-    fireEvent.click(button)
-    expect(panel()).not.toBeNull()
+  // A facet can empty out under an open panel — a fresh sweep recomputes the
+  // options while its pill is still open — so the panel says so itself rather
+  // than standing blank.
+  it('reads as empty for lack of options, rather than standing blank', () => {
+    setup([], { options: [] })
 
-    fireEvent.pointerDown(document.body)
-
-    expect(panel()).toBeNull()
-  })
-
-  it('stays open on a click inside', () => {
-    const { button } = setup()
-    fireEvent.click(button)
-
-    fireEvent.pointerDown(option('SpiZ'))
-
-    expect(panel()).not.toBeNull()
-  })
-
-  it('closes on Escape', () => {
-    const { button } = setup()
-    fireEvent.click(button)
-
-    fireEvent.keyDown(document, { key: 'Escape' })
-
-    expect(panel()).toBeNull()
+    expect(within(panel()).queryAllByRole('checkbox')).toHaveLength(0)
+    expect(panel()).toHaveTextContent('Rien à filtrer pour l’instant.')
   })
 
   // The name column is 149px wide and ellipsises anything longer — a game's
   // full title, or the id an unresolved category is named by, which is the very
   // part the label exists to carry.
   it('carries the full label on the option, past what the column can show', () => {
-    const { button } = setup([], {
+    setup([], {
       options: [{ value: '1', count: 3 }],
       labelOf: () => 'Tom Clancy’s Rainbow Six Siege',
     })
 
-    fireEvent.click(button)
-
-    expect(within(panel()!).getByTitle('Tom Clancy’s Rainbow Six Siege')).toBeInTheDocument()
+    expect(within(panel()).getByTitle('Tom Clancy’s Rainbow Six Siege')).toBeInTheDocument()
   })
 
   it('maps the values through the label provided', () => {
-    const { button } = setup([], {
+    setup([], {
       options: [{ value: '1', count: 3 }],
       labelOf: (value) => (value === '1' ? 'Cult of the Lamb' : value),
     })
 
-    fireEvent.click(button)
-
     expect(panel()).toHaveTextContent('Cult of the Lamb')
-  })
-
-  it('disables itself for lack of options, rather than opening an empty panel', () => {
-    const { button } = setup([], { options: [] })
-
-    expect(button).toBeDisabled()
   })
 
   // A facet the other filters have emptied still shows, at zero: it is drawn
   // back so the eye skips it, not withdrawn.
   it('marks the options the other filters have spent', () => {
-    const { button } = setup([], {
+    setup([], {
       options: [
         { value: 'SpiZ', count: 12 },
         { value: 'Ori', count: 0 },
       ],
     })
 
-    fireEvent.click(button)
-
-    expect(option('SpiZ').closest('label')).not.toHaveClass('is-spent')
-    expect(option('Ori').closest('label')).toHaveClass('is-spent')
+    expect(option('SpiZ').closest('label')).not.toHaveClass('spent')
+    expect(option('Ori').closest('label')).toHaveClass('spent')
   })
 
   // Drawn back, never disabled: a checked value can fall to zero — the panel it
   // was checked from is the only place it can be unchecked.
   it('leaves a spent option clickable, so a checked one can be taken back', () => {
-    const { button, onChange } = setup(['Ori'], {
+    const { onChange } = setup(['Ori'], {
       options: [{ value: 'Ori', count: 0 }],
     })
 
-    fireEvent.click(button)
     fireEvent.click(option('Ori'))
 
     expect(onChange).toHaveBeenCalledWith([])
@@ -190,11 +152,7 @@ describe('MultiSelect, longues listes', () => {
     count: 400 - index,
   }))
 
-  const openLong = (selected: string[] = []) => {
-    const rendered = setup(selected, { options: many })
-    fireEvent.click(rendered.button)
-    return rendered
-  }
+  const setupLong = (selected: string[] = []) => setup(selected, { options: many })
 
   const scrollTo = (offset: number) => {
     list().scrollTop = offset
@@ -202,44 +160,33 @@ describe('MultiSelect, longues listes', () => {
   }
 
   it('mounts a window of the options rather than the whole list', () => {
-    openLong()
+    setupLong()
 
-    expect(within(panel()!).getAllByRole('checkbox').length).toBeLessThan(50)
+    expect(within(panel()).getAllByRole('checkbox').length).toBeLessThan(50)
     expect(option('créateur-000')).toBeInTheDocument()
   })
 
+  // The pitch is not drawn inline any more — the sheet's `--opt-row` places the
+  // rows — so the spacer is what still states it: 400 options at 32px.
   it('reserves the height of the whole list, so the scrollbar tells the truth', () => {
-    openLong()
+    setupLong()
 
     expect(list().firstElementChild).toHaveStyle({ height: '12800px' })
   })
 
   it('mounts the options scrolled to, and lets go of those left behind', () => {
-    openLong()
+    setupLong()
 
     scrollTo(3000)
 
     expect(option('créateur-100')).toBeInTheDocument()
-    expect(within(panel()!).queryByRole('checkbox', { name: /créateur-000/ })).toBeNull()
-  })
-
-  // The panel is unmounted on close, so the DOM reopens at the top; the window
-  // has to be told, or it would draw the options from where we left off against
-  // a scroller sitting at zero.
-  it('reopens at the top of the list after having been closed further down', () => {
-    const { button } = openLong()
-    scrollTo(3000)
-
-    fireEvent.click(button)
-    fireEvent.click(button)
-
-    expect(option('créateur-000')).toBeInTheDocument()
+    expect(within(panel()).queryByRole('checkbox', { name: 'créateur-000' })).toBeNull()
   })
 
   it('keeps "Uncheck all" out of the scrolling list, in reach at any depth', () => {
-    openLong(['créateur-000'])
+    setupLong(['créateur-000'])
 
-    const clear = within(panel()!).getByRole('button', { name: 'Tout décocher' })
+    const clear = within(panel()).getByRole('button', { name: 'Tout décocher' })
     expect(list().contains(clear)).toBe(false)
   })
 })
