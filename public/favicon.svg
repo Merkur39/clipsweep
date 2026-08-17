@@ -4,37 +4,23 @@
 
     A favicon is loaded as an isolated document: the CSS variables of the parent
     document do not reach it, and `light-dark()` has no `color-scheme` to read
-    there. The values from `base.css` are therefore carried over here by hand,
-    and the switch is made by media query. That is the price of standing alone.
+    there. The values from `base.css` are therefore carried over here by hand.
+    That is the price of standing alone.
 
     Careful when editing this block: two consecutive hyphens close an XML
     comment. Spelling a CSS variable out in full here makes the file unreadable
     to the parser, and the favicon vanishes without anything signalling it (the
     file still serves with a 200).
 
-    The pattern is the one from the frieze: a whole period, split in two, then
-    again, and a last segment left saturated at the floor, which the tool
-    declares rather than passing over in silence.
+    No media query any more, and that is not an omission: the plate carries the
+    accent flat, which is the one colour of the system that is identical in both
+    worlds, and the bars carry the white it was chosen to hold. Nothing here has
+    a second value to switch to.
+
+    The pattern is the mechanism: three windows of a sweep, growing.
   -->
-  <style>
-    .rule { fill: #b6ada0 }
-    .half { fill: #8f6ae8 }
-    .full { fill: #6b3fd4 }
-    .lost { fill: #cf2b2b }
-
-    @media (prefers-color-scheme: dark) {
-      .rule { fill: #39415c }
-      .half { fill: #6a45c8 }
-      .full { fill: #a481ff }
-      .lost { fill: #ff5d5d }
-    }
-  </style>
-
-  <rect class="rule" x="1" y="2.4" width="14" height="2.2" rx="0.6" />
-  <rect class="rule" x="1" y="6.9" width="6.4" height="2.2" rx="0.6" />
-  <rect class="half" x="8.6" y="6.9" width="6.4" height="2.2" rx="0.6" />
-  <rect class="half" x="1" y="11.4" width="2.8" height="2.2" rx="0.6" />
-  <rect class="full" x="5" y="11.4" width="2.4" height="2.2" rx="0.6" />
-  <rect class="full" x="8.6" y="11.4" width="2.4" height="2.2" rx="0.6" />
-  <rect class="lost" x="12.2" y="11.4" width="2.8" height="2.2" rx="0.6" />
+  <rect fill="#0b5ed7" width="16" height="16" rx="5" />
+  <rect fill="#ffffff" x="4" y="10" width="2" height="3" rx="1" />
+  <rect fill="#ffffff" x="7" y="7" width="2" height="6" rx="1" />
+  <rect fill="#ffffff" x="10" y="4.5" width="2" height="8.5" rx="1" />
 </svg>
