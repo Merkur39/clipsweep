@@ -36,6 +36,20 @@ export interface SearchProgressProps {
 const identity = (value: string) => value
 
 /**
+ * What the rankings are while the drawer is shut. A module-level constant, not
+ * a fresh `{ rows: [], total: 0 }` per render: the memo's whole purpose is to
+ * return the same reference when nothing is being asked of it.
+ */
+const EMPTY_RANKING: Ranking = { rows: [], total: 0 }
+
+/**
+ * Longer than `--dur-panel`, which is 240ms. Only a backstop for a close whose
+ * transition never reports back; ending it early would cut the animation the
+ * closing state exists to permit.
+ */
+const CLOSE_FALLBACK_MS = 600
+
+/**
  * The log's four kinds, in the sheet's vocabulary. `info` deliberately maps to
  * nothing: it is the running trace, and it takes the log's own ink — only what
  * departs from the trace is coloured.
@@ -74,25 +88,53 @@ export function SearchProgress({
   const { locale, t } = useTranslation()
   const logRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
+  /**
+   * Held true for the length of the closing transition.
+   *
+   * The panel is not rendered while the drawer is shut — the whole point — but
+   * unmounting it on the click that closes it would leave the track with
+   * nothing to shrink, and the drawer would snap instead of closing. So the
+   * contents outlive the click by exactly one transition.
+   */
+  const [closing, setClosing] = useState(false)
+  const mounted = open || closing
 
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight })
   }, [logEntries])
 
-  // Recounted only when the clips change: the sweep appends to that array a few
-  // times a second, but a keystroke in the filters must not walk it again.
+  useEffect(() => {
+    if (!closing) return
+
+    // The transition's own end is the signal; this only covers the cases where
+    // it never arrives — a tab backgrounded mid-close, an engine that skips a
+    // transition it considers invisible. Generous on purpose: firing early
+    // would cut the animation this state exists to allow.
+    const timer = setTimeout(() => setClosing(false), CLOSE_FALLBACK_MS)
+    return () => clearTimeout(timer)
+  }, [closing])
+
+  /**
+   * The three passes over the whole collection, skipped while the drawer is
+   * shut — which is its default and, for most of a sweep, its state.
+   *
+   * Guarded inside the memo rather than around it: a hook cannot be called
+   * conditionally, but the work it wraps can be. `mounted` joins the
+   * dependencies, so opening the drawer pays for them once, at the moment
+   * someone asks to see them.
+   */
   const creators = useMemo(
-    () => rankClips(clips, (clip) => clip.creator_name, identity, t),
-    [clips, t],
+    () => (mounted ? rankClips(clips, (clip) => clip.creator_name, identity, t) : EMPTY_RANKING),
+    [mounted, clips, t],
   )
   const games = useMemo(
-    () => rankClips(clips, (clip) => clip.game_id, gameLabel, t),
-    [clips, gameLabel, t],
+    () => (mounted ? rankClips(clips, (clip) => clip.game_id, gameLabel, t) : EMPTY_RANKING),
+    [mounted, clips, gameLabel, t],
   )
 
   const zeroViews = useMemo(
-    () => clips.reduce((total, clip) => total + (clip.view_count === 0 ? 1 : 0), 0),
-    [clips],
+    () => (mounted ? clips.reduce((total, clip) => total + (clip.view_count === 0 ? 1 : 0), 0) : 0),
+    [mounted, clips],
   )
   const split = reports.filter((report) => report.split).length
 
@@ -103,7 +145,10 @@ export function SearchProgress({
         type="button"
         aria-expanded={open}
         aria-controls="stats-body"
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          if (open) setClosing(true)
+          setOpen(!open)
+        }}
       >
         {/* The glyph turns on the attribute, not on a swapped class: the chevron
             is the same node in both states, so the turn can be animated. */}
@@ -118,87 +163,106 @@ export function SearchProgress({
       {/* One grid track that goes from `minmax(0, 0fr)` to `minmax(0, 1fr)`, and
           therefore exactly one child to crop — hence the panel below rather than
           four siblings, which would open four implicit tracks and never
-          collapse. */}
-      <div className="stats-body" id="stats-body">
-        <div className="stats-inner glass">
-          <div className="stats-grid">
-            <RankCard title={t('stats.topCreators')} ranking={creators} locale={locale} t={t} />
-            <RankCard title={t('stats.topGames')} ranking={games} locale={locale} t={t} />
-          </div>
+          collapse.
 
-          <div className="card glass">
-            <div className="card-head">
-              <h4>{t('progress.timeSplit')}</h4>
-              <span className="sub">{t('stats.friezeSub', { n: reports.length })}</span>
+          The track itself is always rendered, and only what it holds comes and
+          goes: the transition needs a stable element on both sides of the
+          click, and this element costs one empty `<div>` where its contents
+          cost a frieze, a log, two rankings and five counters — all of them
+          reconciled on every window a sweep closes, for nobody. */}
+      <div
+        className="stats-body"
+        id="stats-body"
+        onTransitionEnd={(event) => {
+          // The track's own transition, not one bubbling up from a child: the
+          // panel holds several of its own, and any of them would otherwise
+          // cut the close short.
+          if (event.target === event.currentTarget && event.propertyName === 'grid-template-rows') {
+            setClosing(false)
+          }
+        }}
+      >
+        {mounted && (
+          <div className="stats-inner glass">
+            <div className="stats-grid">
+              <RankCard title={t('stats.topCreators')} ranking={creators} locale={locale} t={t} />
+              <RankCard title={t('stats.topGames')} ranking={games} locale={locale} t={t} />
             </div>
-            <Frieze reports={reports} span={span} running={running} />
-            {/* The legend is the caption of the frieze, not part of it: it is
+
+            <div className="card glass">
+              <div className="card-head">
+                <h4>{t('progress.timeSplit')}</h4>
+                <span className="sub">{t('stats.friezeSub', { n: reports.length })}</span>
+              </div>
+              <Frieze reports={reports} span={span} running={running} />
+              {/* The legend is the caption of the frieze, not part of it: it is
                 what the reader looks back at, so it stays outside the plot's
                 pointer area. */}
-            <div className="legend">
-              <span>
-                <u className="done" />
-                {t('progress.legend.done')}
-              </span>
-              <span>
-                <u className="split" />
-                {t('progress.legend.split')}
-              </span>
-              <span>
-                <u className="lost" />
-                {t('progress.legend.lost')}
-              </span>
+              <div className="legend">
+                <span>
+                  <u className="done" />
+                  {t('progress.legend.done')}
+                </span>
+                <span>
+                  <u className="split" />
+                  {t('progress.legend.split')}
+                </span>
+                <span>
+                  <u className="lost" />
+                  {t('progress.legend.lost')}
+                </span>
+              </div>
             </div>
-          </div>
 
-          <div className="counters">
-            {/* Amber, and it is not a fault: a clip nobody ever watched is the
+            <div className="counters">
+              {/* Amber, and it is not a fault: a clip nobody ever watched is the
                 find this tool exists for, and the colour marks it as the thing
                 to look at. */}
-            <Counter
-              tone="warn"
-              label={t('stats.zeroViews')}
-              value={formatCount(zeroViews, locale)}
-            />
-            <Counter
-              label={t('progress.periods')}
-              value={
-                progress
-                  ? `${formatCount(progress.windowsDone, locale)}/${formatCount(progress.windowsTotal, locale)}`
-                  : t('panel.nothingYet')
-              }
-            />
-            <Counter
-              label={t('progress.requests')}
-              value={progress ? formatCount(progress.requests, locale) : t('panel.nothingYet')}
-            />
-            <Counter label={t('stats.windowsSplit')} value={formatCount(split, locale)} />
-            <Counter
-              label={t('panel.elapsed')}
-              value={elapsedMs === null ? t('panel.nothingYet') : formatElapsed(elapsedMs)}
-            />
-          </div>
+              <Counter
+                tone="warn"
+                label={t('stats.zeroViews')}
+                value={formatCount(zeroViews, locale)}
+              />
+              <Counter
+                label={t('progress.periods')}
+                value={
+                  progress
+                    ? `${formatCount(progress.windowsDone, locale)}/${formatCount(progress.windowsTotal, locale)}`
+                    : t('panel.nothingYet')
+                }
+              />
+              <Counter
+                label={t('progress.requests')}
+                value={progress ? formatCount(progress.requests, locale) : t('panel.nothingYet')}
+              />
+              <Counter label={t('stats.windowsSplit')} value={formatCount(split, locale)} />
+              <Counter
+                label={t('panel.elapsed')}
+                value={elapsedMs === null ? t('panel.nothingYet') : formatElapsed(elapsedMs)}
+              />
+            </div>
 
-          <div className="card glass">
-            <div className="card-head">
-              <h4>{t('progress.log')}</h4>
-              <span className="sub">{t('stats.logSub', { n: progress?.requests ?? 0 })}</span>
-            </div>
-            {/* Nothing here is animated: the log takes several lines a second,
+            <div className="card glass">
+              <div className="card-head">
+                <h4>{t('progress.log')}</h4>
+                <span className="sub">{t('stats.logSub', { n: progress?.requests ?? 0 })}</span>
+              </div>
+              {/* Nothing here is animated: the log takes several lines a second,
                 and a transition on a line's arrival makes flicker, not motion. */}
-            <div className="log" ref={logRef}>
-              {logEntries.length === 0 ? (
-                <p className="dim">{t('progress.logEmpty')}</p>
-              ) : (
-                logEntries.map((entry) => (
-                  <p key={entry.id} className={LOG_TONE[entry.kind]}>
-                    {entry.text}
-                  </p>
-                ))
-              )}
+              <div className="log" ref={logRef}>
+                {logEntries.length === 0 ? (
+                  <p className="dim">{t('progress.logEmpty')}</p>
+                ) : (
+                  logEntries.map((entry) => (
+                    <p key={entry.id} className={LOG_TONE[entry.kind]}>
+                      {entry.text}
+                    </p>
+                  ))
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   )
