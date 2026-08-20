@@ -95,7 +95,7 @@ describe('describeEmptyResults', () => {
   it('invites a sweep while nothing has run', () => {
     expect(
       describeEmptyResults({ searched: false, running: false, clipsFound: 0, maxViews: null }, t),
-    ).toBe('Aucun scan lancé.')
+    ).toBe('Tapez le nom d’une chaîne au-dessus, puis lancez le scan.')
   })
 
   it('tells apart a period with no clips at all', () => {

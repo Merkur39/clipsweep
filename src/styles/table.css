@@ -6,7 +6,7 @@
 
 .table {
   border: 1px solid var(--rule);
-  border-radius: 0 0 var(--r) var(--r);
+  border-radius: var(--r);
   overflow: hidden;
   background: var(--surface);
 }
@@ -86,7 +86,7 @@
 
 /* Zero views: the case the sweep exists to unearth. */
 .table-row .col-views.zero {
-  color: var(--amber);
+  color: var(--accent);
 }
 
 .col-date {
@@ -112,7 +112,7 @@
 }
 
 .table-row .col-title a:hover {
-  color: var(--violet-strong);
+  color: var(--accent-strong);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -124,7 +124,7 @@
 
 /* ---- the play control ----
    The row's second control. It stays quiet on a resting row — a column of
-   violet triangles would out-shout the readout it serves — but it must never
+   accent triangles would out-shout the readout it serves — but it must never
    leave a doubt about what the cursor is over: the whole row is clickable and
    ticks the box, so the one place that does something else has to draw its own
    edge. Hence the box, held at 26 px and outlined as soon as the row is
@@ -154,15 +154,15 @@
 
 .table-row:hover .row-play {
   border-color: var(--rule-strong);
-  color: var(--violet);
+  color: var(--accent);
   opacity: 1;
 }
 
 .row-play:hover:not(:disabled),
 .row-play:focus-visible {
   background: var(--surface-raised);
-  border-color: var(--violet);
-  color: var(--violet-strong);
+  border-color: var(--accent);
+  color: var(--accent-strong);
   opacity: 1;
 }
 

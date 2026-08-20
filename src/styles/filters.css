@@ -1,43 +1,15 @@
 /* FiltersBar.tsx, NumberField.tsx, MultiSelect.tsx — the filter row.
-   It is welded to the top of the table (bottom border removed, radius cut):
-   the two form a single panel, not two stacked cards. */
 
-.result-count {
-  margin: 0 0 var(--s-3);
-  font-family: var(--mono);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-dim);
-}
-
-/* The blanket check, filed at the end of the counts it acts on. In the sans, on
-   a line otherwise set in the mono: the counts are a readout, this is an
-   action, and `button.link` would inherit the readout's family. Its bottom
-   padding — meant for links stacked in a panel — would push the line apart. */
-.result-count .link {
-  margin-left: var(--s-2);
-  padding: 0;
-  font-family: var(--sans);
-  font-size: 12px;
-}
-
-/* Six controls hold on one line provided they are not given the same template:
-   a views field houses six digits, a date field does not go below 137px (its
-   segments, its calendar and its cross), and the facets want everything that
-   is left — they are the ones that truncate ("SpiZ, Ori +3"). Each basis is
-   therefore calibrated on its content, each growth capped: it is the cap that
-   keeps a wrapped control from stretching alone across the full width, which
-   is what the row did before. */
+   It sits inside the toolbar now, and is no longer a panel welded to the top of
+   the readout: no border, no flat, no card. What restricts the clips reads as a
+   line of words over them, which is what leaves the thumbnails as the only
+   coloured thing on the page. */
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-3);
-  align-items: end;
-  padding: var(--s-3) var(--s-4);
-  border: 1px solid var(--rule);
-  border-bottom: 0;
-  border-radius: var(--r) var(--r) 0 0;
-  background: var(--chassis);
+  gap: var(--s-2) var(--s-4);
+  align-items: center;
+  min-width: 0;
 }
 
 .field,
@@ -46,33 +18,51 @@
   min-width: 0;
 }
 
-.filters .field {
-  flex: 1 1 90px;
-  max-width: 130px;
-}
-
-/* `min-width` as much as `flex-basis`: below 137px the date segments would get
-   clipped by the native calendar. */
-.filters .field.date {
-  flex: 1 1 137px;
-  min-width: 137px;
-  max-width: 148px;
-}
-
-/* Low basis, high cap: a facet needs no more than 73px for its minimal
-   content, and it is the one that takes back all the space available. */
+/* Label beside the control, not above it: stacked labels belong to a panel of
+   fields, and this is one line. */
+.filters .field,
 .filters .multiselect {
-  flex: 1 1 110px;
-  max-width: 240px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+/* The silkscreen that `controls.css` gives every label is a caption on an
+   instrument; across one line it would shout six times. */
+.filters .field-label {
+  font-size: var(--t-1);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.filters .field {
+  flex: 0 1 auto;
+}
+
+.filters .field .field-control {
+  width: 92px;
+}
+
+/* Below 137px the native calendar clips the date segments; 148 leaves the
+   picker its indicator and the clear button its place beside it. */
+.filters .field.date .field-control {
+  width: 148px;
+}
+
+.filters .multiselect {
+  flex: 0 1 auto;
 }
 
 /* Three native controls, three intrinsic heights under Chromium (33px for a
    number field, 34 for the button, 35 for a date field, which yields neither to
    `line-height` nor to styling its shadow DOM). Without a common height, the
-   labels of the row do not line up. */
-.filters .field-control input,
-.filters .multiselect-button {
-  height: 35px;
+   row does not sit on one line. */
+.filters .field-control input {
+  height: 32px;
 }
 
 /* The clear button is overlaid, not inserted: its appearing must move neither
@@ -128,45 +118,47 @@
   color: var(--text);
 }
 
-/* Set at the end of the "Results" label, after the hairline its `::after`
-   draws — hence the `order`, without which the hairline would run to the right
-   of the button instead of pushing it. */
-.section-label .filters-reset {
-  order: 1;
-  width: auto;
-  padding: 0;
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
 /* ---- multiselect ---- */
 
 .multiselect {
   position: relative;
 }
 
+/* A word and a caret, not a box: the facets are the two filters that read as
+   text in the toolbar, and a framed control among them would look like the only
+   one that matters. */
 .multiselect-button {
   gap: var(--s-2);
-  width: 100%;
-  padding: 8px 10px;
-  background: var(--ground);
-  border: 1px solid var(--rule);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 13px;
+  width: auto;
+  padding: 4px 0;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--text-dim);
+  font-family: var(--sans);
+  font-size: var(--t-1);
   font-weight: 400;
   text-align: left;
   justify-content: flex-start;
 }
 
+/* Something is actually filtering: the accent underlines it, which is the mark
+   the sort key wears too. */
+.multiselect.is-on .multiselect-button {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+}
+
 .multiselect-button:hover:not(:disabled) {
-  background: var(--ground);
-  border-color: var(--rule-strong);
+  background: none;
+  border-bottom-color: var(--rule-strong);
+  color: var(--text);
 }
 
 .multiselect-button[aria-expanded='true'] {
-  border-color: var(--violet);
+  border-bottom-color: var(--accent);
+  color: var(--text);
 }
 
 .multiselect-button .icon {
@@ -272,8 +264,34 @@
    has to be able to read what one is unchecking.
 
    Deliberately not `.zero`, which this sheet spends on the opposite errand:
-   amber, for the clip at zero views that the sweep exists to unearth. There the
+   the accent, for the clip at zero views that the sweep exists to unearth. There the
    eye is called; here it is meant to pass over. */
 .multiselect-option.is-spent .multiselect-option-name {
   color: var(--text-faint);
+}
+
+@media (max-width: 760px) {
+  /* Two columns rather than a wrapping row. Left to wrap, six controls of three
+     different widths landed in a staircase: the two view thresholds on one
+     line, the "from" date alone on the next, the "to" date sharing with the
+     creators facet. A grid pairs them the way they are read — the two
+     thresholds, the two bounds, the two facets. */
+  .filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-3) var(--s-4);
+  }
+
+  /* The control takes what the label leaves, instead of a width measured for a
+     desktop row. */
+  .filters .field .field-control,
+  .filters .field.date .field-control {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+  }
+
+  .filters .multiselect-button {
+    min-width: 0;
+  }
 }

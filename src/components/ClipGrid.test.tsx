@@ -9,6 +9,9 @@ import { ClipGrid } from './ClipGrid'
 
 afterEach(cleanup)
 
+/* Helix names its categories on demand; the stub stands in for that lookup. */
+const gameLabel = (id: string) => `Jeu ${id}`
+
 const clip = (id: string, over: Partial<Clip> = {}): Clip =>
   ({
     id,
@@ -26,7 +29,12 @@ const clip = (id: string, over: Partial<Clip> = {}): Clip =>
   }) as Clip
 
 const setup = (
-  options: { clips?: Clip[]; selected?: ReadonlySet<string>; sort?: ClipSort } = {},
+  options: {
+    clips?: Clip[]
+    selected?: ReadonlySet<string>
+    sort?: ClipSort
+    dense?: boolean
+  } = {},
 ) => {
   const onToggle = vi.fn()
   const onPlay = vi.fn()
@@ -34,6 +42,8 @@ const setup = (
   render(
     <ClipGrid
       clips={options.clips ?? [clip('a'), clip('b')]}
+      dense={options.dense ?? false}
+      gameLabel={gameLabel}
       selected={options.selected ?? new Set()}
       onToggle={onToggle}
       onPlay={onPlay}
@@ -140,12 +150,40 @@ describe('ClipGrid, ordering', () => {
   })
 })
 
+describe('ClipGrid, tight', () => {
+  /**
+   * What the tight gallery buys beyond more columns: a second readout line,
+   * carrying when the clip was made and what it was filed under. The large tile
+   * has no second line to put them on, and says nothing of the category.
+   */
+  it('names the category the large tile does without', () => {
+    setup({ dense: true, clips: [clip('a', { game_id: '7' })] })
+
+    expect(screen.getByText(/Jeu 7/)).toBeInTheDocument()
+  })
+
+  it('keeps the large tile to its one line', () => {
+    setup({ clips: [clip('a', { game_id: '7' })] })
+
+    expect(screen.queryByText(/Jeu 7/)).not.toBeInTheDocument()
+  })
+
+  /** A clip filed under nothing gets no mention, not an empty one. */
+  it('says nothing of a category that is not there', () => {
+    setup({ dense: true, clips: [clip('a', { game_id: '' })] })
+
+    expect(screen.queryByText(/Jeu/)).not.toBeInTheDocument()
+  })
+})
+
 describe('ClipGrid, with nothing to show', () => {
   it('says why, and offers the way out', () => {
     const onClick = vi.fn()
     render(
       <ClipGrid
         clips={[]}
+        dense={false}
+        gameLabel={gameLabel}
         selected={new Set()}
         onToggle={vi.fn()}
         onPlay={vi.fn()}

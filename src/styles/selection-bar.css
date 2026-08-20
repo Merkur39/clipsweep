@@ -1,0 +1,102 @@
+/* SelectionBar.tsx — what to do with what is kept.
+
+   Fixed to the viewport, not to the page: a sweep is tens of thousands of
+   clips, and a bar that scrolls away with the first screenful is a bar you have
+   to go back up to find. It is rendered only while something is selected, so it
+   covers nothing the rest of the time. */
+
+.selection-bar {
+  position: fixed;
+  /* Pinned to the page's left edge, not the window's. Fixed positioning knows
+     nothing of the 1440px the content is centred in: on a wide screen the bar
+     sat alone in the gutter, 520px from anything it acts on. The max() falls
+     back to the plain gutter as soon as the window is narrower than the page.
+     Per cent, not vw: `vw` counts the scrollbar the centred page does not, and
+     the bar landed seven pixels off its own column. */
+  left: max(var(--s-6), calc(50% - 720px + var(--s-6)));
+  bottom: var(--s-5);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  max-width: min(1440px - 2 * var(--s-6), 100vw - 2 * var(--s-6));
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  /* Neutral, and the only shadow in the design: on paper a hairline alone does
+     not lift a near-white bar off a near-white page. In dark it barely shows,
+     which is correct — there the hairline already does the work. */
+  box-shadow: 0 2px 14px var(--shadow-panel);
+}
+
+.selection-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.selection-count {
+  font-size: var(--t-1);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Flat, not folded behind a menu: three words fit, and hiding them would cost a
+   click and conceal from a first-time visitor that the list can leave without
+   the videos. */
+.selection-formats {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.selection-formats button {
+  font-size: var(--t-1);
+}
+
+.selection-bar .primary {
+  margin-left: auto;
+}
+
+/* What the download actually is, said where the click happens rather than in a
+   panel further down that nobody reads twice. */
+.selection-note {
+  margin: 0;
+  max-width: 64ch;
+  font-size: var(--t-1);
+  line-height: 1.45;
+  color: var(--text-faint);
+  text-wrap: pretty;
+}
+
+.selection-note .link {
+  width: auto;
+  padding: 0;
+  font-size: var(--t-1);
+}
+
+@media (max-width: 760px) {
+  /* Full width on a phone: a floating island 340px wide on a 390px screen is a
+     full-width bar with a gutter it has not earned. */
+  .selection-bar {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-width: none;
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+    padding: var(--s-3) var(--s-4);
+  }
+
+  .selection-bar .primary {
+    margin-left: 0;
+  }
+
+  /* The explanation is the first thing to go when there is no room for it: the
+     buttons have to stay reachable with a thumb. */
+  .selection-note {
+    display: none;
+  }
+}

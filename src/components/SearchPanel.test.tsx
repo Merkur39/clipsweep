@@ -8,17 +8,10 @@ import { SearchPanel, type SearchPanelProps } from './SearchPanel'
 afterEach(cleanup)
 
 const setup = (props: Partial<SearchPanelProps> = {}) => {
-  const onConnect = vi.fn()
-  const onDisconnect = vi.fn()
   const onRememberChange = vi.fn()
+  const onConnect = vi.fn()
   render(
     <SearchPanel
-      authMessage="peu importe"
-      authKind=""
-      connected={false}
-      canConnect
-      onConnect={onConnect}
-      onDisconnect={onDisconnect}
       channel="testchannel"
       onChannelChange={vi.fn()}
       remember={false}
@@ -30,51 +23,20 @@ const setup = (props: Partial<SearchPanelProps> = {}) => {
       today="2026-08-01"
       periodError={null}
       channelCreatedAt={null}
+      connected
+      canConnect
+      onConnect={onConnect}
       running={false}
       onRun={vi.fn()}
       {...props}
     />,
   )
-  return { onConnect, onDisconnect, onRememberChange }
+  return { onRememberChange, onConnect }
 }
 
-const connexion = () => screen.queryByRole('button', { name: 'Se connecter à Twitch' })
-const deconnexion = () => screen.queryByRole('button', { name: 'Se déconnecter' })
 const memoire = () => screen.getByRole('checkbox', { name: 'Se souvenir de cette chaîne' })
 
-describe('SearchPanel, access', () => {
-  it('offers to connect while you are not', () => {
-    setup()
-
-    expect(connexion()).toBeInTheDocument()
-    expect(deconnexion()).toBeNull()
-  })
-
-  // A disabled button repeating the status line is not a control: once
-  // connected, the only action left is leaving.
-  it('offers to disconnect once connected', () => {
-    setup({ connected: true })
-
-    expect(deconnexion()).toBeInTheDocument()
-    expect(connexion()).toBeNull()
-  })
-
-  it('reports the disconnect request', () => {
-    const { onDisconnect } = setup({ connected: true })
-
-    fireEvent.click(deconnexion()!)
-
-    expect(onDisconnect).toHaveBeenCalledTimes(1)
-  })
-
-  // Sans Client ID, aucune connexion n'est possible : le bouton reste visible
-  // pour que le message de configuration ait un sujet, mais inerte.
-  it('disables connecting for lack of a configured application', () => {
-    setup({ canConnect: false })
-
-    expect(connexion()).toBeDisabled()
-  })
-
+describe('SearchPanel, the period', () => {
   // The log is folded by default: an error that appears only there is
   // impossible to find, and the click that triggers it has no visible effect.
   it('announces the period error outside the log', () => {
@@ -137,5 +99,74 @@ describe('SearchPanel, remembering the channel', () => {
     fireEvent.click(memoire())
 
     expect(onRememberChange).toHaveBeenCalledWith(false)
+  })
+})
+
+// What a visitor meets before there is any session. "Connect to Twitch" alone
+// asks someone who has never heard of the tool to hand over an account without
+// saying what that buys or what it costs; the tokens carry no scope at all,
+// which is the one fact worth stating before the click.
+describe('SearchPanel, before any session', () => {
+  const promise = /aucune permission sur ton compte/
+
+  it('says what connecting grants, and what it does not', () => {
+    setup({ connected: false })
+
+    expect(screen.getByText(promise)).toBeInTheDocument()
+  })
+
+  // Afterwards it is noise: the question it answers has been settled.
+  it('drops the explanation once connected', () => {
+    setup({ connected: true })
+
+    expect(screen.queryByText(promise)).toBeNull()
+  })
+})
+
+// The one thing to do when there is no session, and it sits on the row the eye
+// is already on rather than in a corner of the top bar.
+describe('SearchPanel, connecting', () => {
+  const connexion = () => screen.queryByRole('button', { name: 'Se connecter à Twitch' })
+
+  it('offers to connect instead of to start', () => {
+    setup({ connected: false })
+
+    expect(connexion()).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Lancer le scan' })).toBeNull()
+  })
+
+  it('reports the connection request', () => {
+    const { onConnect } = setup({ connected: false })
+
+    fireEvent.click(connexion()!)
+
+    expect(onConnect).toHaveBeenCalledTimes(1)
+  })
+
+  // Sans Client ID, aucune connexion n'est possible : le bouton reste visible
+  // pour que le message de configuration ait un sujet, mais inerte.
+  it('disables connecting for lack of a configured application', () => {
+    setup({ connected: false, canConnect: false })
+
+    expect(connexion()).toBeDisabled()
+  })
+})
+
+// The creation date stays true once the session ends — it is a fact about the
+// channel, not about the visitor. What stops being true is the offer built on
+// it: widening the period is something only a session can act on.
+describe('SearchPanel, reaching back to the channel’s creation', () => {
+  const remonter = () => screen.queryByRole('button', { name: /Remonter à la création/ })
+
+  it('offers the jump when the channel predates the period asked for', () => {
+    setup({ connected: true, channelCreatedAt: '2017-07-10', since: '2019-01-01' })
+
+    expect(remonter()).toBeInTheDocument()
+  })
+
+  it('withdraws the offer once there is no session to act on it', () => {
+    setup({ connected: false, channelCreatedAt: '2017-07-10', since: '2019-01-01' })
+
+    expect(remonter()).toBeNull()
   })
 })

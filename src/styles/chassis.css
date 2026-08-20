@@ -1,20 +1,28 @@
-/* The shell of App.tsx: nameplate, chassis columns, facade labels. */
+/* The shell of App.tsx: the top bar, the search that opens the page, the
+   editorial header a swept channel earns, and the toolbar over the readout.
+
+   There is no rail. The search is one centred block at the top and the clips
+   have the full width underneath — which is the whole point of the model: the
+   thing being looked for is a channel, and the thing being read is its clips.
+   Nothing else is entitled to a column. */
 
 .page {
-  max-width: 1360px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 0 var(--s-5) var(--s-7);
+  padding: 0 var(--s-6) var(--s-7);
 }
 
-/* ---- nameplate ---- */
+/* ---- top bar ----
+   Identification and preferences, nothing of the task. It weighs what its own
+   type weighs and gets no rule under it: the search below is separation
+   enough. */
 
 .masthead {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: var(--s-4);
   flex-wrap: wrap;
-  padding: var(--s-5) 0 var(--s-4);
-  border-bottom: 1px solid var(--rule-strong);
+  padding: var(--s-5) 0 var(--s-3);
 }
 
 .masthead-name {
@@ -22,9 +30,10 @@
   align-items: center;
   gap: 10px;
   margin: 0;
-  font-size: 19px;
-  font-weight: 650;
-  letter-spacing: -0.015em;
+  font-family: var(--serif);
+  font-size: var(--t-3);
+  font-weight: 400;
+  letter-spacing: 0.005em;
 }
 
 .masthead-mark {
@@ -32,25 +41,15 @@
   display: block;
 }
 
-.lede {
-  margin: 0;
-  max-width: 62ch;
-  font-size: 13px;
-  color: var(--text-dim);
-}
-
-/* ---- preference rows ----
-   Display preferences, not actions of the task: they file at the end of the
-   plate and weigh no more than their pills. The chassis aligns on the
-   baseline, which would lay them askew.
-
-   The two rows share the same shape because they have the same standing: a
-   three-position state whose current one reads without acting. */
+/* Everything after the nameplate is pushed right, and the session is set apart
+   from the two preferences rather than filed with them: language and theme are
+   settings, a session is a state. Butted against the pills it read as a third
+   one. */
 .masthead-prefs {
   display: flex;
-  align-self: center;
-  margin-left: auto;
+  align-items: center;
   gap: var(--s-3);
+  margin-left: auto;
 }
 
 /* No `overflow: hidden` to cut the corners: here it would clip the focus ring,
@@ -58,7 +57,6 @@
 .segmented {
   display: flex;
   border: 1px solid var(--rule);
-  border-radius: var(--r);
 }
 
 .segmented button {
@@ -81,8 +79,9 @@
   border-right: 0;
 }
 
-/* The bare button turns violet on its border; here the border is a seam shared
-   between three pills, it does not follow the hover of any one of them. */
+/* The bare button takes the accent on its border; here the border is a seam
+   shared between three pills, it does not follow the hover of any one of
+   them. */
 .segmented button:hover:not(:disabled) {
   background: var(--surface-hover);
   border-color: var(--rule);
@@ -90,116 +89,155 @@
 }
 
 .segmented button[aria-pressed='true'] {
-  background: var(--violet-wash);
-  color: var(--violet);
+  background: var(--accent-wash);
+  color: var(--accent);
 }
 
-/* Filed at the very end of the "Results" label, past the reset: the choice of
-   readout governs what is drawn below, not the filters beside it. Slimmer than
-   the pills of the masthead — this one joins a line of type, not a row of
-   preferences. */
-.section-label .view-toggle {
-  order: 2;
-}
+/* ---- the editorial header ----
+   The channel, named once, at the only size the page uses it at. Beside it,
+   what the sweep came back with. Before a sweep there is nothing to name, and
+   the block is not rendered at all — a placeholder headline would announce a
+   channel nobody has asked for yet. */
 
-.section-label .view-toggle button {
-  padding: 4px 8px;
-}
-
-/* ---- chassis ---- */
-
-.layout {
-  display: grid;
-  grid-template-columns: 296px minmax(0, 1fr);
-  align-items: stretch;
-}
-
-/* The seam runs the full height: a chassis is not cut short at the point where
-   its left panel stops having content. */
-.rail {
-  border-right: 1px solid var(--rule-strong);
-  padding: var(--s-5) 0 var(--s-6);
-}
-
-/* `overflow-y: auto` moves `overflow-x` from `visible` to `auto`: the slightest
-   horizontal overflow — a focus ring, the intrinsic width of a date field —
-   brings out a scrollbar. The gutters are therefore inside the container that
-   scrolls, not on the panel.
-
-   The left one is worth the exact reach of the focus ring, `outline-width` plus
-   `outline-offset`: what overflows to the left of a scrolling container is
-   clipped, and not recoverable by scrolling. The negative margin cancels the
-   shift this gutter would impose on the content. */
-.rail-inner {
-  position: sticky;
-  top: 0;
-  max-height: 100vh;
-  overflow-y: auto;
-  padding: 4px var(--s-5) 0 4px;
-  margin-left: -4px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
-}
-
-.stage {
-  padding: var(--s-5) 0 0 var(--s-5);
-  min-width: 0;
-}
-
-/* ---- facade labels ----
-   Silkscreen: small drawn capitals, extended by a hairline that runs to the
-   edge of the panel. That is what organises the surface — not cards. */
-
-.section-label {
+.channel-head {
   display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  margin: var(--s-6) 0 var(--s-3);
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+  padding: var(--s-6) 0 var(--s-4);
+}
+
+.channel-name {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: var(--t-4);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  /* A Twitch login is one word and can be long; it may shrink but never push
+     the readout off the page. */
+  overflow-wrap: anywhere;
+}
+
+.channel-tally {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2) var(--s-5);
+  flex-wrap: wrap;
+  padding-bottom: 6px;
+  font-size: var(--t-1);
   color: var(--text-dim);
 }
 
-.section-label::after {
+.tally-figure {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+
+.channel-tally b {
+  font-size: var(--t-3);
+  font-weight: 400;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A chip, not a banner: it qualifies the count it sits beside, and a full-width
+   alert under the heading would say the sweep failed, which it did not. Its own
+   hue, never the accent — see base.css. */
+.tally-warn {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--lost-strong);
+}
+
+.tally-warn::before {
   content: '';
-  flex: 1;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lost);
+}
+
+.channel-rule {
   height: 1px;
   background: var(--rule);
 }
 
-.rail-inner .section-label:first-child,
-.stage > .section-label:first-child {
-  margin-top: 0;
+/* ---- the toolbar over the readout ----
+   Text, not boxes. What is active carries the accent under it; what is not is
+   a word. The density control is the one thing drawn, because it is a picture
+   of what it does. */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-5);
+  flex-wrap: wrap;
+  padding: var(--s-4) 0 var(--s-3);
+  font-size: var(--t-1);
+}
+
+.toolbar-left,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+}
+
+/* Its own line under the toolbar. Inline, it made a row of six filters, three
+   counts and two controls compete for 1440px, and the controls wrapped away to
+   a second row where nothing pointed at them. */
+.result-line {
+  margin: 0 0 var(--s-3);
+  font-size: var(--t-1);
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.result-line .link {
+  width: auto;
+  margin-left: var(--s-2);
+  padding: 0;
+  font-size: var(--t-1);
+}
+
+/* Filed at the end of the toolbar: the choice of readout governs what is drawn
+   below, not the page. */
+.toolbar .view-toggle button {
+  padding: 4px 8px;
 }
 
 /* ---- what the two readouts share ----
-   Why there is nothing on screen: the table and the grid go empty for exactly
-   the same reasons, so the message belongs to neither of them. */
+   Why there is nothing on screen: the table and the gallery go empty for
+   exactly the same reasons, so the message belongs to neither of them. */
 
 .results-empty {
   margin: 0;
-  padding: 26px var(--s-4);
-  font-size: 13px;
+  padding: var(--s-7) var(--s-4);
+  font-size: var(--t-2);
+  line-height: 1.5;
   color: var(--text-dim);
+  text-align: center;
+  text-wrap: pretty;
 }
 
 .results-empty .link {
   width: auto;
   padding: 0;
-  font-size: 13px;
+  font-size: var(--t-2);
 }
 
 /* ---- footer ---- */
 
-/* The counterpart of the nameplate: the same seam hairline, above rather than
-   below. Both close the page on the same line, one announces, the other
-   accounts. */
 .colophon {
-  margin-top: var(--s-6);
+  margin-top: var(--s-7);
   padding: var(--s-4) 0 var(--s-5);
-  border-top: 1px solid var(--rule-strong);
+  border-top: 1px solid var(--rule);
 }
 
 .colophon-links {
@@ -209,54 +247,57 @@
   margin: 0 0 var(--s-3);
 }
 
-/* Silkscreened like the section labels: they are markers, not invitations. The
-   underline on hover is enough to say they are alive. */
 .colophon-links a {
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  font-size: var(--t-1);
   color: var(--text-dim);
   text-decoration: none;
 }
 
 .colophon-links a:hover {
-  color: var(--violet-strong);
+  color: var(--accent);
   text-decoration: underline;
 }
 
-/* Bounded measure: a legal notice reads in one go, not by sweeping 1600px from
+/* Bounded measure: a legal notice reads in one go, not by sweeping 1400px from
    one temple to the other. */
 .colophon-note {
   max-width: 78ch;
   margin: 0;
-  font-size: 12px;
+  font-size: var(--t-1);
   line-height: 1.55;
   color: var(--text-faint);
 }
 
-@media (max-width: 960px) {
+@media (max-width: 760px) {
+  .masthead {
+    gap: var(--s-3);
+    padding: var(--s-4) 0 var(--s-2);
+  }
+
+  .masthead-prefs {
+    gap: var(--s-2);
+  }
+
   .page {
     padding: 0 var(--s-4) var(--s-6);
   }
 
-  .layout {
-    grid-template-columns: 1fr;
+  .channel-head {
+    padding: var(--s-4) 0 var(--s-3);
   }
 
-  .rail {
-    border-right: 0;
-    border-bottom: 1px solid var(--rule-strong);
-    padding: var(--s-5) 0 var(--s-5);
+  /* The one size that cannot survive a phone: 56px of Newsreader across a
+     390px screen leaves room for six letters. */
+  .channel-name {
+    font-size: 40px;
   }
 
-  .rail-inner {
-    position: static;
-    max-height: none;
-    overflow: visible;
+  .toolbar {
+    gap: var(--s-3);
   }
 
-  .stage {
-    padding: var(--s-5) 0 0;
+  .toolbar-left,
+  .toolbar-right {
+    gap: var(--s-4);
   }
 }

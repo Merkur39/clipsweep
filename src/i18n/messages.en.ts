@@ -3,7 +3,6 @@ import type { Catalogue } from './messages.fr'
 /** The English translation. See `messages.fr.ts` for the writing rules. */
 export const en: Catalogue = {
   // ── Masthead ─────────────────────────────────────────────────────────────
-  'app.tagline': 'Every clip a channel ever had. Yes, that one too.',
 
   // ── Access ───────────────────────────────────────────────────────────────
   'access.disconnected': 'Disconnected from Twitch.',
@@ -16,16 +15,16 @@ export const en: Catalogue = {
     'No application configured. Set VITE_TWITCH_CLIENT_ID in .env.local, and declare {redirectUri} in your Twitch application’s “OAuth Redirect URLs”.',
   'access.verifying': 'Checking the token, try again.',
   'access.required': 'Connect to Twitch before starting the sweep.',
+  'access.why':
+    'Connecting to Twitch is only there to query its API. ClipSweep asks for no permission on your account.',
 
   'access.life.minutes': { one: '{n} min left', other: '{n} min left' },
   'access.life.hours': { one: '{n} h left', other: '{n} h left' },
   'access.life.days': { one: '{n} d left', other: '{n} d left' },
 
   // ── Search panel ─────────────────────────────────────────────────────────
-  'panel.access': 'Access',
   'panel.connect': 'Connect to Twitch',
   'panel.disconnect': 'Disconnect',
-  'panel.target': 'Target',
   'panel.channel': 'Channel',
   'panel.remember': 'Remember this channel',
   'panel.since': 'From',
@@ -53,12 +52,13 @@ export const en: Catalogue = {
   'results.selectAll': 'Select all',
   'results.deselectAll': 'Deselect all',
   'results.showAll': 'Show all {n}',
+  'results.retrieved': { one: 'clip found', other: 'clips found' },
   'results.count.found': { one: '{n} clip collected', other: '{n} clips collected' },
   'results.count.shown': { one: '{n} shown', other: '{n} shown' },
   'results.count.selected': { one: '{n} selected', other: '{n} selected' },
 
   // ── Empty table ──────────────────────────────────────────────────────────
-  'results.empty.notSearched': 'No sweep has run yet.',
+  'results.empty.notSearched': 'Type a channel name above, then start the sweep.',
   'results.empty.running': 'Sweeping — the first clips are on their way.',
   'results.empty.nothing': 'No clips in this period. Widen the date range.',
   'results.empty.outOfRange': {
@@ -106,8 +106,9 @@ export const en: Catalogue = {
 
   // ── Thumbnails ───────────────────────────────────────────────────────────
   'view.label': 'Display',
-  'view.table': 'Table',
-  'view.grid': 'Thumbnails',
+  'view.large': 'Large thumbnails',
+  'view.dense': 'Tight thumbnails',
+  'view.list': 'List',
   'grid.sortBy': 'Sort',
 
   // ── Player ───────────────────────────────────────────────────────────────
@@ -127,12 +128,12 @@ export const en: Catalogue = {
     other:
       '{n} periods could not be explored in full: clips are missing from them. Narrow the date range.',
   },
-  'progress.details': 'Sweep details',
-  'progress.detailsAside': 'frieze, counters, log',
-  'progress.timeSplit': 'Time breakdown',
-  'progress.legend.done': 'complete period',
-  'progress.legend.split': 'saturated, split',
-  'progress.legend.lost': 'saturated at the floor — clips missing',
+  'progress.details': 'Details',
+  'progress.detailsAside': 'how the sweep went about it',
+  'progress.timeSplit': 'Periods covered',
+  'progress.legend.done': 'everything was collected',
+  'progress.legend.split': 'too many clips at once, period split',
+  'progress.legend.lost': 'too many even split — some are missing',
   'progress.periods': 'Periods',
   'progress.requests': 'Requests',
   'progress.log': 'Log',
@@ -149,15 +150,14 @@ export const en: Catalogue = {
     one: '{n} period · hover for detail · logarithmic height',
     other: '{n} periods · hover for detail · logarithmic height',
   },
-  'frieze.kind.done': 'complete',
-  'frieze.kind.split': 'saturated, split',
-  'frieze.kind.lost': 'saturated at the floor — clips missing',
+  'frieze.kind.done': 'all collected',
+  'frieze.kind.split': 'split',
+  'frieze.kind.lost': 'clips are missing',
 
   // ── Export ───────────────────────────────────────────────────────────────
   'export.download.title': 'Download the videos',
   'export.download.ledeBefore': 'A script to run on your machine: it borrows',
   'export.download.ledeAfter': 'if needed, installing nothing, then downloads the clips.',
-  'export.download.none': 'No clip selected',
   'export.download.some': {
     one: 'Download the clip',
     other: 'Download the {n} clips',
@@ -166,16 +166,9 @@ export const en: Catalogue = {
   'export.script.sh': 'macOS · Linux script (.sh)',
   'export.script.batHelp': 'Save it in a folder, then double-click it.',
   'export.script.shHelp': 'Save it, then: chmod +x file.sh && ./file.sh',
-  'export.script.batHint': 'Windows script (.bat) — save it in a folder, then double-click it.',
-  'export.script.shHint': 'macOS · Linux script (.sh) — save it, then chmod +x and run it.',
   'export.script.otherUnix': 'I’m on macOS or Linux',
   'export.script.otherWindows': 'I’m on Windows',
-  'export.list.title': 'Export the list',
-  'export.list.lede':
-    'The clips’ metadata, without the videos — for a spreadsheet or another tool.',
   'export.urlsHelp': 'One URL per line, for yt-dlp -a',
-  'export.tally': '{selected} of {found}',
-  'export.tallyFound': { one: '{n} collected', other: '{n} collected' },
 
   // ── Preferences ──────────────────────────────────────────────────────────
   'theme.label': 'Theme',

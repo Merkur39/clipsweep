@@ -8,7 +8,7 @@ import { ViewToggle } from './ViewToggle'
 
 afterEach(cleanup)
 
-const setup = (view: View = 'table') => {
+const setup = (view: View = 'large') => {
   const onChange = vi.fn()
   render(<ViewToggle view={view} onChange={onChange} />)
   return { onChange }
@@ -17,27 +17,42 @@ const setup = (view: View = 'table') => {
 const choice = (name: string) => screen.getByRole('button', { name })
 
 describe('ViewToggle', () => {
-  it('offers the two readouts under a named group', () => {
+  it('offers the three readouts under a named group', () => {
     setup()
 
     expect(screen.getByRole('group', { name: 'Affichage' })).toBeInTheDocument()
-    expect(screen.getAllByRole('button')).toHaveLength(2)
+    expect(screen.getAllByRole('button')).toHaveLength(3)
   })
 
   // Read without acting, as everywhere else: the state is heard through
   // `aria-pressed`, not guessed from a tint.
   it('announces the readout on screen, and only it', () => {
-    setup('grid')
+    setup('dense')
 
-    expect(choice('Vignettes')).toHaveAttribute('aria-pressed', 'true')
-    expect(choice('Tableau')).toHaveAttribute('aria-pressed', 'false')
+    expect(choice('Vignettes serrées')).toHaveAttribute('aria-pressed', 'true')
+    expect(choice('Grandes vignettes')).toHaveAttribute('aria-pressed', 'false')
+    expect(choice('Liste')).toHaveAttribute('aria-pressed', 'false')
   })
 
   it('reports the readout asked for', () => {
-    const { onChange } = setup('table')
+    const { onChange } = setup('large')
 
-    choice('Vignettes').click()
+    choice('Vignettes serrées').click()
 
-    expect(onChange).toHaveBeenCalledWith('grid')
+    expect(onChange).toHaveBeenCalledWith('dense')
+  })
+
+  /**
+   * The two galleries sit next to each other and the rows last: the control
+   * reads as one axis of density, not as three unrelated shapes.
+   */
+  it('orders them from the loosest to the tightest', () => {
+    setup()
+
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Grandes vignettes',
+      'Vignettes serrées',
+      'Liste',
+    ])
   })
 })

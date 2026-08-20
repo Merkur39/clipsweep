@@ -1,2 +1,6 @@
 * text=auto eol=lf
 package-lock.json -diff linguist-generated
+
+# Self-hosted webfonts. `text=auto` above sniffs content to decide, and a
+# font it guessed wrong about would be silently corrupted by eol conversion.
+*.woff2 binary

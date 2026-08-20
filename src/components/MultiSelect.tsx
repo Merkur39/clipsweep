@@ -101,7 +101,7 @@ export function MultiSelect({
   })
 
   return (
-    <div className="multiselect" ref={rootRef}>
+    <div className={selected.length > 0 ? 'multiselect is-on' : 'multiselect'} ref={rootRef}>
       <span className="field-label" id={labelId}>
         {label}
       </span>
