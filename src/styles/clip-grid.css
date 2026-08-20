@@ -68,17 +68,12 @@
    checked by default here, so extinguishing what is not kept would put the
    whole board out at rest.
 
-   An outline, not an inset shadow: a shadow is painted under the element's
-   children, so the thumbnail covered the very edge meant to mark the tile — two
-   pixels around the block of type, one around the image, which read as a frame
-   the image was biting into. The outline paints above everything, follows the
-   radius, and costs no layout, which the virtualiser demands: a kept tile has
-   to measure exactly what an unkept one measures. */
-.tile.is-picked {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
+   The mark is the box filled with the accent, and the title taking its ink —
+   not a rectangle round the tile. That rectangle was drawn for a framed tile
+   and outlived the frame: on a board of unframed images it put the grid of
+   boxes straight back, and a run of adjacent kept tiles read as a stray border
+   along the first row and the outer columns rather than as anything anyone had
+   chosen. */
 .tile.is-picked .tile-title {
   color: var(--accent-strong);
 }
