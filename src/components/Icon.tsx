@@ -66,6 +66,25 @@ export function PlayIcon() {
   )
 }
 
+/** Drawn at the head of the field it belongs to, never as a button. */
+export function SearchIcon() {
+  return (
+    <svg {...base} width={15} height={15} strokeWidth={1.7}>
+      <circle cx="7.2" cy="7.2" r="4.6" />
+      <path d="M10.6 10.6 14 14" />
+    </svg>
+  )
+}
+
+/** Down, into the machine: the arrow lands on a floor, which is the file. */
+export function DownloadIcon() {
+  return (
+    <svg {...base} width={13} height={13}>
+      <path d="M8 2.5v7.5M5 7.5 8 10.5l3-3M3 13.5h10" />
+    </svg>
+  )
+}
+
 /** An arrow leaving the panel: you are leaving, nothing is being deleted. */
 export function LogoutIcon() {
   return (
@@ -89,13 +108,36 @@ export function RowsIcon() {
   )
 }
 
+/* The two galleries. Filled, where every other glyph is stroked: a
+   three-column grid drawn at this weight leaves cells of four units carrying
+   two of stroke, and turns to mush at the size the control is read at. Solid
+   cells keep the pair legible and, more to the point, keep them comparable —
+   they say the same thing at two densities, so they must be drawn the same
+   way. */
+
 export function GridIcon() {
   return (
-    <svg {...base} width={13} height={13} strokeWidth={1.6}>
-      <rect x="2.4" y="2.4" width="4.8" height="4.8" rx="0.6" />
-      <rect x="8.8" y="2.4" width="4.8" height="4.8" rx="0.6" />
-      <rect x="2.4" y="8.8" width="4.8" height="4.8" rx="0.6" />
-      <rect x="8.8" y="8.8" width="4.8" height="4.8" rx="0.6" />
+    <svg {...base} width={13} height={13} fill="currentColor" stroke="none">
+      <rect x="0.8" y="0.8" width="6.4" height="6.4" />
+      <rect x="8.8" y="0.8" width="6.4" height="6.4" />
+      <rect x="0.8" y="8.8" width="6.4" height="6.4" />
+      <rect x="8.8" y="8.8" width="6.4" height="6.4" />
+    </svg>
+  )
+}
+
+export function DenseGridIcon() {
+  return (
+    <svg {...base} width={13} height={13} fill="currentColor" stroke="none">
+      <rect x="0.8" y="0.8" width="4" height="4" />
+      <rect x="6" y="0.8" width="4" height="4" />
+      <rect x="11.2" y="0.8" width="4" height="4" />
+      <rect x="0.8" y="6" width="4" height="4" />
+      <rect x="6" y="6" width="4" height="4" />
+      <rect x="11.2" y="6" width="4" height="4" />
+      <rect x="0.8" y="11.2" width="4" height="4" />
+      <rect x="6" y="11.2" width="4" height="4" />
+      <rect x="11.2" y="11.2" width="4" height="4" />
     </svg>
   )
 }
@@ -140,9 +182,12 @@ export function AlertIcon() {
 }
 
 /**
- * The mark is the mechanism: one span of time, halved, halved again — and one
- * segment that stayed saturated at the floor, which the tool declares rather
- * than hides. It is the frieze's legend, compressed.
+ * The mark is the claim: a play triangle cut into scan lines, its lower half in
+ * the accent. What Helix hands over is the top; what the sweep goes back for is
+ * the part drawn in colour. One shape, and it says the whole product.
+ *
+ * Square, like everything else — the sheet sets `--r` to zero and a mark with
+ * rounded bars beside unrounded thumbnails reads as a leftover.
  */
 export function Mark() {
   return (
@@ -154,13 +199,11 @@ export function Mark() {
       fill="none"
       aria-hidden="true"
     >
-      <rect x="1" y="2.4" width="14" height="2.2" rx="0.6" fill="var(--rule-strong)" />
-      <rect x="1" y="6.9" width="6.4" height="2.2" rx="0.6" fill="var(--rule-strong)" />
-      <rect x="8.6" y="6.9" width="6.4" height="2.2" rx="0.6" fill="var(--violet-half)" />
-      <rect x="1" y="11.4" width="2.8" height="2.2" rx="0.6" fill="var(--violet-half)" />
-      <rect x="5" y="11.4" width="2.4" height="2.2" rx="0.6" fill="var(--violet)" />
-      <rect x="8.6" y="11.4" width="2.4" height="2.2" rx="0.6" fill="var(--violet)" />
-      <rect x="12.2" y="11.4" width="2.8" height="2.2" rx="0.6" fill="var(--red)" />
+      <rect x="1" y="1.6" width="4" height="1.8" fill="var(--mark-quiet)" />
+      <rect x="1" y="4.6" width="8" height="1.8" fill="var(--mark-quiet)" />
+      <rect x="1" y="7.6" width="12" height="1.8" fill="var(--mark-quiet)" />
+      <rect x="1" y="10.6" width="8" height="1.8" fill="var(--accent)" />
+      <rect x="1" y="13.6" width="4" height="1.8" fill="var(--accent)" />
     </svg>
   )
 }

@@ -87,20 +87,20 @@
 /* Each state carries a texture on top of its hue: the frieze stays readable in
    greyscale and in deuteranopia. */
 .slab.done {
-  background: var(--violet-fill);
-  border-top: 1.5px solid var(--violet);
+  background: var(--trace-fill);
+  border-top: 1.5px solid var(--trace);
 }
 
 .slab.split {
-  background: var(--amber-fill);
-  background-image: repeating-linear-gradient(-45deg, transparent 0 3px, var(--amber) 3px 4.5px);
-  border-top: 1.5px solid var(--amber);
+  background: var(--accent-fill);
+  background-image: repeating-linear-gradient(-45deg, transparent 0 3px, var(--accent) 3px 4.5px);
+  border-top: 1.5px solid var(--accent);
 }
 
 /* The only real gap: full red, and the trace escapes off the top. */
 .slab.lost {
-  background: var(--red-fill);
-  border-top: 2px solid var(--red);
+  background: var(--lost-fill);
+  border-top: 2px solid var(--lost);
 }
 
 .slab.lost::after {
@@ -110,7 +110,7 @@
   right: 0;
   bottom: 100%;
   height: 15px;
-  background: repeating-linear-gradient(to top, var(--red) 0 2px, transparent 2px 5px);
+  background: repeating-linear-gradient(to top, var(--lost) 0 2px, transparent 2px 5px);
 }
 
 .slab.active {
@@ -125,8 +125,7 @@
   top: 0;
   bottom: 0;
   width: 1px;
-  background: var(--violet-strong);
-  box-shadow: 0 0 8px 1px var(--glow-violet);
+  background: var(--accent);
   animation: pen 1.4s ease-in-out infinite;
   pointer-events: none;
   z-index: 3;
@@ -204,19 +203,19 @@
 }
 
 .legend .done {
-  background: var(--violet-fill);
-  border-top: 1.5px solid var(--violet);
+  background: var(--trace-fill);
+  border-top: 1.5px solid var(--trace);
 }
 
 .legend .split {
-  background: var(--amber-fill);
-  background-image: repeating-linear-gradient(-45deg, transparent 0 3px, var(--amber) 3px 4.5px);
-  border-top: 1.5px solid var(--amber);
+  background: var(--accent-fill);
+  background-image: repeating-linear-gradient(-45deg, transparent 0 3px, var(--accent) 3px 4.5px);
+  border-top: 1.5px solid var(--accent);
 }
 
 .legend .lost {
-  background: var(--red-fill);
-  border-top: 2px solid var(--red);
+  background: var(--lost-fill);
+  border-top: 2px solid var(--lost);
 }
 
 @media (max-width: 960px) {

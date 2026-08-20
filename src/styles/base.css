@@ -13,86 +13,122 @@
    Naming: no token carries a word of absolute lightness. "bright" and "deep"
    point opposite ways from one theme to the other — emphasis is lighter in
    dark, darker in light. Hence `-strong` (what insists), `-press` (what is
-   pushed in) and `-fill` (the flat that carries the ink). */
+   pushed in) and `-fill` (the flat that carries the ink).
+
+   ---- how the light world was derived ----
+   Not by inverting lightness, which was measured wrong: it put every neutral
+   three to four points too dark. Each light ink was **solved** so it holds
+   against paper what its dark twin holds against ink — 17.1, 6.4, 5.9, 5.0 —
+   and the four land within 0.1 of their targets.
+
+   The accent and the statuses do NOT transpose, for the same reason the violet
+   never did: an amber holding 10:1 on paper is a brown, and the naive answer,
+   `oklch(0.47 0.12 62)`, is not even inside the sRGB gamut. They carry their
+   own light values, chosen to clear 4.5:1 while staying the colour they are.
+   Ratios in the comments are measured against that world's own ground. */
 
 :root {
   color-scheme: light dark;
 
-  /* Light: warm paper, graphite hairlines. Dark: cold graphite tinted
-     blue-violet — the chassis, not Twitch's background.
-     In both cases depth runs from the page ground towards the work surface:
-     `--ground` is the furthest back, `--surface` carries the readout. */
-  --ground: light-dark(#f3f1ed, #090b12);
-  --chassis: light-dark(#f9f8f5, #0f121c);
-  --surface: light-dark(#ffffff, #141824);
-  --surface-raised: light-dark(#ffffff, #1b2030);
-  --surface-hover: light-dark(#ebe8e2, #212739);
-  /* A pressed button sinks: in light it cannot do so by climbing towards
+  /* Depth runs from the page ground towards the work surface. Light does not
+     start at white: paper is the ground, and white is what rises off it — the
+     same order as dark, where the surface climbs out of the near-black. */
+  --ground: light-dark(oklch(0.975 0.004 275), oklch(0.145 0.004 275));
+  --chassis: light-dark(oklch(0.96 0.004 275), oklch(0.175 0.005 275));
+  --surface: light-dark(oklch(1 0 0), oklch(0.19 0.005 275));
+  --surface-raised: light-dark(oklch(1 0 0), oklch(0.21 0.005 275));
+  --surface-hover: light-dark(oklch(0.955 0.004 275), oklch(0.235 0.005 275));
+  /* A pressed control sinks: in light it cannot do so by climbing towards
      white, it needs its own notch below hover. */
-  --surface-sunken: light-dark(#ded9d1, #141824);
+  --surface-sunken: light-dark(oklch(0.93 0.004 275), oklch(0.17 0.005 275));
 
   /* Two levels of hairline: the separating stroke and the structural seam. */
-  --rule: light-dark(#ddd8d0, #262c3d);
-  --rule-strong: light-dark(#b6ada0, #39415c);
+  --rule: light-dark(oklch(0.88 0.005 275), oklch(0.27 0.004 275));
+  --rule-strong: light-dark(oklch(0.8 0.006 275), oklch(0.34 0.005 275));
 
-  --text: light-dark(#1b1d24, #e7e9f1);
-  --text-dim: light-dark(#5b6070, #a2a9bd);
-  /* The dimmest of the three must still hold 4.5:1 on the hovered row, not
-     only on the resting background: that is where a date gets read.
-     It is that constraint which fixes the light value, not the reverse. */
-  --text-faint: light-dark(#62677a, #8d97b0);
+  /* Four tiers, and the last one is a floor rather than a taste: below it the
+     ratio drops under 4.5:1 on its own ground. */
+  --text: light-dark(oklch(0.19 0.005 275), oklch(0.95 0.004 85)); /* 17.2 · 17.1 */
+  --text-dim: light-dark(oklch(0.47 0.006 275), oklch(0.66 0.006 85)); /*  6.4 ·  6.4 */
+  --text-meta: light-dark(oklch(0.49 0.006 275), oklch(0.64 0.006 85)); /*  5.8 ·  5.9 */
+  --text-faint: light-dark(oklch(0.53 0.006 275), oklch(0.6 0.006 85)); /*  4.9 ·  5.0 */
 
-  /* Three inks, three meanings. Nothing else takes colour.
-     violet = the normal trace · amber = split · red = lost
+  /* One accent, warm, and it is the only hue the chassis carries: what is
+     selected, what is live, what invites a click — and the clip at zero views
+     the whole sweep exists to unearth. */
+  --accent: light-dark(oklch(0.53 0.12 62), oklch(0.8 0.13 72)); /*  5.1 · 10.4 */
+  --accent-strong: light-dark(oklch(0.42 0.11 62), oklch(0.87 0.11 72));
+  --accent-press: light-dark(oklch(0.34 0.09 62), oklch(0.68 0.12 68));
+  /* The one token that does not move between the worlds. A bright amber under
+     near-black type is 9:1 on paper as it is on ink; darkening it in light
+     would cost the design its only warm surface. What changes is the ink laid
+     on it, and barely. */
+  --accent-flat: oklch(0.8 0.13 72);
+  --accent-flat-hover: oklch(0.74 0.13 70);
+  --on-accent: oklch(0.17 0.005 275);
+  /* The pressed flat is dark in light and only mid in dark, so its label cannot
+     be one ink: near-white where the flat sinks, near-black where it does not.
+     Collapsing the two onto --on-accent puts near-black on oklch(0.34 …). */
+  --on-accent-press: light-dark(oklch(0.97 0.004 85), oklch(0.17 0.005 275));
+  --accent-fill: light-dark(oklch(0.53 0.12 62 / 40%), oklch(0.8 0.13 72 / 40%));
+  --accent-wash: light-dark(oklch(0.53 0.12 62 / 10%), oklch(0.8 0.13 72 / 14%));
 
-     The dark values have no light equivalent by simple inversion: none of the
-     three holds 4.5:1 on paper (violet 2.9:1, amber 2.1:1, red 3.0:1). The
-     light world therefore has its own inks, chosen to hold that threshold on
-     the hovered row — not to resemble the others. */
-  --violet: light-dark(#6b3fd4, #a481ff);
-  --violet-strong: light-dark(#4e2ba0, #c3aaff);
-  --violet-press: light-dark(#3d2080, #6a45c8);
-  --violet-fill: light-dark(#ded0fa, #6a45c8);
-  /* The half-drawn trace, in `<Mark />`: the notch between the neutral hairline
-     and the full ink. The slab flat cannot hold it — pale on paper, it would
-     fade off the plate. */
-  --violet-half: light-dark(#8f6ae8, #6a45c8);
-  --violet-wash: light-dark(rgb(107 63 212 / 10%), rgb(164 129 255 / 14%));
-  --amber: light-dark(#925506, #f0a63c);
-  --amber-fill: light-dark(#f5e0c0, #6a4611);
-  --red: light-dark(#cf2b2b, #ff5d5d);
-  --red-strong: light-dark(#a81b1b, #ff9494);
-  --red-fill: light-dark(#e0a0a0, #6d1f28);
-  --red-wash: light-dark(rgb(207 43 43 / 6%), rgb(255 93 93 / 7%));
+  /* The frieze's ordinary bar. Neutral on purpose: nearly every period comes
+     back complete, and a frieze that paints the rule in the accent leaves
+     nothing for the two states worth looking at. */
+  --trace: light-dark(oklch(0.62 0.006 275), oklch(0.52 0.006 85));
+  --trace-fill: light-dark(oklch(0.62 0.006 275 / 22%), oklch(0.52 0.006 85 / 26%));
 
-  /* The only text that is not a shade of `--text`: the label set on the full
-     violet flat, which has to stand out against it. */
-  --on-violet: light-dark(#f7f4ff, #17102c);
-  /* No `light-dark()`, and that is the point: the pressed flat is dark in both
-     worlds, so its label is light in both. */
-  --on-violet-press: #e7e9f1;
+  /* What is missing, and what refused. Its own hue, never the accent: painting
+     "clips are missing" in the colour of "this one is selected" says both with
+     one voice. */
+  --lost: light-dark(oklch(0.47 0.16 30), oklch(0.7 0.15 32)); /*  6.9 ·  7.0 */
+  --lost-strong: light-dark(oklch(0.38 0.15 30), oklch(0.8 0.12 32));
+  --lost-fill: light-dark(oklch(0.47 0.16 30 / 32%), oklch(0.7 0.15 32 / 34%));
+  --lost-wash: light-dark(oklch(0.47 0.16 30 / 7%), oklch(0.7 0.15 32 / 9%));
 
-  /* What is neither flat nor hairline: lamp glows, the table zebra, the
-     floating panel's shadow. Each of them hangs on a ratio to the background,
-     not on a hue — which is what makes them unable to cross a theme change
-     without being named.
+  /* A live session. Green because that is what green says, and it sits outside
+     the accent for the same reason the loss does. Non-text: 3:1 is its bar. */
+  --ok: light-dark(oklch(0.47 0.14 145), oklch(0.72 0.15 145)); /*  6.0 ·  8.4 */
 
-     The glow keeps its geometry in light: a saturated ink diffusing into paper
-     is ink that bleeds, not a blot. It is the pale glow on a pale background
-     that would have turned to mush. */
-  --glow-violet: light-dark(rgb(107 63 212 / 45%), rgb(164 129 255 / 55%));
-  --glow-red: light-dark(rgb(207 43 43 / 45%), rgb(255 93 93 / 55%));
-  --zebra: light-dark(rgb(0 0 0 / 3%), rgb(255 255 255 / 2.2%));
-  --shadow-panel: light-dark(rgb(58 48 36 / 18%), rgb(0 0 0 / 65%));
-  /* What puts the page behind the player. Dark in both worlds — a scrim's job is
-     to push back, and paper pushed back with paper pushes nothing. It is read
-     from `::backdrop`, which inherits the custom properties of its originating
-     element in every browser that can resolve `light-dark()` at all. */
-  --scrim: light-dark(rgb(38 32 24 / 52%), rgb(0 0 0 / 66%));
+  /* The mark's upper bars — the part of the trace the API does hand over. */
+  --mark-quiet: light-dark(oklch(0.58 0.006 275), oklch(0.55 0.006 85));
 
-  --sans:
-    system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  /* What is neither flat nor hairline. Each hangs on a ratio to its background
+     rather than on a hue, which is what makes it unable to cross a theme
+     change without being named. No glow among them: a zero-offset chromatic
+     halo is the one thing this design does not do. */
+  --zebra: light-dark(oklch(0 0 0 / 3%), oklch(1 0 0 / 2.2%));
+  --shadow-panel: light-dark(oklch(0.19 0.005 275 / 10%), oklch(0 0 0 / 55%));
+  /* What puts the page behind the player. Dark in both worlds — a scrim's job
+     is to push back, and paper pushed back with paper pushes nothing. It is
+     read from `::backdrop`, which inherits the custom properties of its
+     originating element in every browser that can resolve `light-dark()`. */
+  --scrim: light-dark(oklch(0.19 0.005 275 / 48%), oklch(0 0 0 / 66%));
+
+  /* Both faces are served by `fonts.css`, out of `styles/fonts/` — never from
+     Google. Newsreader carries the channel name and the mark; Archivo carries
+     everything else. The fallbacks are what a visitor sees for the length of
+     one `font-display: swap`, and what they keep for a title written outside
+     the two Latin subsets shipped.
+
+     Numbers are set with `font-variant-numeric: tabular-nums`, not with a
+     second face: `--mono` survives only where a figure has to be read as data,
+     and is on its way out. */
+  --serif: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --sans: 'Archivo', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
   --mono: ui-monospace, 'Cascadia Mono', 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  /* Four sizes, and the jumps between them are wide on purpose: a ramp whose
+     steps sit a point apart reads as one size badly kept. `--t-1` is almost
+     everything — labels, readouts, filters, actions. `--t-2` is a title in the
+     large gallery. `--t-3` is what must be read first: the wordmark, a figure
+     that carries the answer. `--t-4` happens once per page, and only when a
+     sweep has named a channel. */
+  --t-1: 13px;
+  --t-2: 17px;
+  --t-3: 22px;
+  --t-4: 56px;
 
   --s-1: 4px;
   --s-2: 8px;
@@ -102,8 +138,9 @@
   --s-6: 32px;
   --s-7: 48px;
 
-  /* An instrument facade has no soft corners. */
-  --r: 2px;
+  /* Nothing is rounded. The thumbnail is a rectangle, and so is everything
+     that sits beside it. */
+  --r: 0;
 
   --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
 }
@@ -128,26 +165,26 @@ body {
   background: var(--ground);
   color: var(--text);
   font:
-    14px/1.55 var(--sans),
+    13px/1.55 var(--sans),
     sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 a {
-  color: var(--violet);
+  color: var(--accent);
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--violet-fill);
+  text-decoration-color: var(--accent-fill);
 }
 
 a:hover {
-  color: var(--violet-strong);
+  color: var(--accent-strong);
   text-decoration-color: currentcolor;
 }
 
 :focus-visible {
-  outline: 2px solid var(--violet-strong);
+  outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
 }
 

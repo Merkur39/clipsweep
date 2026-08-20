@@ -43,24 +43,12 @@ input:not([type='checkbox']):hover {
 }
 
 input:not([type='checkbox']):focus {
-  border-color: var(--violet);
+  border-color: var(--accent);
   background: var(--chassis);
 }
 
 input::placeholder {
   color: var(--text-faint);
-}
-
-/* Without `min-width: 0`, the intrinsic width of an `input[type=date]` — with
-   its picker icon — overruns its column and pushes the grid. */
-.duo {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s-2);
-}
-
-.duo > * {
-  min-width: 0;
 }
 
 button {
@@ -85,7 +73,7 @@ button {
 
 button:hover:not(:disabled) {
   background: var(--surface-hover);
-  border-color: var(--violet);
+  border-color: var(--accent);
 }
 
 /* Pressed, therefore darker than hover. In light, `--surface` is the white of
@@ -95,38 +83,34 @@ button:active:not(:disabled) {
 }
 
 button.primary {
-  background: var(--violet);
-  border-color: var(--violet);
-  color: var(--on-violet);
+  background: var(--accent-flat);
+  border-color: var(--accent-flat);
+  color: var(--on-accent);
   font-weight: 650;
 }
 
 button.primary:hover:not(:disabled) {
-  background: var(--violet-strong);
-  border-color: var(--violet-strong);
+  background: var(--accent-flat-hover);
+  border-color: var(--accent-flat-hover);
 }
 
-/* `--violet-fill` is the flat that carries the ink — pale on paper. A pressed
-   button sinks: it needs the darkest violet of the two worlds. */
+/* `--accent-fill` is the flat that carries the ink — pale on paper. A pressed
+   button sinks: it needs the darkest accent of the two worlds. */
 button.primary:active:not(:disabled) {
-  background: var(--violet-press);
-  border-color: var(--violet-press);
-  color: var(--on-violet-press);
+  background: var(--accent-press);
+  border-color: var(--accent-press);
+  color: var(--on-accent-press);
 }
 
-/* The violet ring on a violet background is invisible: it gets lifted off. */
+/* The accent ring on an accent background is invisible: it gets lifted off. */
 button.primary:focus-visible {
   outline-color: var(--text);
-}
-
-button.wide {
-  width: 100%;
 }
 
 button.link {
   background: none;
   border: none;
-  color: var(--violet);
+  color: var(--accent);
   font-size: 12px;
   font-weight: 500;
   padding: 0 0 var(--s-3);
@@ -136,7 +120,7 @@ button.link {
 
 button.link:hover:not(:disabled) {
   background: none;
-  color: var(--violet-strong);
+  color: var(--accent-strong);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -148,7 +132,7 @@ button.link:disabled {
 
 /* Written last, and it must stay that way: `button:disabled` has exactly the
    same specificity as `button.primary` (0,1,1), so only the order settles
-   between them. Placed before, the primary variant kept its full violet once
+   between them. Placed before, the primary variant kept its full accent once
    disabled — a dead button that looks like the most actionable on the page.
 
    Opacity takes the label below the contrast threshold: the switching-off is
@@ -187,13 +171,13 @@ input[type='checkbox'] {
 }
 
 input[type='checkbox']:hover:not(:disabled) {
-  border-color: var(--violet);
+  border-color: var(--accent);
 }
 
 input[type='checkbox']:checked,
 input[type='checkbox']:indeterminate {
-  background: var(--violet-wash);
-  border-color: var(--violet);
+  background: var(--accent-wash);
+  border-color: var(--accent);
 }
 
 input[type='checkbox']:checked::after {
@@ -203,7 +187,7 @@ input[type='checkbox']:checked::after {
   top: 1px;
   width: 4px;
   height: 8px;
-  border: solid var(--violet-strong);
+  border: solid var(--accent-strong);
   border-width: 0 1.6px 1.6px 0;
   transform: rotate(43deg);
 }
@@ -213,7 +197,7 @@ input[type='checkbox']:indeterminate::after {
   position: absolute;
   inset: 6px 3px auto;
   height: 0;
-  border-top: 1.6px solid var(--violet-strong);
+  border-top: 1.6px solid var(--accent-strong);
 }
 
 input[type='checkbox']:disabled {
@@ -253,5 +237,5 @@ input[type='checkbox']:disabled {
 .sort-key-arrow {
   display: inline-flex;
   width: 9px;
-  color: var(--violet);
+  color: var(--accent);
 }

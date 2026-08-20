@@ -1,20 +1,189 @@
-/* SearchPanel.tsx — the access state. */
+/* SearchPanel.tsx — the block that opens the page, and Access.tsx, which sits
+   in the top bar rather than here. */
 
-/* An instrument panel signals its state with a lamp, not with a coloured strip
-   stuck on the edge of a box. */
-.status {
+/* ---- the search ----
+   Centred and bounded: a field stretched to 1400px reads as a form, not as the
+   one thing the page is asking for. */
+
+.search {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-5) 0 var(--s-4);
+}
+
+/* The only line above the field, and only while there is no session: someone
+   who has never heard of this tool is being asked for a Twitch account. */
+.search-why {
+  margin: 0;
+  /* Bounded: small print that runs the full measure stops reading as small
+     print. */
+  max-width: 54ch;
+  font-size: var(--t-1);
+  line-height: 1.5;
+  color: var(--text-faint);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+/* The subject of the page, at the size that says so. One hairline under it and
+   nothing else: a boxed field would be a fourth rectangle on a page that has
+   given up rounding anything. */
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: min(620px, 100%);
+  padding: 0 2px var(--s-3);
+  border-bottom: 1px solid var(--accent-fill);
+}
+
+.search-row:focus-within {
+  border-bottom-color: var(--accent);
+}
+
+.search-row .icon {
+  flex: none;
+  color: var(--text-faint);
+}
+
+.search-at {
+  color: var(--text-faint);
+  font-size: var(--t-3);
+}
+
+/* Bare: this one is already framed by the rule under the row.
+
+   Two classes deep on purpose. Every input in the app is framed by
+   `input:not([type='checkbox'])` in controls.css, whose specificity is (0,1,1)
+   — one class plus one element — and which therefore outranks a lone
+   `.search-channel` at (0,1,0). It won silently: the field kept its box and its
+   13px while the sheet said otherwise, and only measuring the computed border
+   showed it. */
+.search-row .search-channel {
+  flex-grow: 1;
+  /* A login is a name, not a reading: the mono controls.css gives every
+     input belongs to the dates beside it, not here. */
+  font-family: var(--sans);
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: var(--text);
+  font-size: var(--t-3);
+}
+
+.search-row .search-channel:focus-visible {
+  outline: none;
+}
+
+.search-row button {
+  flex: none;
+}
+
+/* ---- the period ----
+   A row of footnotes to the field above, not a second form: same ink, same
+   size, wrapping rather than stretching. */
+
+.search-period {
+  display: flex;
+  /* Top, not centre: the lower bound carries a footnote under it and is taller
+     than its neighbours, which would otherwise be dragged down to sit against
+     its middle. */
+  align-items: flex-start;
+  justify-content: center;
+  gap: var(--s-3) var(--s-5);
+  flex-wrap: wrap;
+  width: min(620px, 100%);
+  font-size: var(--t-1);
+}
+
+/* The lower bound and the link that sets it. */
+.search-bound {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.search-period label {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  /* Level with the field inside `.search-bound`, whose column starts at the
+     same top: without it the neighbours would align on the label rather than on
+     the field beside them. */
+  min-height: 32px;
+}
+
+/* The silkscreen `controls.css` gives to `label > span` belongs to a panel of
+   stacked fields; on one line it reads as shouting. */
+.search-period label > span {
+  font-size: var(--t-1);
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-dim);
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+/* Space held whether the link is there or not: it appears with whatever channel
+   is typed, and must not shift the row on every keystroke. */
+.channel-hint {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  min-height: 1.55em;
+}
+
+/* Placed under the fields it speaks about: the error reads where it gets fixed.
+   The space is permanently reserved — a one-line `min-height` taken from
+   `line-height` — so the message appears without pushing the readout down. */
+.field-error {
   display: flex;
   align-items: flex-start;
-  gap: 9px;
-  font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.5;
-  padding: 9px 11px;
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  margin-bottom: var(--s-3);
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 1.45em;
+  margin: 0;
+  font-size: var(--t-1);
+  line-height: 1.45;
+  color: var(--lost-strong);
+}
+
+.field-error .icon {
+  margin-top: 2px;
+  color: var(--lost);
+}
+
+/* ---- access, in the top bar ----
+   A lamp and a word, the same weight as the language and the theme beside it.
+   Not a panel: whoever is connected thinks about this once. */
+
+.access {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  /* Set apart from the preference pills — see `.masthead-prefs` in
+     chassis.css for why the session does not file with them. */
+  margin-left: var(--s-6);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-1);
   color: var(--text-dim);
-  background: var(--chassis);
 }
 
 .status::before {
@@ -22,77 +191,23 @@
   flex: none;
   width: 7px;
   height: 7px;
-  margin-top: 6px;
   border-radius: 50%;
   background: var(--rule-strong);
 }
 
 .status.ok::before {
-  background: var(--violet);
-  box-shadow: 0 0 7px 1px var(--glow-violet);
+  background: var(--ok);
 }
 
 .status.bad {
-  border-color: var(--red-fill);
-  background: var(--red-wash);
-  color: var(--red-strong);
+  color: var(--lost-strong);
 }
 
 .status.bad::before {
-  background: var(--red);
-  box-shadow: 0 0 7px 1px var(--glow-red);
+  background: var(--lost);
 }
 
-/* Placed under the offending fields: the error reads where it gets fixed.
-
-   The space is permanently reserved — a one-line `min-height`, taken from
-   `line-height` — so the message appears without pushing the sweep button
-   down. The paragraph is always rendered, empty the rest of the time. */
-
-.field-error {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  min-height: 1.45em;
-  margin: 0 0 var(--s-3);
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--red-strong);
-}
-
-.field-error .icon {
-  margin-top: 2px;
-  color: var(--red);
-}
-
-/* A footnote to the channel field, not a control of the panel's own standing:
-   it is pulled back up against the field it speaks about, and reads in the
-   dimmer ink of an annotation. The bare label text escapes the silkscreen
-   treatment `controls.css` gives to `label > span`. */
-.remember {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  margin-top: -6px;
-  font-size: 12px;
-  color: var(--text-dim);
-  cursor: pointer;
-}
-
-/* Same reservation as `.field-error`, for the same reason: the link appears
-   with whatever channel and period are typed, and must push neither the sweep
-   button nor the rest of the panel. One line plus the indent the link carries
-   itself. */
-.channel-hint {
-  display: flex;
-  min-height: calc(1.55em + var(--s-3));
-  margin: 0;
-  font-size: 12px;
-}
-
-/* A rare action, so discreet — but discreet in colour, not in size: the rail
-   lines up full-width buttons, and an off-template one would break the column's
-   rhythm and make the layout jump from one state to the next. */
+/* A rare action, so discreet — discreet in colour, never in reach. */
 .disconnect {
   color: var(--text-dim);
   border-color: var(--rule);
@@ -101,8 +216,8 @@
 
 .disconnect:hover:not(:disabled) {
   background: var(--surface-raised);
-  border-color: var(--red);
-  color: var(--red-strong);
+  border-color: var(--lost);
+  color: var(--lost-strong);
 }
 
 .disconnect .icon {
@@ -110,5 +225,69 @@
 }
 
 .disconnect:hover .icon {
-  color: var(--red);
+  color: var(--lost);
+}
+
+@media (max-width: 760px) {
+  /* The top bar has a wordmark, three controls and a session to fit across
+     390px. The status line goes first — the lamp alone still says connected —
+     and the disconnect label with it, since its two words were wrapping inside
+     their own button and dragging the row onto a third line. */
+  .status {
+    gap: 0;
+  }
+
+  .status:not(.bad) {
+    font-size: 0;
+  }
+
+  .disconnect-label {
+    display: none;
+  }
+
+  .disconnect {
+    padding: 7px 9px;
+  }
+
+  /* The gutter that separates the session from the preferences is the first
+     thing to go: below this width the row has none to spare. */
+  .access {
+    margin-left: var(--s-3);
+  }
+
+  /* Two columns, labels stacked over their fields. Side by side on one line the
+     two dated bounds need 195px each and there are 390 to share; stacked, the
+     label costs a line instead of 55px and both fit. */
+  .search-period {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-3) var(--s-4);
+  }
+
+  /* The two dated bounds, and not the remember box beside them: it is a label
+     too, and stacking it put a checkbox above its own sentence. */
+  .search-period label:not(.remember) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  /* The dated bounds only. Unscoped, this caught the remember box as well and
+     stretched a 14px checkbox across the whole row. */
+  .search-period label > input[type='date'] {
+    width: 100%;
+  }
+
+  /* It speaks about the pair above it, not about one bound — unlike the link,
+     which now travels with the bound it sets. */
+  .remember {
+    grid-column: 1 / -1;
+  }
+
+  /* The block that opens the page can afford to breathe on a desktop; on a
+     phone the space between it and the channel it found is space nobody
+     scrolls past twice. */
+  .search {
+    padding-bottom: var(--s-2);
+  }
 }

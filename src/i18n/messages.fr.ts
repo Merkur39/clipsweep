@@ -14,12 +14,10 @@ import type { Plural } from './message'
  */
 export const fr = {
   // ── Masthead ─────────────────────────────────────────────────────────────
-  'app.tagline': 'Tous les clips d’une chaîne. Oui, même celui-là.',
 
   // ── Access ───────────────────────────────────────────────────────────────
   'access.disconnected': 'Déconnecté de Twitch.',
   'access.connected': 'Connecté.',
-  'access.connectedFor': 'Connecté — {life}.',
   /**
    * The optimistic bet taking itself back, and a token refused mid-sweep, say
    * the same thing: reconnecting, for its part, is carried by the button.
@@ -36,19 +34,16 @@ export const fr = {
     'Aucune application configurée. Renseigne VITE_TWITCH_CLIENT_ID dans .env.local, et déclare {redirectUri} dans les « OAuth Redirect URLs » de ton application Twitch.',
   'access.verifying': 'Vérification du jeton, réessaie.',
   'access.required': 'Connecte-toi à Twitch avant de lancer le scan.',
+  'access.why':
+    'Se connecter à Twitch sert seulement à interroger son API. ClipSweep ne demande aucune permission sur ton compte.',
 
   // A token's remaining life, in whichever unit reads: a Twitch token lasts
   // some sixty days, and "1477 h" is exact, unreadable, and spills out of the
   // panel onto two lines.
-  'access.life.minutes': { one: '{n} min restante', other: '{n} min restantes' },
-  'access.life.hours': { one: '{n} h restante', other: '{n} h restantes' },
-  'access.life.days': { one: '{n} j restant', other: '{n} j restants' },
 
   // ── Search panel ─────────────────────────────────────────────────────────
-  'panel.access': 'Accès',
   'panel.connect': 'Se connecter à Twitch',
   'panel.disconnect': 'Se déconnecter',
-  'panel.target': 'Cible',
   'panel.channel': 'Chaîne',
   /**
    * "this channel", not "the channel": the box bears on the name typed just
@@ -94,6 +89,7 @@ export const fr = {
   'results.selectAll': 'Tout sélectionner',
   'results.deselectAll': 'Tout désélectionner',
   'results.showAll': 'Voir les {n}',
+  'results.retrieved': { one: 'clip retrouvé', other: 'clips retrouvés' },
   'results.count.found': { one: '{n} clip récupéré', other: '{n} clips récupérés' },
   'results.count.shown': { one: '{n} affiché', other: '{n} affichés' },
   'results.count.selected': { one: '{n} sélectionné', other: '{n} sélectionnés' },
@@ -101,7 +97,7 @@ export const fr = {
   // ── Empty table ──────────────────────────────────────────────────────────
   // Silence is the worst outcome here: a filter hiding every clip looks exactly
   // like a sweep that returned nothing.
-  'results.empty.notSearched': 'Aucun scan lancé.',
+  'results.empty.notSearched': 'Tapez le nom d’une chaîne au-dessus, puis lancez le scan.',
   'results.empty.running': 'Scan en cours — les premiers clips arrivent.',
   'results.empty.nothing': 'Aucun clip sur cette période. Élargis l’intervalle de dates.',
   'results.empty.outOfRange': {
@@ -156,8 +152,9 @@ export const fr = {
    * choice bears on the shape given to the clips, not on a place one goes to.
    */
   'view.label': 'Affichage',
-  'view.table': 'Tableau',
-  'view.grid': 'Vignettes',
+  'view.large': 'Grandes vignettes',
+  'view.dense': 'Vignettes serrées',
+  'view.list': 'Liste',
   'grid.sortBy': 'Trier',
 
   // ── Player ───────────────────────────────────────────────────────────────
@@ -182,12 +179,12 @@ export const fr = {
     other:
       '{n} périodes n’ont pas pu être explorées entièrement : il manque des clips sur celles-ci. Resserre l’intervalle de dates.',
   },
-  'progress.details': 'Détail du scan',
-  'progress.detailsAside': 'frise, compteurs, journal',
-  'progress.timeSplit': 'Découpage du temps',
-  'progress.legend.done': 'période complète',
-  'progress.legend.split': 'saturée, recoupée',
-  'progress.legend.lost': 'saturée au plancher — clips manquants',
+  'progress.details': 'Détails',
+  'progress.detailsAside': 'comment le scan s’y est pris',
+  'progress.timeSplit': 'Périodes parcourues',
+  'progress.legend.done': 'tout a été récupéré',
+  'progress.legend.split': 'trop de clips d’un coup, période recoupée',
+  'progress.legend.lost': 'trop de clips même recoupée — il en manque',
   'progress.periods': 'Périodes',
   'progress.requests': 'Requêtes',
   'progress.log': 'Journal',
@@ -205,9 +202,9 @@ export const fr = {
     other: '{n} périodes · survole pour le détail · hauteur logarithmique',
   },
   // Terser than the legend: the readout line already names the period.
-  'frieze.kind.done': 'complète',
-  'frieze.kind.split': 'saturée, recoupée',
-  'frieze.kind.lost': 'saturée au plancher — clips manquants',
+  'frieze.kind.done': 'tout récupéré',
+  'frieze.kind.split': 'recoupée',
+  'frieze.kind.lost': 'il manque des clips',
 
   // ── Export ───────────────────────────────────────────────────────────────
   'export.download.title': 'Télécharger les vidéos',
@@ -220,7 +217,6 @@ export const fr = {
    * by default any more, so this is the state a sweep ends in. "Download the
    * clips" read as "download them all" — an offer the button was refusing.
    */
-  'export.download.none': 'Aucun clip sélectionné',
   'export.download.some': {
     one: 'Télécharger le clip',
     other: 'Télécharger les {n} clips',
@@ -229,17 +225,9 @@ export const fr = {
   'export.script.sh': 'Script macOS · Linux (.sh)',
   'export.script.batHelp': 'Enregistrer dans un dossier, puis double-cliquer.',
   'export.script.shHelp': 'Enregistrer, puis : chmod +x fichier.sh && ./fichier.sh',
-  'export.script.batHint':
-    'Script Windows (.bat) — enregistrer dans un dossier, puis double-cliquer.',
-  'export.script.shHint': 'Script macOS · Linux (.sh) — enregistrer, puis chmod +x et lancer.',
   'export.script.otherUnix': 'Je suis sur macOS ou Linux',
   'export.script.otherWindows': 'Je suis sur Windows',
-  'export.list.title': 'Exporter la liste',
-  'export.list.lede':
-    'Les métadonnées des clips, sans les vidéos — pour un tableur ou un autre outil.',
   'export.urlsHelp': 'Une URL par ligne, pour yt-dlp -a',
-  'export.tally': '{selected} sur {found}',
-  'export.tallyFound': { one: '{n} récupéré', other: '{n} récupérés' },
 
   // ── Preferences ──────────────────────────────────────────────────────────
   'theme.label': 'Thème',

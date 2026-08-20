@@ -38,6 +38,10 @@ export function authorizeUrl(clientId: string, redirectUri: string): string {
 export interface Session {
   clientId: string
   accessToken: string
+  /** What `/oauth2/validate` reports. Nothing reads it since the status line stopped
+   *  spelling out the days left; it stays because this type models the token as
+   *  Twitch describes it, and it is the only thing that could ever warn a
+   *  session it is about to lapse. */
   expiresInSeconds: number
 }
 

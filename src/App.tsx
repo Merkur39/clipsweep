@@ -4,8 +4,9 @@ import { ClipGrid } from './components/ClipGrid'
 import { ClipPlayer } from './components/ClipPlayer'
 import { ClipTable } from './components/ClipTable'
 import { Colophon } from './components/Colophon'
-import { ExportPanel } from './components/ExportPanel'
+import { SelectionBar } from './components/SelectionBar'
 import { FiltersBar } from './components/FiltersBar'
+import { Access } from './components/Access'
 import { SearchPanel } from './components/SearchPanel'
 import { Mark } from './components/Icon'
 import { LocaleToggle } from './components/LocaleToggle'
@@ -15,13 +16,14 @@ import { ThemeToggle } from './components/ThemeToggle'
 import { ViewToggle } from './components/ViewToggle'
 import { applyTheme, parseTheme } from './domain/theme'
 import { parseView } from './domain/view'
-import { describeAccess, describeTokenLife } from './domain/access'
+import { describeAccess } from './domain/access'
 import { applyFilters, dateExtent, facets, narrowedRange, panelOrder } from './domain/filters'
 import { clampSince, clampUntil, describePeriodError, monthBefore } from './domain/period'
 import { describeEmptyResults, describeResultCount } from './domain/results'
 import { buildDownloadScript, detectScriptFlavor } from './domain/scripts'
 import { selectedClips, toggle, toggleAll } from './domain/selection'
 import { DEFAULT_SORT, nextSort, sortClips, type ClipSort, type SortKey } from './domain/sort'
+import { formatCount } from './i18n/format'
 import { useTranslation } from './i18n/LocaleProvider'
 import { useChannelLookup } from './hooks/useChannelLookup'
 import { useClipSearch } from './hooks/useClipSearch'
@@ -75,7 +77,7 @@ function toCsv(clips: Clip[]): string {
 }
 
 export default function App({ authError }: { authError: string | null }) {
-  const { t } = useTranslation()
+  const { locale, t } = useTranslation()
   const [session, setSession] = useState<Session | null>(null)
   // Read once only, before the first render: that is what allows announcing
   // "checking" rather than "no token" during the round trip.
@@ -104,9 +106,7 @@ export default function App({ authError }: { authError: string | null }) {
   )
   const presumedConnected = access.presumedConnected
   // A confirmed session outranks any notice: it is what makes them stale.
-  const authMessage = session
-    ? t('access.connectedFor', { life: describeTokenLife(session.expiresInSeconds, t) })
-    : (notice && t(notice.key)) || access.message
+  const authMessage = session ? t('access.connected') : (notice && t(notice.key)) || access.message
   const authKind: AccessKind = session ? 'ok' : (notice?.kind ?? access.kind)
 
   // Already set on `<html>` by `main.tsx` before the first render; the effect
@@ -118,7 +118,7 @@ export default function App({ authError }: { authError: string | null }) {
   // Which readout is on screen. A display preference, like the theme, and it
   // outlives the tab for the same reason: it says how one likes to read the
   // clips, not which clips were being read.
-  const [storedView, setView] = usePersistedState('view', 'table')
+  const [storedView, setView] = usePersistedState('view', 'large')
   const view = parseView(storedView)
 
   // The target and the period live for the tab's lifetime, unlike the theme:
@@ -153,6 +153,9 @@ export default function App({ authError }: { authError: string | null }) {
   // on delivering, a filter can carry one off — and an index would quietly come
   // to name another clip.
   const [playingId, setPlayingId] = useState<string | null>(null)
+  // The channel as it was swept, not as the field now reads: editing the field
+  // afterwards must not rewrite the heading over clips already collected.
+  const [sweptChannel, setSweptChannel] = useState('')
   // Read once: the visitor's machine does not change mid-session.
   const [flavor] = useState(() =>
     detectScriptFlavor({
@@ -361,6 +364,7 @@ export default function App({ authError }: { authError: string | null }) {
     // instead of a blank the user has to fill in before narrowing at all.
     setFromDate(effectiveSince)
     setToDate(effectiveUntil)
+    setSweptChannel(channel)
     void search.start({ channel, since: effectiveSince, until: effectiveUntil })
   }
 
@@ -368,68 +372,109 @@ export default function App({ authError }: { authError: string | null }) {
 
   return (
     <div className="page">
-      {/* Plaque d'identification, pas bandeau d'accueil : l'outil se consulte
-          tous les jours, son nom n'a pas besoin de 46 px. */}
+      {/* Nameplate and preferences, nothing of the task: the tool is opened
+          every day, and its name does not need to be the biggest thing on the
+          page. That place belongs to the channel, once one has been swept. */}
       <header className="masthead">
         <h1 className="masthead-name">
           <Mark />
           ClipSweep
         </h1>
-        <p className="lede">{t('app.tagline')}</p>
-        {/* Two display preferences of equal standing, hence of equal shape,
-            filed together at the end of the masthead. */}
         <div className="masthead-prefs">
           <LocaleToggle />
           <ThemeToggle theme={theme} onChange={setTheme} />
         </div>
+        <Access
+          message={authMessage}
+          kind={authKind}
+          connected={session !== null || presumedConnected}
+          onDisconnect={disconnect}
+        />
       </header>
 
-      <div className="layout">
-        <SearchPanel
-          authMessage={authMessage}
-          authKind={authKind}
-          connected={session !== null || presumedConnected}
-          canConnect={Boolean(BUILD_TIME_CLIENT_ID)}
-          onConnect={connect}
-          onDisconnect={disconnect}
-          channel={channel}
-          onChannelChange={setChannel}
-          remember={remember}
-          onRememberChange={setRemember}
-          since={effectiveSince}
-          onSinceChange={setSince}
-          until={effectiveUntil}
-          onUntilChange={setUntil}
-          today={today}
-          periodError={periodError}
-          channelCreatedAt={channelCreatedAt}
+      <SearchPanel
+        channel={channel}
+        onChannelChange={setChannel}
+        remember={remember}
+        onRememberChange={setRemember}
+        since={effectiveSince}
+        onSinceChange={setSince}
+        until={effectiveUntil}
+        onUntilChange={setUntil}
+        today={today}
+        periodError={periodError}
+        channelCreatedAt={channelCreatedAt}
+        connected={session !== null || presumedConnected}
+        canConnect={Boolean(BUILD_TIME_CLIENT_ID)}
+        onConnect={connect}
+        running={running}
+        onRun={run}
+      />
+
+      {/* The channel is named once a sweep has gone looking for it, and named
+          as it was swept rather than as the field now reads: editing the field
+          afterwards must not rewrite the heading over clips already on screen.
+          Before that there is nothing to name, and the block is not rendered —
+          a placeholder headline would announce a channel nobody asked for. */}
+      {sweptChannel && (
+        <>
+          <div className="channel-head">
+            <h2 className="channel-name">{sweptChannel}</h2>
+            <p className="channel-tally">
+              <span className="tally-figure">
+                <b>{formatCount(clips.length, locale)}</b>
+                {t('results.retrieved', { n: clips.length })}
+              </span>
+              {/* The verdict on the result's validity, beside the count it
+                  qualifies rather than in the technical fold: whether clips are
+                  missing is not a detail of how the algorithm went about it. */}
+              {incomplete.length > 0 && (
+                <span className="tally-warn">
+                  {t('progress.incomplete', { n: incomplete.length })}
+                </span>
+              )}
+            </p>
+          </div>
+          <div className="channel-rule" />
+        </>
+      )}
+
+      <main className="stage">
+        <SearchProgress
+          reports={reports}
+          span={span}
+          progress={progress}
+          clipsFound={clips.length}
+          logEntries={logEntries}
           running={running}
-          onRun={run}
         />
 
-        <main className="stage">
-          <SearchProgress
-            reports={reports}
-            span={span}
-            progress={progress}
-            incomplete={incomplete}
-            clipsFound={clips.length}
-            logEntries={logEntries}
-            running={running}
-          />
-
-          {/* The blanket reset lives at the end of the label, not in the row:
-              there it stole a column, while every control already carries its
-              own reset. Always rendered — its appearing would shift the label's
-              rule.
-
-              A `<div>`, unlike every other label of the facade: this one hosts
-              the readout toggle, itself a `<div role="group">`, and no paragraph
-              may contain one. The class carries the whole appearance — its own
-              margins included — so the element it sits on changes nothing on
-              screen. */}
-          <div className="section-label">
-            {t('results.label')}
+        {/* Text, not a panel: what the readout is showing on the left, what
+            governs it on the right. The blanket reset lives here rather than in
+            the filter row, where it stole a column from controls that each
+            carry their own. */}
+        <div className="toolbar">
+          <div className="toolbar-left">
+            <FiltersBar
+              minViews={minViewsInput}
+              onMinViewsChange={setMinViewsInput}
+              maxViews={maxViewsInput}
+              onMaxViewsChange={setMaxViewsInput}
+              from={fromDate}
+              onFromChange={setFromDate}
+              to={toDate}
+              onToChange={setToDate}
+              dateBounds={dateBounds}
+              creatorFacets={creatorFacets}
+              creators={creators}
+              onCreatorsChange={setCreators}
+              gameFacets={gameFacets}
+              gameIds={gameIds}
+              onGameIdsChange={setGameIds}
+              gameLabel={gameLabel}
+            />
+          </div>
+          <div className="toolbar-right">
             <button
               type="button"
               className="link filters-reset"
@@ -440,111 +485,79 @@ export default function App({ authError }: { authError: string | null }) {
             </button>
             <ViewToggle view={view} onChange={setView} />
           </div>
-          {clips.length > 0 && (
-            <p className="result-count">
-              {describeResultCount(
-                {
-                  found: clips.length,
-                  shown: shown.length,
-                  selected: selected.length,
-                },
-                t,
-              )}{' '}
-              {/* A sweep ends with nothing checked, and every export stays dead
-                  until something is: the blanket check needs a target wider
-                  than the head checkbox, and it belongs on the line that gives
-                  the count it acts on. */}
-              <button
-                type="button"
-                className="link"
-                onClick={checkAll}
-                disabled={shown.length === 0}
-              >
-                {t(allChecked ? 'results.deselectAll' : 'results.selectAll')}
-              </button>
-            </p>
-          )}
+        </div>
 
-          <FiltersBar
-            minViews={minViewsInput}
-            onMinViewsChange={setMinViewsInput}
-            maxViews={maxViewsInput}
-            onMaxViewsChange={setMaxViewsInput}
-            from={fromDate}
-            onFromChange={setFromDate}
-            to={toDate}
-            onToChange={setToDate}
-            dateBounds={dateBounds}
-            creatorFacets={creatorFacets}
-            creators={creators}
-            onCreatorsChange={setCreators}
-            gameFacets={gameFacets}
-            gameIds={gameIds}
-            onGameIdsChange={setGameIds}
+        {clips.length > 0 && (
+          <p className="result-line">
+            {describeResultCount(
+              { found: clips.length, shown: shown.length, selected: selected.length },
+              t,
+            )}{' '}
+            {/* A sweep ends with nothing checked, and every export stays
+                dead until something is: the blanket check needs a target
+                wider than the head checkbox, and it belongs on the line
+                that gives the count it acts on. */}
+            <button type="button" className="link" onClick={checkAll} disabled={shown.length === 0}>
+              {t(allChecked ? 'results.deselectAll' : 'results.selectAll')}
+            </button>
+          </p>
+        )}
+
+        {/* One readout at a time: the same clips shown twice would cost two
+            virtualisers and a page twice as long, the selection being shared
+            anyway. */}
+        {view === 'list' ? (
+          <ClipTable
+            clips={shown}
+            selected={selectedIds}
+            onToggle={toggleClip}
+            onToggleAll={checkAll}
+            onPlay={setPlayingId}
+            emptyMessage={emptyMessage}
+            emptyAction={emptyAction}
+            sort={sort}
+            onSortChange={changeSort}
+          />
+        ) : (
+          <ClipGrid
+            clips={shown}
+            dense={view === 'dense'}
             gameLabel={gameLabel}
+            selected={selectedIds}
+            onToggle={toggleClip}
+            onPlay={setPlayingId}
+            emptyMessage={emptyMessage}
+            emptyAction={emptyAction}
+            sort={sort}
+            onSortChange={changeSort}
           />
+        )}
 
-          {/* One readout at a time: the same clips shown twice would cost two
-              virtualisers and a page twice as long, the selection being shared
-              anyway. */}
-          {view === 'table' ? (
-            <ClipTable
-              clips={shown}
-              selected={selectedIds}
-              onToggle={toggleClip}
-              onToggleAll={checkAll}
-              onPlay={setPlayingId}
-              emptyMessage={emptyMessage}
-              emptyAction={emptyAction}
-              sort={sort}
-              onSortChange={changeSort}
-            />
-          ) : (
-            <ClipGrid
-              clips={shown}
-              selected={selectedIds}
-              onToggle={toggleClip}
-              onPlay={setPlayingId}
-              emptyMessage={emptyMessage}
-              emptyAction={emptyAction}
-              sort={sort}
-              onSortChange={changeSort}
-            />
-          )}
+        <SelectionBar
+          selected={selected}
+          flavor={flavor}
+          onDownloadScript={(target) =>
+            download(
+              `${stamp}.${target}`,
+              buildDownloadScript(
+                target,
+                channel,
+                selected.map((clip) => clip.url),
+                t,
+              ),
+              'text/plain',
+            )
+          }
+          onExportCsv={() => download(`${stamp}.csv`, toCsv(selected), 'text/csv')}
+          onExportJson={() =>
+            download(`${stamp}.json`, JSON.stringify(selected, null, 2), 'application/json')
+          }
+          onExportUrls={() =>
+            download(`${stamp}_urls.txt`, selected.map((clip) => clip.url).join('\n'), 'text/plain')
+          }
+        />
+      </main>
 
-          <ExportPanel
-            selected={selected}
-            clipsFound={clips.length}
-            flavor={flavor}
-            onDownloadScript={(target) =>
-              download(
-                `${stamp}.${target}`,
-                buildDownloadScript(
-                  target,
-                  channel,
-                  selected.map((clip) => clip.url),
-                  t,
-                ),
-                'text/plain',
-              )
-            }
-            onExportCsv={() => download(`${stamp}.csv`, toCsv(selected), 'text/csv')}
-            onExportJson={() =>
-              download(`${stamp}.json`, JSON.stringify(selected, null, 2), 'application/json')
-            }
-            onExportUrls={() =>
-              download(
-                `${stamp}_urls.txt`,
-                selected.map((clip) => clip.url).join('\n'),
-                'text/plain',
-              )
-            }
-          />
-        </main>
-      </div>
-
-      {/* Outside `.layout`: it runs under the rail as under the stage, with the
-          masthead answering it at the top of the page. */}
       <Colophon />
 
       {/* Last of the page, and it does not matter where: `showModal` lifts it

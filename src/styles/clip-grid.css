@@ -1,37 +1,29 @@
 /* ClipGrid.tsx — the second readout: the same clips, given their images.
 
-   Careful: the geometry is settled in `ClipGrid.tsx`, which places the rows
-   from it. The thumbnail's height comes from there, applied on `.tile-frame` —
-   which is why no `aspect-ratio` is written here: two sources for one height
-   round differently, and half a pixel per row becomes a visible step.
+   Careful: the geometry is settled in `tileGeometry.ts`, and `ClipGrid.tsx`
+   places the rows from it. The thumbnail's height and the gap between tiles
+   come from there, applied inline — which is why neither an `aspect-ratio` nor
+   a `gap` is written here: two sources for one figure round differently, and
+   half a pixel per row becomes a visible step.
 
    What this sheet still owns is the block underneath, and it must come to
-   exactly `META_HEIGHT` (60px): 1 (hairline) + 6 + 32 (two lines of title) + 15
-   (the readout) + 5 + 1. A rule changed here without being changed there puts
-   the placed rows beside the drawn ones. */
+   exactly the metaHeight of the density in play — 72px large, 79px tight,
+   both broken down beside their constants. A rule changed here without being
+   changed there puts the placed rows beside the drawn ones. */
 
 .grid {
-  border: 1px solid var(--rule);
-  border-radius: 0 0 var(--r) var(--r);
-  overflow: hidden;
-  background: var(--surface);
+  min-width: 0;
 }
 
-/* The same silkscreen strip as the table's head, minus the columns: nothing
-   here is a column header, so the pressed key says what `aria-sort` says over
-   there. */
+/* The sort keys, as words over the gallery rather than a strip welded to it.
+   Nothing here is a column header — the pressed key says what `aria-sort` says
+   in the table. */
 .grid-head {
   display: flex;
   align-items: center;
   gap: var(--s-4);
-  height: 34px;
-  padding: 0 var(--s-4);
-  background: var(--chassis);
-  border-bottom: 1px solid var(--rule-strong);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  padding: 0 0 var(--s-3);
+  font-size: var(--t-1);
   color: var(--text-faint);
 }
 
@@ -45,50 +37,45 @@
 
 .grid-body {
   height: clamp(300px, 62vh, 860px);
-  padding: var(--s-3) var(--s-4);
+  padding: 0;
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--rule-strong) transparent;
 }
 
+/* The gap is set inline, from `tileGeometry`, like the thumbnail height and for
+   the same reason: it changes with the density, and the virtualiser places rows
+   on it. Declared here as well, the two figures would drift the day one of them
+   moved. */
 .grid-rows {
   position: absolute;
   left: 0;
   right: 0;
   display: grid;
-  gap: 12px;
 }
 
 /* ---- the tile ----
-   Its own frame, because a board of images needs a grid to hold it: the flat
-   carries the thumbnail, the hairline separates two neighbours whose images
-   would otherwise touch. */
+   No frame. The thumbnail is the tile: a hairline around each one put a grid of
+   boxes between the eye and the images, which are the only thing on this page
+   worth looking at. Neighbours are separated by the gap, which is what a gap is
+   for. */
 
 .tile {
   position: relative;
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  background: var(--chassis);
-  overflow: hidden;
 }
 
 /* Kept: marked in the positive, never by dimming its neighbours. Nothing is
    checked by default here, so extinguishing what is not kept would put the
    whole board out at rest.
 
-   An outline, not an inset shadow: a shadow is painted under the element's
-   children, so the thumbnail covered the very edge meant to mark the tile — two
-   pixels around the block of type, one around the image, which read as a frame
-   the image was biting into. The outline paints above everything, follows the
-   radius, and costs no layout, which the virtualiser demands: a kept tile has
-   to measure exactly what an unkept one measures. */
-.tile.is-picked {
-  border-color: var(--violet);
-  outline: 1px solid var(--violet);
-}
-
+   The mark is the box filled with the accent, and the title taking its ink —
+   not a rectangle round the tile. That rectangle was drawn for a framed tile
+   and outlived the frame: on a board of unframed images it put the grid of
+   boxes straight back, and a run of adjacent kept tiles read as a stray border
+   along the first row and the outer columns rather than as anything anyone had
+   chosen. */
 .tile.is-picked .tile-title {
-  color: var(--violet-strong);
+  color: var(--accent-strong);
 }
 
 /* The whole tile save the box: a button, hence every bare-button rule undone. */
@@ -143,41 +130,63 @@
   border-radius: var(--r);
   background: rgb(0 0 0 / 72%);
   color: #fff;
-  font-family: var(--mono);
-  font-size: 11px;
+  font-size: var(--t-1);
   font-variant-numeric: tabular-nums;
-  line-height: 15px;
+  line-height: 17px;
 }
 
 /* The two lines are reserved whether the title fills them or not: a tile one
-   line shorter than its neighbour would break the row the virtualiser places. */
+   line shorter than its neighbour would break the row the virtualiser places.
+   Every figure is in pixels rather than a ratio, so the sum in `tileGeometry`
+   can be checked by reading — nothing here is measurable under jsdom. */
 .tile-title {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  height: 32px;
-  margin: 6px 8px 0;
-  font-size: 12.5px;
-  line-height: 16px;
+  height: 44px;
+  margin: 6px 0 0;
+  font-size: var(--t-2);
+  line-height: 22px;
   color: var(--text);
 }
 
+/* The tight tile drops the title to the body size. At 262px wide, a 17px title
+   over two lines is most of the tile, and the point of the density is to see
+   more clips, not more type. */
+.grid.is-dense .tile-title {
+  height: 34px;
+  font-size: var(--t-1);
+  line-height: 17px;
+}
+
 .tile-open:hover .tile-title {
-  color: var(--violet-strong);
+  color: var(--accent-strong);
 }
 
 .tile-meta {
   display: block;
-  height: 15px;
-  margin: 0 8px 5px;
+  height: 17px;
+  margin: 0 0 5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--mono);
-  font-size: 11px;
-  line-height: 15px;
+  font-family: var(--sans);
+  font-size: var(--t-1);
+  font-variant-numeric: tabular-nums;
+  line-height: 17px;
   color: var(--text-faint);
+}
+
+/* The second readout, on the tight tile only. It takes over the bottom margin
+   the first one gives up, so the block comes to DENSE.metaHeight (79px):
+   6 + 34 (two lines of title) + 17 + 17 + 5. */
+.tile-meta-under {
+  margin-top: 0;
+}
+
+.tile-meta:has(+ .tile-meta-under) {
+  margin-bottom: 0;
 }
 
 .tile-views {
@@ -186,7 +195,7 @@
 
 /* Zero views: the case the sweep exists to unearth. */
 .tile-views.zero {
-  color: var(--amber);
+  color: var(--accent);
 }
 
 /* ---- the box ----
@@ -210,23 +219,18 @@
 /* Checked, the shared box fills with a wash — which counts on something opaque
    behind it. Over a thumbnail there is nothing: the image showed through, and
    the tick, drawn a shade away from that wash, all but vanished. Here the box
-   is a full violet flat and the tick takes the ink meant for that flat. */
+   is a full accent flat and the tick takes the ink meant for that flat. */
 .tile-pick input:checked {
-  background: var(--violet);
-  border-color: var(--violet);
+  background: var(--accent-flat);
+  border-color: var(--accent-flat);
 }
 
 .tile-pick input:checked::after {
-  border-color: var(--on-violet);
+  border-color: var(--on-accent);
 }
 
 @media (max-width: 700px) {
-  .grid-body {
-    padding: var(--s-2);
-  }
-
   .grid-head {
     gap: var(--s-3);
-    padding: 0 var(--s-3);
   }
 }

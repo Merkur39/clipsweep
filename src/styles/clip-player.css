@@ -34,8 +34,8 @@
 
 .player-title {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--t-2);
+  font-weight: 500;
   /* One line: a five-line title would push the video off a short screen. */
   overflow: hidden;
   text-overflow: ellipsis;
@@ -43,9 +43,9 @@
 }
 
 .player-meta {
-  margin: 2px 0 0;
-  font-family: var(--mono);
-  font-size: 12px;
+  margin: 4px 0 0;
+  font-size: var(--t-1);
+  font-variant-numeric: tabular-nums;
   color: var(--text-faint);
 }
 
@@ -85,7 +85,7 @@
   margin: 0;
   padding: var(--s-7) var(--s-4);
   text-align: center;
-  font-size: 13px;
+  font-size: var(--t-2);
   color: var(--text-dim);
 }
 
@@ -108,8 +108,7 @@
 
 .player-position {
   min-width: 74px;
-  font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--t-1);
   font-variant-numeric: tabular-nums;
   text-align: center;
   color: var(--text-dim);
@@ -121,7 +120,7 @@
 }
 
 .player-away {
-  font-size: 12px;
+  font-size: var(--t-1);
   white-space: nowrap;
 }
 

@@ -14,7 +14,7 @@
 }
 
 .search-status.running {
-  color: var(--violet-strong);
+  color: var(--accent-strong);
 }
 
 .alert {
@@ -22,16 +22,16 @@
   gap: 10px;
   margin: var(--s-3) 0 0;
   padding: 10px 13px;
-  border: 1px solid var(--red-fill);
+  border: 1px solid var(--lost-fill);
   border-radius: var(--r);
-  background: var(--red-wash);
-  color: var(--red-strong);
+  background: var(--lost-wash);
+  color: var(--lost-strong);
   font-size: 13px;
 }
 
 .alert .icon {
   margin-top: 2px;
-  color: var(--red);
+  color: var(--lost);
 }
 
 /* ---- repli technique ---- */
@@ -40,23 +40,18 @@
   margin: var(--s-3) 0 0;
 }
 
+/* A word and a caret, like the facets in the toolbar: this opens the account of
+   how the sweep went, and an account is not an action. Boxed, it read as the
+   most important control on a page whose subject is the clips. */
 .technical > summary {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--s-2);
   width: fit-content;
-  padding: 6px 11px 6px 8px;
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  background: var(--chassis);
+  padding: 4px 0;
   color: var(--text-dim);
-  font-size: 12px;
-  font-weight: 550;
+  font-size: var(--t-1);
   cursor: pointer;
-  list-style: none;
-  transition:
-    color 0.12s var(--ease),
-    border-color 0.12s var(--ease);
 }
 
 .technical > summary::-webkit-details-marker {
@@ -81,6 +76,28 @@
 .technical > summary .summary-aside {
   color: var(--text-faint);
   font-weight: 400;
+}
+
+/* The silkscreen heading, which the facade used to wear all over and which
+   only the folded detail still does: inside it these are captions on an
+   instrument, not headings on a page. */
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: var(--s-5) 0 var(--s-3);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
 }
 
 .technical .section-label:first-of-type {
@@ -150,13 +167,13 @@
 }
 
 .log .good {
-  color: var(--violet-strong);
+  color: var(--accent-strong);
 }
 
 .log .warn {
-  color: var(--amber);
+  color: var(--accent);
 }
 
 .log .err {
-  color: var(--red-strong);
+  color: var(--lost-strong);
 }

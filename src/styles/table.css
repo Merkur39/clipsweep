@@ -4,11 +4,10 @@
    Careful: `ROW_HEIGHT` lives in `ClipTable.tsx` and drives the virtualiser.
    A row's height is set over there, not here. */
 
+/* No frame and no flat, as in the gallery: the rows carry themselves, and a
+   panel around them would be the one box left on the page. */
 .table {
-  border: 1px solid var(--rule);
-  border-radius: 0 0 var(--r) var(--r);
-  overflow: hidden;
-  background: var(--surface);
+  min-width: 0;
 }
 
 .table-head,
@@ -20,14 +19,13 @@
   padding: 0 var(--s-3) 0 var(--s-4);
 }
 
+/* Column headers, in words. The silkscreen belonged to the instrument facade;
+   here it shouted six times over a list it only labels. The hairline stays —
+   unlike the gallery, a table needs its head told apart from its rows. */
 .table-head {
   height: 34px;
-  background: var(--chassis);
-  border-bottom: 1px solid var(--rule-strong);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--t-1);
   color: var(--text-faint);
 }
 
@@ -42,7 +40,7 @@
    targets excluded from it. */
 .table-row {
   border-bottom: 1px solid var(--rule);
-  font-size: 13px;
+  font-size: var(--t-1);
   cursor: pointer;
 }
 
@@ -64,6 +62,15 @@
   color: var(--text);
 }
 
+/* A header sits over its own column. The two numeric ones already did, by the
+   row-reverse below; the two textual ones were centred over left-aligned
+   content — a button centres its label by default, and the silkscreen used to
+   disguise it. */
+.table-head .col-title .sort-key,
+.table-head .col-author .sort-key {
+  justify-content: flex-start;
+}
+
 /* Numeric column: the label must line up with its values, so the arrow files
    to its left rather than pushing the header away from the edge. */
 .table-head .col-views .sort-key,
@@ -73,8 +80,7 @@
 }
 
 .col-views {
-  font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: var(--t-1);
   font-variant-numeric: tabular-nums;
   text-align: right;
   color: var(--text-dim);
@@ -86,12 +92,11 @@
 
 /* Zero views: the case the sweep exists to unearth. */
 .table-row .col-views.zero {
-  color: var(--amber);
+  color: var(--accent);
 }
 
 .col-date {
-  font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--t-1);
   font-variant-numeric: tabular-nums;
   text-align: right;
   color: var(--text-faint);
@@ -112,19 +117,19 @@
 }
 
 .table-row .col-title a:hover {
-  color: var(--violet-strong);
+  color: var(--accent-strong);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .col-author {
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: var(--t-1);
 }
 
 /* ---- the play control ----
    The row's second control. It stays quiet on a resting row — a column of
-   violet triangles would out-shout the readout it serves — but it must never
+   accent triangles would out-shout the readout it serves — but it must never
    leave a doubt about what the cursor is over: the whole row is clickable and
    ticks the box, so the one place that does something else has to draw its own
    edge. Hence the box, held at 26 px and outlined as soon as the row is
@@ -154,15 +159,15 @@
 
 .table-row:hover .row-play {
   border-color: var(--rule-strong);
-  color: var(--violet);
+  color: var(--accent);
   opacity: 1;
 }
 
 .row-play:hover:not(:disabled),
 .row-play:focus-visible {
   background: var(--surface-raised);
-  border-color: var(--violet);
-  color: var(--violet-strong);
+  border-color: var(--accent);
+  color: var(--accent-strong);
   opacity: 1;
 }
 

@@ -7,13 +7,12 @@ import { useTranslation } from '../i18n/LocaleProvider'
 import type { WindowReport } from '../twitch/clips'
 import type { Progress } from '../twitch/types'
 import { Frieze, type Span } from './Frieze'
-import { AlertIcon, CaretIcon } from './Icon'
+import { CaretIcon } from './Icon'
 
 export interface SearchProgressProps {
   reports: WindowReport[]
   span: Span | null
   progress: Progress | null
-  incomplete: WindowReport[]
   clipsFound: number
   logEntries: LogEntry[]
   running: boolean
@@ -29,7 +28,6 @@ export function SearchProgress({
   reports,
   span,
   progress,
-  incomplete,
   clipsFound,
   logEntries,
   running,
@@ -45,14 +43,10 @@ export function SearchProgress({
 
   return (
     <section className="progress-block">
-      {status && <p className={running ? 'search-status running' : 'search-status'}>{status}</p>}
-
-      {incomplete.length > 0 && (
-        <p className="alert">
-          <AlertIcon />
-          <span>{t('progress.incomplete', { n: incomplete.length })}</span>
-        </p>
-      )}
+      {/* Only while it runs. Once the sweep is over, the count and the
+          completeness verdict are both stated by the tally beside the channel's
+          name, and a status line under it would say the same thing twice. */}
+      {running && status && <p className="search-status running">{status}</p>}
 
       {/* Deliberately uncontrolled: React must never close again what the user
           has just opened. */}

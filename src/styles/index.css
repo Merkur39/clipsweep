@@ -1,3 +1,4 @@
+@import './fonts.css';
 @import './base.css';
 @import './chassis.css';
 @import './controls.css';
@@ -8,4 +9,4 @@
 @import './table.css';
 @import './clip-grid.css';
 @import './clip-player.css';
-@import './export-panel.css';
+@import './selection-bar.css';

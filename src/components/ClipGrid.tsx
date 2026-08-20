@@ -7,25 +7,19 @@ import type { Clip } from '../twitch/types'
 import { CaretIcon, PlayIcon } from './Icon'
 import { ResultsEmpty } from './ResultsEmpty'
 import { SORT_COLUMNS } from './sortColumns'
+import { tileGeometry } from './tileGeometry'
 import { gridMetrics, gridRange } from './virtual'
 
-/**
- * The geometry of a tile. The thumbnail's height is computed and then applied,
- * so the sheet has nothing left to decide about it; `META_HEIGHT`, on the other
- * hand, is the one figure the sheet still owns — the exact height of the block
- * under the thumbnail, its two hairlines included: 1 + 6 + 32 (two lines of
- * title) + 15 (the readout) + 5 + 1. Change a rule in `clip-grid.css` without
- * changing it here and the placed rows land beside the drawn ones.
- */
-const TILE_MIN = 230
-const GAP = 12
-const META_HEIGHT = 60
 const OVERSCAN = 2
 /** Before the first measurement; a plausible stage rather than a blank one. */
 const INITIAL_SIZE = { width: 900, height: 560 }
 
 export interface ClipGridProps {
   clips: Clip[]
+  /** The tight gallery: more columns, and one readout line more per tile. */
+  dense: boolean
+  /** Names a game id, for the line only the tight tile carries. */
+  gameLabel: (id: string) => string
   emptyMessage: string
   emptyAction?: { label: string; onClick: () => void }
   selected: ReadonlySet<string>
@@ -43,6 +37,8 @@ export interface ClipGridProps {
  */
 export function ClipGrid({
   clips,
+  dense,
+  gameLabel,
   emptyMessage,
   emptyAction,
   selected,
@@ -82,12 +78,10 @@ export function ClipGrid({
 
   const onScroll = useCallback(() => setScrollTop(scrollerRef.current?.scrollTop ?? 0), [])
 
-  const { perRow, thumbHeight, rowHeight } = gridMetrics({
-    width: size.width,
-    tileMin: TILE_MIN,
-    gap: GAP,
-    metaHeight: META_HEIGHT,
-  })
+  // The gap is applied rather than declared, for the same reason the thumbnail
+  // height is: it varies with the density, and two sources for one figure drift.
+  const geometry = tileGeometry(dense, size.width)
+  const { perRow, thumbHeight, rowHeight } = gridMetrics({ width: size.width, ...geometry })
   const { firstIndex, endIndex, offsetTop, totalHeight } = gridRange({
     scrollTop,
     viewportHeight: size.height,
@@ -98,7 +92,7 @@ export function ClipGrid({
   })
 
   return (
-    <div className="grid">
+    <div className={dense ? 'grid is-dense' : 'grid'}>
       <div className="grid-head" role="group" aria-label={t('grid.sortBy')}>
         {SORT_COLUMNS.map((column) => (
           <button
@@ -123,6 +117,7 @@ export function ClipGrid({
             className="grid-rows"
             style={{
               top: offsetTop,
+              gap: geometry.gap,
               gridTemplateColumns: `repeat(${perRow}, minmax(0, 1fr))`,
             }}
           >
@@ -130,6 +125,8 @@ export function ClipGrid({
               <Tile
                 key={clip.id}
                 clip={clip}
+                dense={dense}
+                gameLabel={gameLabel}
                 thumbHeight={thumbHeight}
                 checked={selected.has(clip.id)}
                 onToggle={onToggle}
@@ -145,6 +142,8 @@ export function ClipGrid({
 
 interface TileProps {
   clip: Clip
+  dense: boolean
+  gameLabel: (id: string) => string
   /** Measured, not declared: see `gridMetrics`. */
   thumbHeight: number
   checked: boolean
@@ -152,7 +151,7 @@ interface TileProps {
   onPlay: (id: string) => void
 }
 
-function Tile({ clip, thumbHeight, checked, onToggle, onPlay }: TileProps) {
+function Tile({ clip, dense, gameLabel, thumbHeight, checked, onToggle, onPlay }: TileProps) {
   const { locale, t } = useTranslation()
   const title = clip.title || t('table.untitled')
   // A thumbnail can be missing or expired. The broken-image glyph says nothing
@@ -194,14 +193,29 @@ function Tile({ clip, thumbHeight, checked, onToggle, onPlay }: TileProps) {
           <span className="tile-duration">{formatDuration(clip.duration)}</span>
         </span>
         <span className="tile-title">{title}</span>
+        {/* The tight tile splits the readout in two rather than saying more in
+            one breath: the counts and who clipped it on the first line, when
+            and from what on the second — which is the room its `metaHeight`
+            buys. The large tile keeps the date on its single line, since it
+            has no second one to move it to. */}
         <span className="tile-meta">
           {/* Zero views: the case the sweep exists to unearth, painted here as
               it is in the table. */}
           <span className={clip.view_count === 0 ? 'tile-views zero' : 'tile-views'}>
             {t('results.views', { n: clip.view_count })}
           </span>
-          {` · ${formatDay(clip.created_at, locale)} · ${clip.creator_name || '—'}`}
+          {dense
+            ? ` · ${clip.creator_name || '—'}`
+            : ` · ${formatDay(clip.created_at, locale)} · ${clip.creator_name || '—'}`}
         </span>
+        {dense && (
+          <span className="tile-meta tile-meta-under">
+            {formatDay(clip.created_at, locale)}
+            {/* An id with no row at Helix is named a category rather than shown
+                bare; a clip filed under nothing at all gets no mention. */}
+            {clip.game_id ? ` · ${gameLabel(clip.game_id)}` : ''}
+          </span>
+        )}
       </button>
 
       <label className="tile-pick">
