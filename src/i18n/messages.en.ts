@@ -7,7 +7,6 @@ export const en: Catalogue = {
   // ── Access ───────────────────────────────────────────────────────────────
   'access.disconnected': 'Disconnected from Twitch.',
   'access.connected': 'Connected.',
-  'access.connectedFor': 'Connected — {life}.',
   'access.tokenExpired': 'Token expired.',
   'access.revokeFailed': 'Token forgotten here; Twitch did not confirm the revocation.',
   'access.refused': 'Twitch refused the connection: {error}',
@@ -17,10 +16,6 @@ export const en: Catalogue = {
   'access.required': 'Connect to Twitch before starting the sweep.',
   'access.why':
     'Connecting to Twitch is only there to query its API. ClipSweep asks for no permission on your account.',
-
-  'access.life.minutes': { one: '{n} min left', other: '{n} min left' },
-  'access.life.hours': { one: '{n} h left', other: '{n} h left' },
-  'access.life.days': { one: '{n} d left', other: '{n} d left' },
 
   // ── Search panel ─────────────────────────────────────────────────────────
   'panel.connect': 'Connect to Twitch',

@@ -2,22 +2,6 @@ import type { T } from '../i18n/translate'
 
 export type AccessKind = 'ok' | 'bad' | ''
 
-/**
- * A token's remaining life, in whichever unit actually reads.
- *
- * A Twitch token lasts some sixty days: "1477 h" is exact, unreadable, and spills
- * out of the panel onto two lines. The unit therefore follows the magnitude.
- */
-export function describeTokenLife(expiresInSeconds: number, t: T): string {
-  const minutes = Math.round(expiresInSeconds / 60)
-  if (minutes < 60) return t('access.life.minutes', { n: Math.max(minutes, 1) })
-
-  const hours = Math.round(expiresInSeconds / 3600)
-  if (hours < 48) return t('access.life.hours', { n: hours })
-
-  return t('access.life.days', { n: Math.round(expiresInSeconds / 86_400) })
-}
-
 export interface AccessInput {
   /** The refusal Twitch just returned on the redirect, if there is one. */
   authError: string | null
@@ -74,8 +58,9 @@ export function describeAccess(
     }
   }
 
-  // The remaining life is still missing: it arrives with validation, which adds
-  // its mention while keeping this prefix intact.
+  // The same sentence validation will land on. A presumed session and a
+  // confirmed one say the same thing now that the remaining life is no longer
+  // spelled out, so nothing changes on screen when the round trip completes.
   if (hasStoredToken) {
     return { message: t('access.connected'), kind: 'ok', presumedConnected: true }
   }

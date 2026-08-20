@@ -18,7 +18,6 @@ export const fr = {
   // ── Access ───────────────────────────────────────────────────────────────
   'access.disconnected': 'Déconnecté de Twitch.',
   'access.connected': 'Connecté.',
-  'access.connectedFor': 'Connecté — {life}.',
   /**
    * The optimistic bet taking itself back, and a token refused mid-sweep, say
    * the same thing: reconnecting, for its part, is carried by the button.
@@ -41,9 +40,6 @@ export const fr = {
   // A token's remaining life, in whichever unit reads: a Twitch token lasts
   // some sixty days, and "1477 h" is exact, unreadable, and spills out of the
   // panel onto two lines.
-  'access.life.minutes': { one: '{n} min restante', other: '{n} min restantes' },
-  'access.life.hours': { one: '{n} h restante', other: '{n} h restantes' },
-  'access.life.days': { one: '{n} j restant', other: '{n} j restants' },
 
   // ── Search panel ─────────────────────────────────────────────────────────
   'panel.connect': 'Se connecter à Twitch',

@@ -16,7 +16,7 @@ import { ThemeToggle } from './components/ThemeToggle'
 import { ViewToggle } from './components/ViewToggle'
 import { applyTheme, parseTheme } from './domain/theme'
 import { parseView } from './domain/view'
-import { describeAccess, describeTokenLife } from './domain/access'
+import { describeAccess } from './domain/access'
 import { applyFilters, dateExtent, facets, narrowedRange, panelOrder } from './domain/filters'
 import { clampSince, clampUntil, describePeriodError, monthBefore } from './domain/period'
 import { describeEmptyResults, describeResultCount } from './domain/results'
@@ -106,9 +106,7 @@ export default function App({ authError }: { authError: string | null }) {
   )
   const presumedConnected = access.presumedConnected
   // A confirmed session outranks any notice: it is what makes them stale.
-  const authMessage = session
-    ? t('access.connectedFor', { life: describeTokenLife(session.expiresInSeconds, t) })
-    : (notice && t(notice.key)) || access.message
+  const authMessage = session ? t('access.connected') : (notice && t(notice.key)) || access.message
   const authKind: AccessKind = session ? 'ok' : (notice?.kind ?? access.kind)
 
   // Already set on `<html>` by `main.tsx` before the first render; the effect
