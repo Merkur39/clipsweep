@@ -2,6 +2,8 @@
 
 Lists **every** clip on a Twitch channel — including the ones the site no longer shows you.
 
+**→ [clipsweep.vercel.app](https://clipsweep.vercel.app/)**
+
 > Independent project, **unaffiliated with Twitch Interactive, Inc.** "Twitch" is a trademark of its
 > owner, used here to name the service the tool works with.
 
