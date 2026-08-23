@@ -12,6 +12,11 @@ on:
 permissions:
   contents: read
 
+# A new push to the same ref makes the running check obsolete.
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check:
     runs-on: ubuntu-latest
