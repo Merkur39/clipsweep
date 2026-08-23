@@ -19,6 +19,10 @@ export default defineConfig({
     // `.env.local` and a runner without one do not render the same interface,
     // and a test can pass here and fail there for a reason it never states.
     env: { VITE_TWITCH_CLIENT_ID: 'test-client' },
+    // `restoreMocks` puts back what `vi.spyOn` replaced; since Vitest 4 that
+    // is all it does, so a bare `vi.fn()` would carry its calls and its
+    // implementation into the next test. `mockReset` clears both.
     restoreMocks: true,
+    mockReset: true,
   },
 })
