@@ -27,7 +27,9 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          # Same pin as the checks: the probe is TypeScript run straight by
+          # node, so it needs a major whose type stripping is on by default.
+          node-version-file: .nvmrc
 
       # No `npm ci`: the probe imports nothing outside Node's standard library.
       # A broken dependency should not be able to silence the canary.
