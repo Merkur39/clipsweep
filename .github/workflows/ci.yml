@@ -25,7 +25,9 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          # The major lives in .nvmrc — `engines.node` mirrors it for Vercel, so
+          # the runner and the build that goes live never drift apart.
+          node-version-file: .nvmrc
           cache: npm
 
       - run: npm ci
