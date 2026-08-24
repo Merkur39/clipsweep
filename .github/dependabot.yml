@@ -27,6 +27,16 @@ updates:
       - dependency-name: '@types/node'
         update-types:
           - version-update:semver-major
+      # TypeScript 7 is the Go port, and typescript-eslint refuses to load
+      # against it — `npm ci` already fails on its peer range (<6.1.0), and
+      # forcing the install past that only reaches a hard throw inside the
+      # plugin. Typecheck, build and tests all pass on 7.0.2: the lint alone
+      # stands in the way. Upstream tracks support for TS >=7.1, so 7.0 will
+      # never be it. Lift this once that ships:
+      # https://github.com/typescript-eslint/typescript-eslint/issues/10940
+      - dependency-name: 'typescript'
+        update-types:
+          - version-update:semver-major
     groups:
       # Minor and patch only, so the group stays mergeable without being read.
       # A major matches no group and therefore gets a pull request of its own —
