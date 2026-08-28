@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 24">
   <!--
     The mark from `Icon.tsx` (`Mark`), made self-standing.
 
@@ -12,29 +12,26 @@
     to the parser, and the favicon vanishes without anything signalling it (the
     file still serves with a 200).
 
-    The pattern is the one from the frieze: a whole period, split in two, then
-    again, and a last segment left saturated at the floor, which the tool
-    declares rather than passing over in silence.
+    One deliberate divergence from the mark, and only one: the tail is a short
+    bar here where the interface draws four dashes. At the size of a tab the
+    gaps between those dashes fall under half a pixel, and four of them read as
+    a smear. The bar says the same thing at a size that can hold it.
+
+    `scripts/geometry/mark.test.ts` holds the three bars of this file to the
+    ones in `Icon.tsx` and in `make-favicon.ts`.
   -->
   <style>
-    .rule { fill: #b6ada0 }
-    .half { fill: #8f6ae8 }
-    .full { fill: #6b3fd4 }
-    .lost { fill: #cf2b2b }
+    .run { fill: #00957d }
+    .tail { fill: #65686f }
 
     @media (prefers-color-scheme: dark) {
-      .rule { fill: #39415c }
-      .half { fill: #6a45c8 }
-      .full { fill: #a481ff }
-      .lost { fill: #ff5d5d }
+      .run { fill: #47d7b8 }
+      .tail { fill: #858e9c }
     }
   </style>
 
-  <rect class="rule" x="1" y="2.4" width="14" height="2.2" rx="0.6" />
-  <rect class="rule" x="1" y="6.9" width="6.4" height="2.2" rx="0.6" />
-  <rect class="half" x="8.6" y="6.9" width="6.4" height="2.2" rx="0.6" />
-  <rect class="half" x="1" y="11.4" width="2.8" height="2.2" rx="0.6" />
-  <rect class="full" x="5" y="11.4" width="2.4" height="2.2" rx="0.6" />
-  <rect class="full" x="8.6" y="11.4" width="2.4" height="2.2" rx="0.6" />
-  <rect class="lost" x="12.2" y="11.4" width="2.8" height="2.2" rx="0.6" />
+  <rect class="run" x="2.5" y="3.4" width="23" height="2.9" rx="1.45" />
+  <rect class="run" x="2.5" y="9.2" width="17" height="2.9" rx="1.45" opacity="0.72" />
+  <rect class="run" x="2.5" y="15" width="10.5" height="2.9" rx="1.45" opacity="0.46" />
+  <rect class="tail" x="2.5" y="20.5" width="5" height="2.9" rx="1.45" />
 </svg>

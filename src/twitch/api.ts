@@ -19,6 +19,17 @@ export class TokenRejectedError extends TranslatableError {
   }
 }
 
+/**
+ * Told the moment Helix asks for a pause, with the epoch millisecond the client
+ * means to resume at, and told again with null once it has.
+ *
+ * The client waits either way; what this buys is that the wait can be said. Up
+ * to a minute of a search standing still, in silence, is indistinguishable from
+ * a search that has hung — and the reader's only move then is to give up on one
+ * that was going to finish.
+ */
+export type PauseListener = (resumesAt: number | null) => void
+
 interface HelixResponse<T> {
   data: T[]
   pagination?: { cursor?: string }
@@ -29,6 +40,7 @@ export class TwitchApi {
   constructor(
     private readonly session: Session,
     private readonly signal?: AbortSignal,
+    private readonly onPause?: PauseListener,
   ) {}
 
   private async get<T>(
@@ -52,7 +64,12 @@ export class TwitchApi {
         // Helix answers with the epoch second at which the bucket refills.
         const reset = Number(response.headers.get('ratelimit-reset')) * 1000
         const waitMs = Number.isFinite(reset) && reset > Date.now() ? reset - Date.now() : 5000
-        await sleep(Math.min(waitMs + 250, 60_000))
+        // Capped whatever the header says: a reset an hour out is a header to
+        // distrust, not an hour to sit through.
+        const wait = Math.min(waitMs + 250, 60_000)
+        this.onPause?.(Date.now() + wait)
+        await sleep(wait)
+        this.onPause?.(null)
         continue
       }
       if (response.status === 401) throw new TokenRejectedError()
@@ -94,7 +111,7 @@ export class TwitchApi {
    * `incomplete` reports that some batch was lost, which is not the same thing
    * as a name missing from the map. Helix returns no row for a category it has
    * retired, and that id comes back unnamed on a request that went perfectly
-   * well — reading the map's gaps as failures would cry wolf on every sweep
+   * well — reading the map's gaps as failures would cry wolf on every search
    * touching an old clip.
    */
   async fetchGameNames(
@@ -112,7 +129,7 @@ export class TwitchApi {
         const { data } = await this.get<Game>('games', params)
         for (const game of data) names.set(game.id, game.name)
       } catch (cause) {
-        // An abort is the user stopping the sweep, not a batch going wrong:
+        // An abort is the user stopping the search, not a batch going wrong:
         // swallowing it here would have us carry on requesting after the stop.
         if ((cause as Error).name === 'AbortError') throw cause
         incomplete = true

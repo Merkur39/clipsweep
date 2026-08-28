@@ -1,6 +1,18 @@
 import type { Clip } from '../twitch/types'
 
-export type SortKey = 'views' | 'date' | 'title' | 'creator'
+/**
+ * What the readouts can order on. A list rather than a bare union, because the
+ * columns that head these keys are checked against it: a key added here and left
+ * unheaded is a key nothing can reach.
+ *
+ * The game is deliberately absent. Ordering on it would group, and grouping is
+ * what the game chip already does — better, since it also drops everything else.
+ * It would also cost the domain a resolver: Helix serves an id, the reader sees
+ * a name, and ordering on the id would look like no order at all.
+ */
+export const SORT_KEYS = ['views', 'date', 'title', 'creator', 'duration'] as const
+
+export type SortKey = (typeof SORT_KEYS)[number]
 export type SortDirection = 'asc' | 'desc'
 
 export interface ClipSort {
@@ -43,6 +55,10 @@ function comparePrimary(a: Clip, b: Clip, key: SortKey): number {
       return collator.compare(a.title, b.title)
     case 'creator':
       return collator.compare(a.creator_name, b.creator_name)
+    // The float Helix serves, not the rounded badge: two clips a tenth of a
+    // second apart read the same and still have an order.
+    case 'duration':
+      return a.duration - b.duration
   }
 }
 

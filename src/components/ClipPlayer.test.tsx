@@ -1,12 +1,10 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen } from '@testing-library/react'
 import { render } from '../test-render'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import type { Clip } from '../twitch/types'
 import { ClipPlayer } from './ClipPlayer'
-
-afterEach(cleanup)
 
 const clip = (id: string): Clip =>
   ({
@@ -82,7 +80,7 @@ describe('ClipPlayer, opening', () => {
   })
 
   /**
-   * The list moves under the player: a sweep goes on delivering clips, and a
+   * The list moves under the player: a search goes on delivering clips, and a
    * filter can carry off the one being watched. Following the id rather than the
    * index is what keeps the screen honest — here it has nothing left to show.
    */

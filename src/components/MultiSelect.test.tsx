@@ -1,11 +1,9 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { render } from '../test-render'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { MultiSelect } from './MultiSelect'
-
-afterEach(cleanup)
 
 const options = [
   { value: 'SpiZ', count: 12 },
@@ -41,10 +39,22 @@ describe('MultiSelect', () => {
     expect(panel()).toBeNull()
   })
 
-  it('announces "All" when nothing is checked', () => {
+  // The chip is the only thing on screen saying the facet is on: with nothing
+  // checked it is the filter switched off, and it stays a bare word.
+  it('stays a bare word while nothing is checked', () => {
     const { button } = setup()
 
-    expect(button).toHaveTextContent('Tous')
+    expect(button).toHaveTextContent(/^Créateurs$/)
+    expect(button).not.toHaveClass('is-on')
+  })
+
+  it('names the single value checked, and counts beyond one', () => {
+    setup(['Ori'])
+    expect(screen.getByRole('button', { name: 'Créateurs Ori' })).toHaveClass('is-on')
+
+    cleanup()
+    setup(['Ori', 'SpiZ'])
+    expect(screen.getByRole('button', { name: 'Créateurs 2 sélectionnés' })).toBeInTheDocument()
   })
 
   it('lists the options with their count on opening', () => {
@@ -182,7 +192,7 @@ describe('MultiSelect', () => {
   })
 })
 
-// A sweep over a busy channel yields hundreds of creators and nearly as many
+// A search over a busy channel yields hundreds of creators and nearly as many
 // games; the panel used to mount every one of them, twice over, on every open.
 describe('MultiSelect, longues listes', () => {
   const many = Array.from({ length: 400 }, (_, index) => ({

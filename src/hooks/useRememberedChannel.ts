@@ -21,10 +21,10 @@ export interface RememberedChannel {
 /**
  * The channel typed, and the opt-in that lets it outlive the tab.
  *
- * By default the target of a sweep dies with the tab, like the period: finding
+ * By default the target of a search dies with the tab, like the period: finding
  * yesterday's channel again would restart, on the first click, a search nobody
  * asked for here. But typing the same name at every opening is a chore for
- * whoever sweeps one channel — their own — and that is what one tick answers.
+ * whoever searches one channel — their own — and that is what one tick answers.
  *
  * The consent is what carries the whole thing: nothing is kept without it, and
  * withdrawing it erases at once what had been kept.
@@ -44,7 +44,7 @@ export function useRememberedChannel(): RememberedChannel {
 
   // One effect for both directions: it follows the field while the box is
   // ticked, and erases as soon as it is not — including at the very first
-  // render, which sweeps up whatever an earlier tick had left.
+  // render, which clears out whatever an earlier tick had left.
   useEffect(() => {
     if (remember) localStorage.setItem(SAVED_KEY, channel)
     else localStorage.removeItem(SAVED_KEY)

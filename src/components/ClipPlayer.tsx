@@ -4,7 +4,7 @@ import { embedSrc } from '../domain/embed'
 import { formatDay } from '../i18n/format'
 import { useTranslation } from '../i18n/LocaleProvider'
 import type { Clip } from '../twitch/types'
-import { ChevronIcon, CloseIcon } from './Icon'
+import { ChevronIcon, CloseIcon, ExternalIcon } from './Icon'
 
 export interface ClipPlayerProps {
   clips: Clip[]
@@ -20,7 +20,7 @@ export interface ClipPlayerProps {
  * the export waits for, in one place.
  *
  * The clip is followed by **id**, never by index. The list moves underneath — a
- * sweep goes on delivering, a filter can carry off the very clip being watched —
+ * search goes on delivering, a filter can carry off the very clip being watched —
  * and an index would quietly come to name another one.
  */
 export function ClipPlayer({
@@ -110,53 +110,44 @@ function PlayerDialog({ clips, index, onPlayingIdChange, checked, onToggle }: Pl
       onClose={() => onPlayingIdChange(null)}
       onKeyDown={onKeyDown}
     >
-      <header className="player-head">
-        <p className="player-title">{title}</p>
-        <p className="player-meta">
-          {[
-            clip.creator_name || '—',
-            formatDay(clip.created_at, locale),
-            t('results.views', { n: clip.view_count }),
-          ].join(' · ')}
-        </p>
+      {/* First in the DOM as it is first in the corner: the way out of a modal
+          is the one control that must be reachable without reading anything. */}
+      <button
+        type="button"
+        className="player-close"
+        aria-label={t('player.close')}
+        onClick={() => onPlayingIdChange(null)}
+      >
+        <CloseIcon size={15} />
+      </button>
+
+      <div className="player-stage">
+        {src ? (
+          <iframe
+            className="player-frame"
+            src={src}
+            title={title}
+            allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+            allowFullScreen
+          />
+        ) : (
+          <p className="player-unavailable">{t('player.unavailable')}</p>
+        )}
+
+        {/* Beside the video, where the eye already is. The step back comes first
+            in the DOM as it does on screen. */}
         <button
           type="button"
-          className="player-close"
-          aria-label={t('player.close')}
-          onClick={() => onPlayingIdChange(null)}
-        >
-          <CloseIcon size={14} />
-        </button>
-      </header>
-
-      {src ? (
-        <iframe
-          className="player-frame"
-          src={src}
-          title={title}
-          allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
-          allowFullScreen
-        />
-      ) : (
-        <p className="player-unavailable">{t('player.unavailable')}</p>
-      )}
-
-      <footer className="player-actions">
-        <button
-          type="button"
-          className="player-step"
+          className="player-step prev"
           aria-label={t('player.previous')}
           disabled={index === 0}
           onClick={() => move(-1)}
         >
           <ChevronIcon turn={90} />
         </button>
-        <span className="player-position">
-          {t('player.position', { index: index + 1, total: clips.length })}
-        </span>
         <button
           type="button"
-          className="player-step"
+          className="player-step next"
           aria-label={t('player.next')}
           disabled={index === clips.length - 1}
           onClick={() => move(1)}
@@ -166,18 +157,44 @@ function PlayerDialog({ clips, index, onPlayingIdChange, checked, onToggle }: Pl
         >
           <ChevronIcon turn={-90} />
         </button>
+      </div>
 
-        <button
-          type="button"
-          className={checked ? 'player-keep primary' : 'player-keep'}
-          onClick={() => onToggle(clip.id)}
-        >
-          {t(checked ? 'player.deselect' : 'player.select')}
-        </button>
-        <a className="player-away" href={clip.url} target="_blank" rel="noreferrer">
-          {t('player.openOnTwitch')}
-        </a>
-      </footer>
+      <div className="player-info">
+        <div>
+          <p className="player-title">{title}</p>
+          <p className="player-meta">
+            {[
+              clip.creator_name || '—',
+              formatDay(clip.created_at, locale),
+              t('results.views', { n: clip.view_count }),
+            ].join(' · ')}
+          </p>
+        </div>
+
+        <div className="player-acts">
+          {/* Primary while the clip is not kept: what the button offers is the
+              reason the clip is on screen. Once it is kept, dropping it again is
+              not the thing to encourage. */}
+          <button
+            type="button"
+            className={checked ? 'player-keep' : 'player-keep primary'}
+            onClick={() => onToggle(clip.id)}
+          >
+            {t(checked ? 'player.deselect' : 'player.select')}
+          </button>
+          {/* A ghost button rather than a link, and it is a matter of rank:
+              it stands beside the choice as the second thing one can do with
+              the clip on screen, and an underlined phrase between two framed
+              controls reads as a footnote to them. */}
+          <a className="player-away" href={clip.url} target="_blank" rel="noreferrer">
+            <ExternalIcon />
+            {t('player.openOnTwitch')}
+          </a>
+          <span className="player-position">
+            {t('player.position', { index: index + 1, total: clips.length })}
+          </span>
+        </div>
+      </div>
     </dialog>
   )
 }

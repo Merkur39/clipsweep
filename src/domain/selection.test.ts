@@ -7,7 +7,7 @@ const none = new Set<string>()
 
 describe('selectedClips', () => {
   // Selections are what gets stored, not exclusions: a clip that appears — a
-  // raised threshold, a fresh sweep — therefore comes in unchecked.
+  // raised threshold, a fresh search — therefore comes in unchecked.
   it('keeps nothing as long as nothing is checked', () => {
     expect(selectedClips(clips, none)).toEqual([])
   })

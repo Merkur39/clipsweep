@@ -3,6 +3,7 @@ import { act, cleanup, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { Session } from '../twitch/auth'
+import { TranslatableError } from '../twitch/errors'
 import type { TwitchUser } from '../twitch/types'
 import { useChannelLookup } from './useChannelLookup'
 
@@ -26,14 +27,13 @@ vi.mock('../domain/channelCache', () => ({
 }))
 
 const session: Session = { clientId: 'c', accessToken: 't', expiresInSeconds: 3600 }
-const user = (login: string, createdAt: string) =>
-  ({
-    id: '1',
-    login,
-    display_name: login,
-    profile_image_url: '',
-    created_at: createdAt,
-  }) as TwitchUser
+const user = (login: string, createdAt: string): TwitchUser => ({
+  id: '1',
+  login,
+  display_name: login,
+  profile_image_url: '',
+  created_at: createdAt,
+})
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -44,23 +44,21 @@ afterEach(() => {
   cleanup()
 })
 
-/** Laisse expirer la temporisation puis vider la file de promesses. */
+/** Lets the debounce run out, then drains the promise queue. */
 const settle = async () => {
   await act(async () => {
     vi.advanceTimersByTime(600)
   })
 }
 
+/**
+ * What is known about the name being typed — and `null` used to say four
+ * different things at once: nothing typed, waiting on Twitch, no such channel,
+ * and the lookup itself failed. Only one of the four is grounds for refusing to
+ * search, so they have to be told apart.
+ */
 describe('useChannelLookup', () => {
-  it('does not call the API without a session', async () => {
-    renderHook(() => useChannelLookup(null, 'testchannel'))
-
-    await settle()
-
-    expect(fetchUser).not.toHaveBeenCalled()
-  })
-
-  it('does not call the API on empty input', async () => {
+  it('has nothing to say about an empty field', async () => {
     renderHook(() => useChannelLookup(session, '   '))
 
     await settle()
@@ -68,15 +66,26 @@ describe('useChannelLookup', () => {
     expect(fetchUser).not.toHaveBeenCalled()
   })
 
-  it('returns the creation date of the resolved channel', async () => {
-    fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
-
-    const { result } = renderHook(() => useChannelLookup(session, 'testchannel'))
-    expect(result.current).toBeNull()
+  /* Not "missing": nothing was learned, and the difference matters — a channel
+     is only refused on Twitch's own answer. */
+  it('learns nothing without a session, and does not ask', async () => {
+    const { result } = renderHook(() => useChannelLookup(null, 'testchannel'))
 
     await settle()
 
-    expect(result.current).toBe('2017-07-10')
+    expect(fetchUser).not.toHaveBeenCalled()
+    expect(result.current).toEqual({ status: 'unreachable' })
+  })
+
+  it('is checking until the answer comes back', async () => {
+    fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
+
+    const { result } = renderHook(() => useChannelLookup(session, 'testchannel'))
+    expect(result.current).toEqual({ status: 'checking' })
+
+    await settle()
+
+    expect(result.current).toEqual({ status: 'found', createdAt: '2017-07-10' })
   })
 
   it('normalizes the case of the input', async () => {
@@ -85,7 +94,7 @@ describe('useChannelLookup', () => {
     const { result } = renderHook(() => useChannelLookup(session, '  TestChannel '))
     await settle()
 
-    expect(result.current).toBe('2017-07-10')
+    expect(result.current).toEqual({ status: 'found', createdAt: '2017-07-10' })
   })
 
   // Without debouncing, "k", "ka", "kal"… would each query the API for a
@@ -108,28 +117,28 @@ describe('useChannelLookup', () => {
     expect(fetchUser).toHaveBeenCalledWith('testchannel')
   })
 
-  it('does not show the date of a channel no longer asked for', async () => {
+  it('does not describe a channel no longer asked for', async () => {
     fetchUser.mockResolvedValue(user('testchannel', '2017-07-10T00:00:00Z'))
     const { result, rerender } = renderHook(({ name }) => useChannelLookup(session, name), {
       initialProps: { name: 'testchannel' },
     })
     await settle()
-    expect(result.current).toBe('2017-07-10')
+    expect(result.current).toEqual({ status: 'found', createdAt: '2017-07-10' })
 
-    // The in-flight response describes "testchannel", the input now says otherwise.
+    // The answer in hand describes "testchannel", the input now says otherwise.
     rerender({ name: 'otherchannel' })
 
-    expect(result.current).toBeNull()
+    expect(result.current).toEqual({ status: 'checking' })
   })
 
-  // A channel already swept has its date in cache: asking Helix again on every
+  // A channel already searched has its date in cache: asking Helix again on every
   // reload would be a request for nothing.
-  it('returns a known date without querying the API', async () => {
+  it('answers from the cache without querying the API', async () => {
     cacheRead.mockReturnValue('2017-07-10')
 
     const { result } = renderHook(() => useChannelLookup(session, 'testchannel'))
 
-    expect(result.current).toBe('2017-07-10')
+    expect(result.current).toEqual({ status: 'found', createdAt: '2017-07-10' })
     await settle()
     expect(fetchUser).not.toHaveBeenCalled()
   })
@@ -142,15 +151,31 @@ describe('useChannelLookup', () => {
     await settle()
 
     expect(fetchUser).toHaveBeenCalledWith('testchannel')
-    expect(result.current).toBe('2017-07-10')
+    expect(result.current).toEqual({ status: 'found', createdAt: '2017-07-10' })
   })
 
-  it('stays silent on a channel that cannot be found', async () => {
-    fetchUser.mockRejectedValue(new Error('Channel not found'))
+  /* The one answer that disproves a channel, and it has to come from Twitch
+     saying so — hence the key rather than the shape of the failure. */
+  it('reports a channel Twitch says does not exist', async () => {
+    fetchUser.mockRejectedValue(new TranslatableError('error.channelNotFound', { login: 'nope' }))
 
-    const { result } = renderHook(() => useChannelLookup(session, 'nexistepas'))
+    const { result } = renderHook(() => useChannelLookup(session, 'nope'))
     await settle()
 
-    expect(result.current).toBeNull()
+    expect(result.current).toEqual({ status: 'missing' })
+  })
+
+  /**
+   * A lookup that fell over proves nothing about the channel. Reading it as
+   * "does not exist" would refuse a search over a dropped connection, on a name
+   * that may well be right.
+   */
+  it('keeps a failed lookup apart from a channel that is not there', async () => {
+    fetchUser.mockRejectedValue(new Error('Failed to fetch'))
+
+    const { result } = renderHook(() => useChannelLookup(session, 'testchannel'))
+    await settle()
+
+    expect(result.current).toEqual({ status: 'unreachable' })
   })
 })

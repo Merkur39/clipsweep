@@ -8,8 +8,8 @@ export const persistedKey = (key: string) => `getclip.${key}`
  *
  * The store is chosen at the call site, and that choice is a choice of lifetime:
  * `localStorage` for a preference that must outlive the tab — the theme —,
- * `sessionStorage` for what only targets one sweep. Finding the channel and the
- * period of a closed session again would restart, on the first click, a sweep
+ * `sessionStorage` for what only targets one search. Finding the channel and the
+ * period of a closed session again would restart, on the first click, a search
  * nobody asked for in this particular tab.
  */
 export function usePersistedState(key: string, initial: string, store: Storage = localStorage) {

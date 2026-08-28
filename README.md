@@ -19,7 +19,7 @@ stays under the ceiling. Any window that saturates anyway (≥ 950 results with 
 in two and replayed**, depth first, down to a 6-hour floor. Clips are deduplicated by `id`.
 
 A window still saturated at the floor means clips remain out of reach: it is counted in `incomplete`,
-drawn in red on the frieze, and called out by an alert. **The tool never claims completeness it has not
+drawn in red on the timeline, and called out by an alert. **The tool never claims completeness it has not
 verified.**
 
 The filters above the table are **optional** and purely local: everything is shown by default.
@@ -191,7 +191,7 @@ dropped rather than escaped.
 | `src/twitch/api.ts`             | Helix client: throttle, 429/5xx retry                     |
 | `src/hooks/useClipSearch.ts`    | sweep orchestration, progress, log                        |
 | `src/domain/filters.ts`         | display filters and facets                                |
-| `src/components/Frieze.tsx`     | frieze of the time breakdown                              |
+| `src/components/Timeline.tsx`   | timeline of the time breakdown                            |
 | `src/components/ClipTable.tsx`  | virtualized table — shows everything, no DOM ceiling      |
 | `src/components/ClipGrid.tsx`   | virtualized board of thumbnails, measured then placed     |
 | `src/components/virtual.ts`     | the windows both readouts are sliced by                   |

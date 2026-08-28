@@ -7,7 +7,7 @@ export interface ResultsEmptyProps {
 /**
  * Why there is nothing on screen, and what to do about it. Shared by the two
  * readouts, which go empty for exactly the same reasons — silence being the
- * worst outcome here, a filter hiding every clip looking just like a sweep that
+ * worst outcome here, a filter hiding every clip looking just like a search that
  * returned none.
  */
 export function ResultsEmpty({ message, action }: ResultsEmptyProps) {

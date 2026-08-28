@@ -1,18 +1,16 @@
 // @vitest-environment jsdom
-import { cleanup, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { render } from '../test-render'
-import { afterEach, describe, expect, it } from 'vitest'
+import { describe, expect, it } from 'vitest'
 
-import { Colophon } from './Colophon'
+import { Footer } from './Footer'
 
-afterEach(cleanup)
-
-describe('Colophon', () => {
+describe('Footer', () => {
   // Every visitor receives the compiled bundle: that is a distribution of the
   // program, and the GPL-3.0 wants the corresponding source offered to them. The
   // repository is public, but the application still has to lead there.
   it('offers the source code', () => {
-    render(<Colophon />)
+    render(<Footer />)
 
     const source = screen.getByRole('link', { name: /code source/i })
 
@@ -21,27 +19,37 @@ describe('Colophon', () => {
   })
 
   it('states the absence of any link with Twitch', () => {
-    render(<Colophon />)
+    render(<Footer />)
 
     expect(screen.getByRole('contentinfo')).toHaveTextContent(/sans lien avec Twitch/i)
   })
 
   it('discloses the analytics', () => {
-    render(<Colophon />)
+    render(<Footer />)
 
     expect(screen.getByRole('contentinfo')).toHaveTextContent(/audience/i)
   })
 
   it('recalls who the clips belong to', () => {
-    render(<Colophon />)
+    render(<Footer />)
 
     expect(screen.getByRole('contentinfo')).toHaveTextContent(/auteurs/i)
   })
 
-  // A link that replaces the page would lose the running sweep and the clips
+  /* The other half of what the GPL asks a distribution to carry: the licence is
+     on the source link, and this names whose work it licenses. Untranslated on
+     purpose — it holds a symbol, a year and a name, and none of the three says
+     anything different in the other language. */
+  it('names the copyright holder', () => {
+    render(<Footer />)
+
+    expect(screen.getByRole('contentinfo')).toHaveTextContent('© 2026 Merkur39')
+  })
+
+  // A link that replaces the page would lose the running search and the clips
   // collected, which live in the application's memory alone.
   it('opens every link in a new tab', () => {
-    render(<Colophon />)
+    render(<Footer />)
 
     const links = screen.getAllByRole('link')
 

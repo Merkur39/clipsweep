@@ -1,83 +1,87 @@
 /* ClipPlayer.tsx — the clip on screen, and the two gestures that follow it:
    keep or drop, then next.
 
-   A panel lifted off the chassis, not a floating card: the same hairlines, the
-   same flats, the same square corners. What sets it apart is the scrim behind
-   it, which is the only thing that says the rest of the page is on hold. */
+   No card. The clip is what is being looked at, so it is what is on screen: the
+   video floats over a scrim that pushes the page back, and everything else —
+   the way out, the two steps, the title, the choice — sits around it without a
+   frame of its own. A panel would have drawn a second rectangle around a
+   rectangle that is already the subject.
+
+   ⚠️ **It writes in white in both worlds, and that is not a shortcut.** The
+   text here sits on the scrim, which is a colour laid over whatever the page
+   holds — no token describes what is behind it, and the contrast gate cannot
+   measure it. Composed over a white page the scrim gives a near-black, where
+   white reads 6.3 and the dimmest ink of the light world read 1.95. The
+   interface's inks belong on the interface's surfaces; this is a projection. */
 
 .player {
-  width: min(1040px, 92vw);
-  max-height: 92vh;
-  padding: 0;
-  overflow: hidden;
-  background: var(--surface-raised);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r);
-  color: var(--text);
-  box-shadow: 0 24px 60px -12px var(--shadow-panel);
+  inset: 0;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-5);
+  padding: var(--s-6) var(--s-7);
+  /* Every one of the dialog's own: it is a stage here, not a box. */
+  background: none;
+  border: 0;
+  color: #fff;
+  overflow: visible;
 }
 
+/* The only thing that says the page is on hold. Blurred as well as darkened —
+   a scrim alone still lets a table of nine hundred rows compete with the clip
+   for the eye. */
 .player::backdrop {
   background: var(--scrim);
-}
-
-/* ---- what is being watched ---- */
-
-.player-head {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 0 var(--s-3);
-  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
-  border-bottom: 1px solid var(--rule);
-}
-
-.player-title {
-  margin: 0;
-  font-size: 14px;
-  font-weight: 600;
-  /* One line: a five-line title would push the video off a short screen. */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.player-meta {
-  margin: 2px 0 0;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--text-faint);
+  backdrop-filter: blur(6px);
 }
 
 /* The way out of a modal: the one control the eye looks for without reading,
-   and the one it must not have to aim at. A 34 px square, framed from the
-   start — the head is a busy corner, an unframed glyph reads as decoration. */
+   and the one it must not have to aim at. Framed, and at the corner of the
+   screen rather than of the video — the video has no corner to spare. */
 .player-close {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: center;
-  width: 34px;
-  height: 34px;
+  position: absolute;
+  top: var(--s-5);
+  right: var(--s-5);
+  width: 38px;
+  height: 38px;
   padding: 0;
-  background: none;
-  border: 1px solid var(--rule);
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--rule-control);
   color: var(--text-dim);
 }
 
 .player-close:hover:not(:disabled) {
   background: var(--surface-hover);
-  border-color: var(--rule-strong);
+  border-color: var(--accent-mark);
   color: var(--text);
 }
 
-/* The player itself. Black behind it, in both worlds: it is the letterbox of a
-   video, not a surface of the interface. */
+/* ---- what is being watched ----
+   Never taller than the screen leaves room for: the width is capped by the
+   height, so a short window narrows the video rather than pushing its title
+   off the bottom. 240px is the close button's clearance plus the two lines
+   under it. */
+
+.player-stage {
+  position: relative;
+  width: min(880px, 100%, calc((100vh - 240px) * 16 / 9));
+}
+
+/* Black behind it, in both worlds: it is the letterbox of a video, not a
+   surface of the interface. */
 .player-frame {
   display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: calc(92vh - 140px);
   border: 0;
+  border-radius: var(--r-card);
   background: #000;
 }
 
@@ -87,57 +91,162 @@
   text-align: center;
   font-size: 13px;
   color: var(--text-dim);
+  background: var(--surface);
+  border-radius: var(--r-card);
 }
 
-/* ---- the two gestures ----
-   Moving through the list on the left, the choice on the right: the hand that
-   sorts stays on one side, the hand that browses on the other. */
+/* ---- moving through the list ----
+   Beside the video rather than under it: the hand that browses stays where the
+   eye already is, and a step never asks it to leave the clip.
 
-.player-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-3) var(--s-4);
-  background: var(--chassis);
-  border-top: 1px solid var(--rule);
-}
+   On its own ground, not the interface's: these two sit against a scrim and a
+   video, where a surface token would read as a hole punched in the picture. */
 
 .player-step {
-  padding: 7px 10px;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgb(0 0 0 / 55%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  color: #fff;
+}
+
+.player-step:hover:not(:disabled) {
+  background: rgb(0 0 0 / 72%);
+  border-color: rgb(255 255 255 / 45%);
+}
+
+.player-step:disabled {
+  opacity: 0.35;
+  background: rgb(0 0 0 / 55%);
+  border-color: rgb(255 255 255 / 20%);
+  color: #fff;
+}
+
+.player-step.prev {
+  left: -66px;
+}
+
+.player-step.next {
+  right: -66px;
+}
+
+/* ---- what it is, and what to do with it ----
+   Under the video, on one line: the title and its metadata on the left, the
+   choice and the way out on the right. */
+
+.player-info {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-5);
+  width: min(880px, 100%);
+}
+
+.player-title {
+  margin: 0;
+  font-size: var(--t-5);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+/* 78%, and the figure is measured: composed over the scrim over a white page
+   it gives #DCDCDC, which reads 4.63 — the last step that still clears 4.5. */
+.player-meta {
+  margin: 6px 0 0;
+  font-size: var(--t-2);
+  color: rgb(255 255 255 / 78%);
+}
+
+.player-acts {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex: none;
 }
 
 .player-position {
-  min-width: 74px;
   font-family: var(--mono);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  text-align: center;
-  color: var(--text-dim);
-}
-
-/* Filed at the far end: it is the reason the clip is on screen at all. */
-.player-keep {
-  margin-left: auto;
-}
-
-.player-away {
-  font-size: 12px;
   white-space: nowrap;
+  color: rgb(255 255 255 / 78%);
+}
+
+/* A ghost button, drawn on the projection rather than in the interface's own
+   ink: it stands beside the choice as the second thing to do with the clip on
+   screen, and an underlined phrase between two framed controls would read as a
+   footnote to them.
+
+   ⚠️ **White at 55%, and the figure is measured.** A ghost control has nothing
+   but its border to say it is one, so that border owes 3:1 (WCAG 1.4.11) —
+   against a scrim, which is a colour composed over whatever the page holds and
+   which no token describes. The worst case is the light world over a white
+   readout: the scrim gives #616161, where white at 45% reads **2.61** and at
+   55% reads **3.12**. `--rule-control`, which every other ghost control in the
+   application takes, is measured against surfaces this one never touches. */
+.player-away {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border: 1px solid rgb(255 255 255 / 55%);
+  border-radius: var(--r);
+  font-size: 13px;
+  font-weight: 550;
+  white-space: nowrap;
+  color: #fff;
+  text-decoration: none;
+  transition:
+    background 0.12s var(--ease),
+    border-color 0.12s var(--ease);
+}
+
+.player-away:hover {
+  color: #fff;
+  background: rgb(255 255 255 / 12%);
+  border-color: #fff;
+}
+
+/* The one control here that belongs to the interface rather than to the
+   projection: it is a choice about a clip, not a way of watching it. */
+.player-keep {
+  flex: none;
+}
+
+/* The two steps come inside the video as soon as the window stops having room
+   for them beside it: 880 of video, 66 of gutter on each side, and the 48 of
+   padding the stage keeps — 1108, rounded up. Left outside past that, they
+   would hang off the edge of the screen. They stay clear of the bottom, where
+   Twitch draws its own controls. */
+@media (max-width: 1120px) {
+  .player-step.prev {
+    left: var(--s-2);
+  }
+
+  .player-step.next {
+    right: var(--s-2);
+  }
 }
 
 @media (max-width: 700px) {
   .player {
-    width: 96vw;
+    padding: var(--s-5) var(--s-4);
+    gap: var(--s-4);
   }
 
-  .player-actions {
+  .player-info {
+    flex-direction: column;
+    gap: var(--s-3);
+  }
+
+  .player-acts {
     flex-wrap: wrap;
-    padding: var(--s-3);
-  }
-
-  /* Wrapped, the away link would sit alone on its line under a stretched
-     button: the choice comes back to the left with the rest. */
-  .player-keep {
-    margin-left: 0;
   }
 }

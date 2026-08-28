@@ -1,0 +1,268 @@
+/* SearchRun.tsx — what the search says while it runs. */
+
+/* ---- the slot ----
+   The block is a hundred and fifty pixels, and it comes and goes twice per
+   search. Left to appear and disappear, it takes the toolbar and the first rows
+   of the readout with it, from one frame to the next — the page jumps under a
+   hand that is already reading.
+
+   So the slot folds instead. `grid-template-rows` from `0fr` to `1fr` is the
+   one way to carry a block from nothing to its own height without knowing what
+   that height is, and the child owes it a `min-height: 0` or it refuses to go
+   below its content.
+
+   The fold is what moves; the block inside fades on its own, a touch faster, so
+   the type is gone before the last pixels close rather than being squeezed.
+
+   A fold is the one motion here that carries information — something is
+   arriving, or is over. `prefers-reduced-motion` takes it away all the same
+   (see `base.css`), and both states still have to be right without it: the slot
+   simply is one height or the other. */
+
+.run-slot {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.24s var(--ease);
+}
+
+.run-slot[data-open] {
+  grid-template-rows: 1fr;
+}
+
+.run {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-2) 0 var(--s-5);
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition:
+    opacity 0.16s var(--ease),
+    padding-block 0.24s var(--ease);
+}
+
+/* ⚠️ Padding is not content, and `overflow: hidden` does not touch it: a box
+   the fold has taken down to no height still stands as tall as its own padding.
+   Measured at 32px of nothing left under the ticket after every search. It has
+   to close with the fold. */
+.run-slot:not([data-open]) .run {
+  padding-block: 0;
+}
+
+.run-slot[data-open] .run {
+  opacity: 1;
+  transition:
+    /* Held back on the way in: fading up while the fold is still opening reads
+       as the type sliding, so it waits for the room to be there. */
+    opacity 0.16s var(--ease) 0.12s,
+    padding-block 0.24s var(--ease);
+}
+
+.run-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-5);
+}
+
+.run-figure {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.run-count {
+  font-size: var(--t-7);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+/* The unit under the figure, not inside it: the number is what climbs, and it
+   climbs alone. */
+.run-unit {
+  margin-top: var(--s-1);
+  font-size: var(--t-2);
+  color: var(--text-faint);
+}
+
+.run-say {
+  margin: 0;
+  max-width: 44ch;
+  text-align: right;
+  font-size: 15px;
+  color: var(--text-dim);
+}
+
+/* Waiting, not working. The amber says the search is held up by something
+   outside it — the same ink a saturated slice takes — where the ordinary line
+   says it is getting on with it. */
+.run-say.is-paused {
+  color: var(--warn-ink);
+}
+
+/* The one bar of the interface, and it fills in `linear`: a curve would lie
+   about the rate at which the slices are actually coming back. */
+.run-bar {
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface-raised);
+  overflow: hidden;
+}
+
+.run-bar i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  border-radius: 999px;
+  background: var(--accent-mark);
+  /* ⚠️ The sheen below is sized to the fill and translated by its own width, so
+     without a clip it sweeps a whole fill-width across the EMPTY rail. Measured
+     in Chrome on a 754px track at a 34% fill: the fill ends at 258px and the
+     white reaches 361px at that instant, 512px at the end of its travel. The
+     bar reads a good ten points further along than it is, and past half it
+     touches the far end — a half-full bar flashing as a full one.
+
+     It lands here, on the fill, and would have done nothing on the track: the
+     track already clips, and the fill is `position: absolute`, which makes it
+     the containing block of its own `::after`. */
+  overflow: clip;
+  transition: inline-size 0.24s linear;
+}
+
+/* A sheen crossing the filled part: the bar can sit still for a whole slice,
+   and stillness is the one thing it must not read as.
+
+   White in both worlds, and unnamed for once: it never touches the page — it
+   crosses `--accent-mark` and nothing else, and both worlds' mint is saturated
+   enough to lift under it. It is decoration, so `prefers-reduced-motion` takes
+   it away with every other animation. */
+.run-bar i::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 45%), transparent);
+  animation: run-sweep 1.9s linear infinite;
+}
+
+/* ⚠️ A full width out on each side, and it has to stay a full width even though
+   the fill now clips — halving it to ±50% looks like the obvious companion to
+   the clip and is a mistake, made here once and measured out again.
+
+   The gradient is three stops with the white at the centre of a box as wide as
+   the fill, so the alpha visible over the fill is `0.45 · (1 − |2u − 1|)` for
+   `u = (x − pW) / W`. At ±100% the peak is off the fill for the outer half of
+   the cycle, but the FLANKS are not: the maximum over the fill runs 0 → 0.225 →
+   0.45 → 0.225 → 0. It fades in, crosses, fades out, and — this is the point —
+   the cycle begins and ends at nought, so the loop has no seam.
+
+   At ±50% that maximum is 0.45 at every instant including both ends, so each
+   loop snaps the lit half from one edge of the fill to the other in a single
+   frame, twice a second, for the whole of a search. The clip on its own is the
+   entire fix; the travel never needed touching. */
+@keyframes run-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* ---- the bar, before it has a fraction ----
+   The channel is still being resolved, or the first slice — a calendar year,
+   ten sequential requests on a dense channel — is still being walked. There is
+   no fraction to draw, and drawing one at nought is worse than drawing none:
+   the sheen above rides *inside* `.run-bar i`, which at `inline-size: 0%` is
+   nought pixels wide and takes its `::after` down with it. The one animation
+   that says "alive" was invisible for precisely the stretch where it was the
+   only thing saying it — and a flat, still rail under a figure reading 0 is
+   exactly how a search that has not answered yet gets read as a search that
+   found nothing.
+
+   Two layers answer it, and they answer to two different readers. */
+
+/* The hatch: the whole track textured rather than tinted, and the texture is
+   the point. This layer is the only one that spans the rail end to end, so it
+   is the one at risk of reading as a bar that is full — and it is also the
+   whole of what `prefers-reduced-motion` is left with, the band below being
+   animation. Both were measured, side by side against the same bar at 34%:
+
+     · a flat `--accent-fill` across the track read FULLER than the 34% fill,
+       which is the exact misreading this state exists to prevent;
+     · `--accent-wash` was honest and invisible — indistinguishable from the
+       bare rail, so reduced motion got back the dead bar it came for.
+
+   Stripes are what escapes the pair. No solid edge falls anywhere along the
+   rail, so there is no fraction to read off it, and the texture still carries
+   at a glance on six pixels of height. */
+.run-bar[data-indeterminate] {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--accent-fill) 0 5px,
+    transparent 5px 10px
+  );
+}
+
+/* The band: what actually moves. On the track, where it has the width to be
+   seen, rather than in a fill that has none. */
+.run-bar[data-indeterminate]::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 40%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--accent-mark), transparent);
+  /* ⚠️ Parked off the left edge by the rule itself, not only by the keyframe.
+     Reduced motion drops the animation and leaves the element wherever the rule
+     put it — and a band frozen mid-track is a band pretending to be a fraction,
+     which is the one thing this state exists to avoid. Parked, it is simply out
+     of sight, and the wash carries the meaning on its own. */
+  transform: translateX(-100%);
+  animation: run-seek 1.4s linear infinite;
+}
+
+/* Edge to edge: the band is 40% of the track, so clearing the far side takes
+   100/40 = 250% of its own width. Linear, for the same reason the fill is —
+   an eased sweep would read as a rate, and there is no rate here to read. */
+@keyframes run-seek {
+  from {
+    transform: translateX(-100%);
+  }
+
+  to {
+    transform: translateX(250%);
+  }
+}
+
+.run-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-4);
+  font-size: var(--t-2);
+  color: var(--text-faint);
+}
+
+/* Under 760 the two ends of a row have nowhere to go: the figure keeps the top
+   and everything else files under it, left-aligned like the rest of the page. */
+@media (max-width: 760px) {
+  .run-head {
+    flex-direction: column-reverse;
+    align-items: flex-start;
+    gap: var(--s-3);
+  }
+
+  .run-say {
+    text-align: left;
+  }
+
+  .run-foot {
+    flex-direction: column;
+    gap: var(--s-1);
+  }
+}

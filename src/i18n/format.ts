@@ -65,7 +65,7 @@ export function formatCount(value: number, locale: Locale): string {
 }
 
 /**
- * A day meant to be read, from a `yyyy-mm-dd` or a full timestamp — the sweep
+ * A day meant to be read, from a `yyyy-mm-dd` or a full timestamp — the search
  * bounds, `created_at` and the windows arrive in both shapes.
  *
  * Display only here as well: the bounds sent to Helix, the values of the

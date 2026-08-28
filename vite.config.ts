@@ -6,6 +6,13 @@ export default defineConfig({
   // a subpath, whoever ends up serving it.
   base: './',
   plugins: [react()],
+  /* Pinned, and it must fail rather than slide. `redirectUri()` derives the
+     OAuth redirect from `location.origin`, and only `http://localhost:5173/` is
+     declared on the Twitch application — see `.env.example`. Left to its
+     default, an occupied 5173 moves the dev server to 5174 and sign-in comes
+     back `redirect_mismatch`, which says nothing about the port. A refusal to
+     start names the problem where it is. */
+  server: { port: 5173, strictPort: true },
   test: {
     // Pure logic runs under node; component tests ask for the DOM through a
     // `@vitest-environment jsdom` docblock at the top of the file.

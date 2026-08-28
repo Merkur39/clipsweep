@@ -8,6 +8,7 @@ import {
   panelOrder,
   narrowedRange,
   NO_FILTERS,
+  parseThreshold,
   type Facet,
 } from './filters'
 import type { Clip } from '../twitch/types'
@@ -34,7 +35,7 @@ const clips = [
 ]
 
 // Dates deliberately out of order: nothing in the domain assumes a sorted array,
-// and the sweep returns windows in the order they finish.
+// and the search returns windows in the order they finish.
 const dated = [
   clip({ id: 'w', created_at: '2020-06-30T23:30:00Z' }),
   clip({ id: 'x', created_at: '2019-03-04T08:00:00Z' }),
@@ -163,6 +164,56 @@ describe('applyFilters', () => {
   })
 })
 
+/**
+ * The free-text search, which bites on the title and on nothing else.
+ *
+ * The creators and the games have their own facets, where a list of real values
+ * is worth more than a guess at a substring; the title is the one field nothing
+ * else reaches, and the one a reader remembers a clip by.
+ */
+describe('applyFilters, the query', () => {
+  const titled = (title: string, over: Partial<Clip> = {}) => clip({ id: title, title, ...over })
+
+  it('keeps everything while nothing is typed', () => {
+    const found = [titled('un'), titled('deux')]
+
+    expect(applyFilters(found, { ...NO_FILTERS, query: '' })).toHaveLength(2)
+  })
+
+  it('keeps the clips whose title contains what was typed', () => {
+    const found = [titled('le boss tombe enfin'), titled('rien à signaler')]
+
+    expect(applyFilters(found, { ...NO_FILTERS, query: 'boss' })).toHaveLength(1)
+  })
+
+  it('ignores the case', () => {
+    expect(applyFilters([titled('Le BOSS')], { ...NO_FILTERS, query: 'boss' })).toHaveLength(1)
+  })
+
+  // Both ways: a title typed without accents must find an accented clip, and a
+  // reader who does type them must not be punished for it.
+  it('ignores the accents, in both directions', () => {
+    expect(
+      applyFilters([titled('la dernière fois')], { ...NO_FILTERS, query: 'derniere' }),
+    ).toHaveLength(1)
+    expect(
+      applyFilters([titled('la derniere fois')], { ...NO_FILTERS, query: 'dernière' }),
+    ).toHaveLength(1)
+  })
+
+  it('ignores the spaces around it', () => {
+    expect(applyFilters([titled('le boss')], { ...NO_FILTERS, query: '  boss  ' })).toHaveLength(1)
+  })
+
+  // The creator and the game have facets of their own, where a list of real
+  // values beats a guess at a substring.
+  it('bites on the title alone', () => {
+    const found = [titled('rien', { creator_name: 'lulubz', game_id: '512' })]
+
+    expect(applyFilters(found, { ...NO_FILTERS, query: 'lulubz' })).toHaveLength(0)
+  })
+})
+
 describe('dateExtent', () => {
   it('returns nothing for an empty list', () => {
     expect(dateExtent([])).toBeNull()
@@ -180,7 +231,7 @@ describe('dateExtent', () => {
   })
 })
 
-// A sweep now opens the range on the period it covers, so both bounds are set
+// A search now opens the range on the period it covers, so both bounds are set
 // as soon as it starts — without hiding a single clip. What is named as the
 // reason for an empty table, and what gets offered for reopening, must be the
 // bounds that actually restrict.
@@ -258,11 +309,11 @@ describe('facets', () => {
   })
 
   // The two lists part company as soon as another filter is on: the options
-  // come from everything swept, the counts from what that filter leaves.
+  // come from everything searched, the counts from what that filter leaves.
   describe('counted against a narrower set', () => {
     const matching = clips.filter((c) => c.view_count >= 7)
 
-    it('counts on the narrower set, not on everything swept', () => {
+    it('counts on the narrower set, not on everything searched', () => {
       expect(facets(clips, matching, (c) => c.creator_name)[0]).toEqual({
         value: 'SpiZ',
         count: 2,
@@ -286,7 +337,7 @@ describe('facets', () => {
       ])
     })
 
-    it('offers nothing the sweep never turned up', () => {
+    it('offers nothing the search never turned up', () => {
       const result = facets(clips, matching, (c) => c.creator_name)
 
       expect(result.map((f) => f.value)).not.toContain('Nobody')
@@ -367,5 +418,22 @@ describe('panelOrder', () => {
     ]
 
     expect(order(list)).toEqual(['named-b', 'raw-a'])
+  })
+})
+
+// The two views fields hold raw text, and two readers depend on it: the filter
+// that applies the threshold, and the chip that reads it back. One parser.
+describe('parseThreshold', () => {
+  it('reads the number typed', () => {
+    expect(parseThreshold('500')).toBe(500)
+  })
+
+  it('reads an empty field as no threshold at all', () => {
+    expect(parseThreshold('')).toBeNull()
+    expect(parseThreshold('   ')).toBeNull()
+  })
+
+  it('reads what is not a number as no threshold, rather than as zero', () => {
+    expect(parseThreshold('abc')).toBeNull()
   })
 })

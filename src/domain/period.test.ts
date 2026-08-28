@@ -1,28 +1,96 @@
 import { describe, expect, it } from 'vitest'
 
-import { clampSince, clampUntil, describePeriodError, monthBefore } from './period'
+import {
+  activePreset,
+  clampSince,
+  clampUntil,
+  daysBefore,
+  describePeriodError,
+  monthsBefore,
+  periodPresets,
+} from './period'
 import { makeT } from '../i18n/translate'
 
 const t = makeT('fr')
 
-describe('monthBefore', () => {
-  it('returns the same day of the previous month', () => {
-    expect(monthBefore('2026-08-02')).toBe('2026-07-02')
+describe('monthsBefore', () => {
+  it('returns the same day of the month asked for', () => {
+    expect(monthsBefore('2026-08-02', 1)).toBe('2026-07-02')
+    expect(monthsBefore('2026-08-02', 12)).toBe('2025-08-02')
   })
 
   it('goes back a year from January', () => {
-    expect(monthBefore('2026-01-15')).toBe('2025-12-15')
+    expect(monthsBefore('2026-01-15', 1)).toBe('2025-12-15')
   })
 
   // 31 March minus one month does not exist: `Date`'s natural slide would return
   // 3 March, a date later than the one we started from.
-  it('settles on the last day when the previous month is shorter', () => {
-    expect(monthBefore('2026-03-31')).toBe('2026-02-28')
-    expect(monthBefore('2026-05-31')).toBe('2026-04-30')
+  it('settles on the last day when the target month is shorter', () => {
+    expect(monthsBefore('2026-03-31', 1)).toBe('2026-02-28')
+    expect(monthsBefore('2026-05-31', 1)).toBe('2026-04-30')
   })
 
   it('accounts for leap years', () => {
-    expect(monthBefore('2024-03-31')).toBe('2024-02-29')
+    expect(monthsBefore('2024-03-31', 1)).toBe('2024-02-29')
+  })
+})
+
+describe('daysBefore', () => {
+  it('counts back the days asked for', () => {
+    expect(daysBefore('2026-08-27', 30)).toBe('2026-07-28')
+  })
+
+  it('crosses a month, a year and a leap day', () => {
+    expect(daysBefore('2026-03-05', 10)).toBe('2026-02-23')
+    expect(daysBefore('2026-01-05', 10)).toBe('2025-12-26')
+    expect(daysBefore('2024-03-05', 10)).toBe('2024-02-24')
+  })
+})
+
+/**
+ * The three shortcuts of the open ticket. They are what a period is chosen with;
+ * the two date fields stay available behind "edit", for the one reader in twenty
+ * who wants a fortnight in 2023.
+ */
+describe('periodPresets', () => {
+  it('offers the last thirty days, the last twelve months, and everything', () => {
+    const presets = periodPresets({ today: '2026-08-27', channelCreatedAt: '2019-04-11' })
+
+    expect(presets).toEqual([
+      { id: 'month', since: '2026-07-28', until: '2026-08-27' },
+      { id: 'year', since: '2025-08-27', until: '2026-08-27' },
+      { id: 'all', since: '2019-04-11', until: '2026-08-27' },
+    ])
+  })
+
+  /**
+   * "Everything" cannot mean "since the channel existed" while the channel is
+   * still being typed: it falls back on the day Twitch itself opened, which no
+   * clip can predate. `clampSince` pulls it up to the creation date as soon as
+   * the lookup lands, so the shortcut never searches years that cannot hold a clip.
+   */
+  it('falls back on the day Twitch opened while the channel is unknown', () => {
+    const presets = periodPresets({ today: '2026-08-27', channelCreatedAt: null })
+
+    expect(presets[2]).toEqual({ id: 'all', since: '2011-06-06', until: '2026-08-27' })
+  })
+})
+
+describe('activePreset', () => {
+  const presets = periodPresets({ today: '2026-08-27', channelCreatedAt: '2019-04-11' })
+
+  it('names the shortcut the period is on', () => {
+    expect(activePreset(presets, '2025-08-27', '2026-08-27')).toBe('year')
+  })
+
+  // A period typed by hand is nobody's shortcut, and lighting the nearest one
+  // would claim a round period the reader never asked for.
+  it('names none when the period is neither', () => {
+    expect(activePreset(presets, '2026-01-01', '2026-08-27')).toBeNull()
+  })
+
+  it('takes both bounds into account', () => {
+    expect(activePreset(presets, '2025-08-27', '2026-06-01')).toBeNull()
   })
 })
 
@@ -31,7 +99,7 @@ describe('describePeriodError', () => {
     expect(describePeriodError('2019-01-01', '2026-08-01', t)).toBeNull()
   })
 
-  // The sweep bounds the end at 23:59:59: a start and an end on the same day do
+  // The search bounds the end at 23:59:59: a start and an end on the same day do
   // cover that day.
   it('accepts a single-day period', () => {
     expect(describePeriodError('2026-08-01', '2026-08-01', t)).toBeNull()
@@ -39,7 +107,7 @@ describe('describePeriodError', () => {
 
   it('reports a start later than the end', () => {
     expect(describePeriodError('2026-08-02', '2026-08-01', t)).toBe(
-      'La date de début doit précéder la date de fin.',
+      'La date de fin est avant la date de début. Inverse les deux.',
     )
   })
 })
@@ -74,7 +142,7 @@ describe('clampSince', () => {
     expect(clampSince('2019-01-01', '2017-07-10')).toBe('2019-01-01')
   })
 
-  // Sweeping before the channel existed can return nothing, and costs one yearly
+  // Searching before the channel existed can return nothing, and costs one yearly
   // window — so at least one request — per year too many.
   it('settles the date on the creation when it precedes it', () => {
     expect(clampSince('2015-01-01', '2017-07-10')).toBe('2017-07-10')

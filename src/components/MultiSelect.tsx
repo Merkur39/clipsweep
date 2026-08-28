@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { Facet } from '../domain/filters'
 import { formatCount } from '../i18n/format'
 import { useTranslation } from '../i18n/LocaleProvider'
-import { ChevronIcon } from './Icon'
+import { FilterChip } from './FilterChip'
 import { describeSelection } from './selectionLabel'
 import { visibleRange } from './virtual'
 
@@ -30,6 +30,10 @@ export interface MultiSelectProps {
   labelOf?: (value: string) => string
 }
 
+/**
+ * A facet, worn as a chip: the values checked read on the chip itself, the
+ * catalogue behind it in the panel it opens.
+ */
 export function MultiSelect({
   label,
   options,
@@ -38,36 +42,14 @@ export function MultiSelect({
   labelOf = (value) => value,
 }: MultiSelectProps) {
   const { locale, t } = useTranslation()
+  // A mirror of the chip's own state: what the list is measured against. The
+  // panel is mounted only while open, so the observer has to be re-attached at
+  // each opening rather than set once.
   const [open, setOpen] = useState(false)
-  const rootRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const [scrollTop, setScrollTop] = useState(0)
   const [viewportHeight, setViewportHeight] = useState(INITIAL_HEIGHT)
-  const baseId = useId()
-  const panelId = `${baseId}-panel`
-  const labelId = `${baseId}-label`
-  const valueId = `${baseId}-value`
 
-  useEffect(() => {
-    if (!open) return
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-
-    document.addEventListener('pointerdown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
-
-  // The panel is mounted only while open, so the list is measured on each
-  // opening rather than once and for all.
   useEffect(() => {
     const list = listRef.current
     if (!list) return
@@ -82,9 +64,9 @@ export function MultiSelect({
   // Closing throws the list away, and a fresh one opens at the top: the window
   // is brought back with it, or it would draw the options from where we left
   // off against a scroller sitting at zero.
-  const togglePanel = () => {
+  const onOpenChange = (next: boolean) => {
     setScrollTop(0)
-    setOpen((previous) => !previous)
+    setOpen(next)
   }
 
   const toggle = (value: string) =>
@@ -101,79 +83,60 @@ export function MultiSelect({
   })
 
   return (
-    <div className="multiselect" ref={rootRef}>
-      <span className="field-label" id={labelId}>
-        {label}
-      </span>
-      <button
-        type="button"
-        className="multiselect-button"
-        onClick={togglePanel}
-        disabled={options.length === 0}
-        aria-expanded={open}
-        aria-controls={panelId}
-        // Without this the accessible name collapses to the value: "Ori", with
-        // no mention of which facet it belongs to.
-        aria-labelledby={`${labelId} ${valueId}`}
-      >
-        <span className="multiselect-value" id={valueId}>
-          {describeSelection(selected, labelOf, t)}
-        </span>
-        <ChevronIcon />
-      </button>
-
-      {open && (
-        <div className="multiselect-panel" id={panelId} role="group" aria-label={label}>
-          {selected.length > 0 && (
-            <button type="button" className="link" onClick={() => onChange([])}>
-              {t('filters.uncheckAll')}
-            </button>
-          )}
-          {/* Windowed, like the results: a sweep over a busy channel yields
-              hundreds of creators, and the two panels together would mount as
-              many rows again as the table itself. */}
-          <div className="multiselect-options" ref={listRef} onScroll={onScroll}>
-            <div style={{ height: options.length * OPTION_HEIGHT, position: 'relative' }}>
-              <div
-                style={{
-                  position: 'absolute',
-                  top: firstIndex * OPTION_HEIGHT,
-                  left: 0,
-                  right: 0,
-                }}
+    <FilterChip
+      label={label}
+      value={describeSelection(selected, labelOf, t)}
+      disabled={options.length === 0}
+      onOpenChange={onOpenChange}
+    >
+      {selected.length > 0 && (
+        <button type="button" className="link" onClick={() => onChange([])}>
+          {t('filters.uncheckAll')}
+        </button>
+      )}
+      {/* Windowed, like the results: a search over a busy channel yields
+          hundreds of creators, and the two panels together would mount as
+          many rows again as the table itself. */}
+      <div className="multiselect-options" ref={listRef} onScroll={onScroll}>
+        <div style={{ height: options.length * OPTION_HEIGHT, position: 'relative' }}>
+          <div
+            style={{
+              position: 'absolute',
+              top: firstIndex * OPTION_HEIGHT,
+              left: 0,
+              right: 0,
+            }}
+          >
+            {options.slice(firstIndex, endIndex).map((option) => (
+              <label
+                key={option.value}
+                /* Spent by the other filters: drawn back, never disabled —
+                   a checked value can fall to zero, and this panel is the
+                   only place it can be unchecked from. */
+                className={
+                  option.count === 0 ? 'multiselect-option is-spent' : 'multiselect-option'
+                }
+                style={{ height: OPTION_HEIGHT }}
               >
-                {options.slice(firstIndex, endIndex).map((option) => (
-                  <label
-                    key={option.value}
-                    /* Spent by the other filters: drawn back, never disabled —
-                       a checked value can fall to zero, and this panel is the
-                       only place it can be unchecked from. */
-                    className={
-                      option.count === 0 ? 'multiselect-option is-spent' : 'multiselect-option'
-                    }
-                    style={{ height: OPTION_HEIGHT }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selected.includes(option.value)}
-                      onChange={() => toggle(option.value)}
-                    />
-                    {/* The column ellipsises anything past 149px — a game's
-                        full title, or the id an unresolved category is named
-                        by. The attribute is what puts it back within reach. */}
-                    <span className="multiselect-option-name" title={labelOf(option.value)}>
-                      {labelOf(option.value)}
-                    </span>
-                    <span className="multiselect-option-count">
-                      {formatCount(option.count, locale)}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            </div>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(option.value)}
+                  onChange={() => toggle(option.value)}
+                />
+                {/* The column ellipsises anything past 149px — a game's
+                    full title, or the id an unresolved category is named
+                    by. The attribute is what puts it back within reach. */}
+                <span className="multiselect-option-name" title={labelOf(option.value)}>
+                  {labelOf(option.value)}
+                </span>
+                <span className="multiselect-option-count">
+                  {formatCount(option.count, locale)}
+                </span>
+              </label>
+            ))}
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </FilterChip>
   )
 }

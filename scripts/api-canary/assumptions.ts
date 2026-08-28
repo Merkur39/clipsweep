@@ -1,5 +1,5 @@
 /**
- * The undocumented Helix behaviours the sweep is built on.
+ * The undocumented Helix behaviours the search is built on.
  *
  * Everything here is *observed*, never promised: Twitch documents neither the
  * view-count ordering, nor the pagination cap, nor the shape of a cursor. The
@@ -19,7 +19,7 @@ export interface Verdict {
   claim: string
   status: 'holds' | 'drifted'
   /**
-   * `critical` is what the sweep's correctness rests on; `info` is what would
+   * `critical` is what the search's correctness rests on; `info` is what would
    * merely be interesting to know. Both raise an issue — a drift is rare enough
    * that filtering it would cost more than it saves.
    */
@@ -39,7 +39,7 @@ export interface Verdict {
  * third party's interface at `first=24`, which put the expected value exactly
  * on the ceiling.
  *
- * The bounds are lopsided on purpose. A cap that dropped makes the sweep lose
+ * The bounds are lopsided on purpose. A cap that dropped makes the search lose
  * clips in silence, so the floor stays close. A cap that rose is only an
  * invitation to lighten the windowing, and a real one would show in thousands
  * rather than in a hundred more — so the ceiling leaves room instead of crying
@@ -102,7 +102,7 @@ export function checkCeiling(total: number, band: typeof CEILING_BAND): Verdict 
     return {
       ...common,
       status: 'drifted',
-      detail: `The walk stopped at ${total} clips, under ${band.min}. Two possible causes: the cap dropped — in which case the sweep is losing clips in silence — or the probe channel no longer holds enough clips to reach it, and it is the probe that needs changing.`,
+      detail: `The walk stopped at ${total} clips, under ${band.min}. Two possible causes: the cap dropped — in which case the search is losing clips in silence — or the probe channel no longer holds enough clips to reach it, and it is the probe that needs changing.`,
     }
   }
 
@@ -165,7 +165,7 @@ function decodeCursorOffset(cursor: string): number | null {
 
 /**
  * How long a token stays good. Informational, but it decides the shape of the
- * connection: at sixty days one signs in and forgets, at four hours the sweep
+ * connection: at sixty days one signs in and forgets, at four hours the search
  * would have to survive an expiry mid-run.
  */
 export function checkTokenLifetime(expiresInSeconds: number): Verdict {
@@ -252,7 +252,7 @@ export function renderIssue(
       : []),
     '### Where it lands',
     '',
-    '`src/twitch/windows.ts` and `src/twitch/clips.ts` carry the bisection; `CEILING_BAND` in `scripts/api-canary/assumptions.ts` carries the expected value. Once the change is confirmed, that is where it is settled — and in the README\'s "What the sweep bets on" table.',
+    '`src/twitch/windows.ts` and `src/twitch/clips.ts` carry the bisection; `CEILING_BAND` in `scripts/api-canary/assumptions.ts` carries the expected value. Once the change is confirmed, that is where it is settled — and in the README\'s "What the search bets on" table.',
   ].join('\n')
 
   return { title, body }

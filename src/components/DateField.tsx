@@ -17,7 +17,7 @@ export interface DateFieldProps {
  * selecting each segment.
  *
  * The bounds grey out the impossible in the picker, nothing more: they call no
- * `clamp`, unlike the sweep's own. A date typed outside the extent spends no
+ * `clamp`, unlike the search's own. A date typed outside the extent spends no
  * request — it empties the table, a case the empty-table message names.
  */
 export function DateField({ label, value, onChange, min, max }: DateFieldProps) {
@@ -25,7 +25,7 @@ export function DateField({ label, value, onChange, min, max }: DateFieldProps) 
   const clear = t('filters.clearField', { label })
 
   return (
-    <label className="field date">
+    <label className="field">
       <span className="field-label">{label}</span>
       <span className="field-control date">
         <input

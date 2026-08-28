@@ -4,7 +4,7 @@ import { makeT, render } from './translate'
 
 describe('render', () => {
   it('renders a plain string as it is', () => {
-    expect(render('Déconnecté de Twitch.', 'fr')).toBe('Déconnecté de Twitch.')
+    expect(render('Déconnecté de Twitch', 'fr')).toBe('Déconnecté de Twitch')
   })
 
   it('substitutes the named parameters', () => {
@@ -47,12 +47,12 @@ describe('render', () => {
   })
 
   describe('pluriel', () => {
-    const clips = { one: '{n} clip récupéré', other: '{n} clips récupérés' }
+    const clips = { one: '{n} clip trouvé', other: '{n} clips trouvés' }
 
     it('choisit la forme sur `n`', () => {
-      expect(render(clips, 'fr', { n: 1 })).toBe('1 clip récupéré')
-      expect(render(clips, 'fr', { n: 2 })).toBe('2 clips récupérés')
-      expect(render(clips, 'fr', { n: 0 })).toBe('0 clip récupéré')
+      expect(render(clips, 'fr', { n: 1 })).toBe('1 clip trouvé')
+      expect(render(clips, 'fr', { n: 2 })).toBe('2 clips trouvés')
+      expect(render(clips, 'fr', { n: 0 })).toBe('0 clip trouvé')
     })
 
     /**
@@ -71,13 +71,13 @@ describe('render', () => {
 
 describe('makeT', () => {
   it('serves the catalogue of the language asked for', () => {
-    expect(makeT('fr')('access.disconnected')).toBe('Déconnecté de Twitch.')
+    expect(makeT('fr')('access.disconnected')).toBe('Déconnecté de Twitch')
     expect(makeT('en')('access.disconnected')).not.toBe(makeT('fr')('access.disconnected'))
   })
 
   it('agrees according to the language served', () => {
-    expect(makeT('fr')('results.count.found', { n: 1 })).toBe('1 clip récupéré')
-    expect(makeT('fr')('results.count.found', { n: 2 })).toBe('2 clips récupérés')
-    expect(makeT('en')('results.count.found', { n: 1 })).toBe('1 clip collected')
+    expect(makeT('fr')('results.count.found', { n: 1 })).toBe('1 clip trouvé')
+    expect(makeT('fr')('results.count.found', { n: 2 })).toBe('2 clips trouvés')
+    expect(makeT('en')('results.count.found', { n: 1 })).toBe('1 clip found')
   })
 })

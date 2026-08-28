@@ -1,114 +1,453 @@
-/* SearchPanel.tsx — the access state. */
+/* The ticket, in its two shapes: SearchPanel.tsx open on its form,
+   TicketSummary.tsx folded onto what the search found. */
 
-/* An instrument panel signals its state with a lamp, not with a coloured strip
-   stuck on the edge of a box. */
-.status {
+/* ---- the stage ----
+   The ticket and what stands under it: the channel searched a minute ago, and
+   the three things a first search wants to know before it commits minutes. */
+
+.search-stage {
   display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  font-family: var(--mono);
-  font-size: 12px;
-  line-height: 1.5;
-  padding: 9px 11px;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-5) 0 var(--s-4);
+}
+
+/* ---- the ticket, folded ----
+   What was searched, what it found, and what is wrong with it. One row, and
+   the same card as the open form so that folding reads as the same object
+   closing rather than as one panel replacing another.
+
+   It carries the "RESULTS" heading and the line of counts the stage used to
+   file above its toolbar: a heading that named the obvious, and three numbers
+   that belonged to nothing. */
+
+.ticket {
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  margin-top: var(--s-5);
+  padding: 14px var(--s-4);
+  background: var(--surface);
   border: 1px solid var(--rule);
-  border-radius: var(--r);
-  margin-bottom: var(--s-3);
-  color: var(--text-dim);
-  background: var(--chassis);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
 }
 
-.status::before {
-  content: '';
+.ticket-identity {
   flex: none;
-  width: 7px;
-  height: 7px;
-  margin-top: 6px;
-  border-radius: 50%;
-  background: var(--rule-strong);
+  min-width: 0;
 }
 
-.status.ok::before {
-  background: var(--violet);
-  box-shadow: 0 0 7px 1px var(--glow-violet);
+.ticket-name {
+  margin: 0;
+  font-size: var(--t-4);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
 }
 
-.status.bad {
-  border-color: var(--red-fill);
-  background: var(--red-wash);
-  color: var(--red-strong);
+.ticket-span {
+  margin: 0;
+  font-size: var(--t-2);
+  color: var(--text-faint);
 }
 
-.status.bad::before {
-  background: var(--red);
-  box-shadow: 0 0 7px 1px var(--glow-red);
-}
-
-/* Placed under the offending fields: the error reads where it gets fixed.
-
-   The space is permanently reserved — a one-line `min-height`, taken from
-   `line-height` — so the message appears without pushing the sweep button
-   down. The paragraph is always rendered, empty the rest of the time. */
-
-.field-error {
+.ticket-mid {
+  flex: 1;
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  min-height: 1.45em;
-  margin: 0 0 var(--s-3);
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--red-strong);
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
-.field-error .icon {
-  margin-top: 2px;
-  color: var(--red);
+/* The answer to what was asked, and the only accent ink of the row: everything
+   else on it is a footnote to this number. */
+.ticket-count {
+  margin: 0;
+  font-size: var(--t-5);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--accent-ink);
+}
+
+.ticket-tally {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2);
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+/* The blanket check reads as an action beside a readout, so it takes the sans
+   the counts do not; the bottom padding meant for links stacked in a panel
+   would push the line apart. */
+.ticket-tally .link {
+  padding: 0;
+  font-size: 12px;
+}
+
+/* Amber, and a lamp rather than a badge: it is a reservation about the result,
+   not a failure of the search. The word "warning" never appears — what is said
+   is what is missing and where to look for it. */
+.ticket-verdict {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: var(--t-2);
+  color: var(--warn-ink);
+}
+
+.ticket-verdict i {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--warn-mark);
+}
+
+.ticket-act {
+  flex: none;
+}
+
+/* The key drawn on the control it works. Same box as the one the search chip
+   wears, and the same reason: it is a key, not a label, so it reads in the
+   dimmer ink and keeps its own border. */
+.ticket-act kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-chip);
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 15px;
+}
+
+/* Under 760 the row becomes a small grid: the identity and its one action side
+   by side, the counts across both. Wrapping the three as a flex row instead
+   left the action stranded on a line of its own, at the far end of nothing. */
+@media (max-width: 760px) {
+  .ticket {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--s-3);
+    padding: var(--s-3) 14px;
+  }
+
+  /* Placed, both of them: left to flow, the counts take the whole width and
+     push the action onto a third row of its own, at the far end of nothing. */
+  .ticket-act {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .ticket-mid {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---- the ticket, open ----
+   One name to type, one period to pick, one button. It is the whole screen
+   before a search, and it earns that by being the only thing on it.
+
+   Two columns, and nothing placed by `grid-area`: what spans is stated on the
+   element itself, so the DOM order stays the reading order and the tab order. */
+
+.ticket-open {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: var(--s-5);
+  padding: var(--s-5);
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+}
+
+.ticket-channel {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* ---- the way back ----
+   Out of the ticket reopened, and only then: before the first search there is
+   nothing on the other side of it.
+
+   Placed rather than flowed, which is the one exception the grid takes — the
+   row it sits on belongs to the channel field, and a column of its own would
+   take width from the one thing that has to be typed. The DOM order is kept all
+   the same: it is first in the markup as it is first in the corner, so the
+   keyboard meets the way out before the form, like the player's.
+
+   It reads in the ink of an annotation: a way out is not a step of the task,
+   and the only accent on this card belongs to the field the screen is about.
+
+   Its two insets are not the same number, and neither is arbitrary. The right
+   one is the card's own padding, so the button ends where the channel field and
+   the search button end — a control floating out into the margin of a card this
+   deliberate reads as a mistake.
+
+   The top one is what is left above that field, and it is measured on the focus
+   ring rather than on the button: the field carries an accent ring 3px outside
+   its own box, taking no layout, and `:focus-visible` pushes this button's
+   outline 4px past its border. 8 + 28 + 4 lands at 40, three pixels clear of a
+   ring that starts at 43. A corner measured symmetrically — or measured on the
+   button alone — puts the outline on the ring the first time it is tabbed to. */
+
+.ticket-fold {
+  position: absolute;
+  top: var(--s-2);
+  right: var(--s-5);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border-color: transparent;
+  border-radius: var(--r-chip);
+  color: var(--text-faint);
+}
+
+.ticket-fold:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--rule);
+  color: var(--text);
+}
+
+/* The one thing that has to be typed, drawn at the size of a title — and
+   carrying its own accent edge at rest, where every other field waits for the
+   pointer. It is not a state, it is the field the screen is about.
+
+   `--ground` inside a `--surface` card is the notch: the sunken token is for a
+   button being pressed, and the contrast gate deliberately measures no ink
+   against it. */
+.channel-input {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  height: 76px;
+  padding: 0 18px;
+  min-width: 0;
+  background: var(--ground);
+  border: 1px solid var(--accent-mark);
+  border-radius: var(--r);
+  box-shadow: 0 0 0 3px var(--accent-wash);
+  transition: box-shadow 0.12s var(--ease);
+}
+
+/* The ring belongs to the box, not to the `<input>` inside it: the focus has to
+   read on the whole field, and a 3px ring drawn around the bare input would sit
+   inside its own container. */
+.channel-input:focus-within {
+  box-shadow: 0 0 0 3px var(--accent-fill);
+}
+
+/* The name names nothing. The field is what is at fault, so the field says so:
+   a red line under an accent-edged box reads as a remark about something else.
+   Edge and ring both, and the focused ring with them — the fault outranks the
+   caret being here, which is where it will be while the name gets fixed. */
+.channel-input.is-unknown {
+  border-color: var(--danger-mark);
+  box-shadow: 0 0 0 3px var(--danger-wash);
+}
+
+.channel-input.is-unknown:focus-within {
+  box-shadow: 0 0 0 3px var(--danger-fill);
+}
+
+/* Which of a streamer's several names is being asked for: the one in the
+   address. It is prose, not a control, so it takes none of the field's weight. */
+.channel-prefix {
+  flex: none;
+  font-size: var(--t-4);
+  color: var(--text-faint);
+  padding-top: var(--t-3);
+}
+
+/* Everything the shared field rule gives an input, undone: this one has no box
+   of its own — the box around it is the field.
+
+   `flex` rather than the shared `width: 100%`: a hundred percent of a flex line
+   that already holds the prefix overruns the box by the width of that prefix,
+   and a long enough name then wrote past the edge of the card. */
+.channel-input input:not([type='checkbox']) {
+  flex: 1;
+  width: auto;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  font-family: var(--sans);
+  font-size: var(--t-7);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.channel-input input:not([type='checkbox']):hover,
+.channel-input input:not([type='checkbox']):focus {
+  background: none;
+  border: 0;
+}
+
+/* The ring on the box already says where the caret is; a second outline inside
+   it would draw a rectangle inside a rectangle. */
+.channel-input input:focus-visible {
+  outline: none;
+}
+
+/* Clear of the field, and clear of the 3px ring the field wears outside its own
+   box — which takes no layout, so a margin measured from the border lands three
+   pixels short of where it looks.
+
+   Carried by the message rather than by the box above it, and always: the
+   paragraph is rendered empty the rest of the time, so the room is reserved once
+   and nothing moves when the message lands in it. */
+.ticket-channel .field-error {
+  margin-top: var(--s-3);
+}
+
+.ticket-presets {
+  min-width: 0;
+}
+
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+/* The button sizes on its label. Stretched across the column it would weigh
+   more than the title it is there to conclude. */
+.ticket-run {
+  height: 54px;
+  padding: 0 28px;
+  font-size: var(--t-4);
+}
+
+/* ---- the footnotes ----
+   What becomes of the name typed, and what period the shortcut above actually
+   resolved to. Neither is a step of the task, and neither takes a place in
+   front of the button that runs it. */
+
+.ticket-foot {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2) var(--s-5);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--rule);
+  font-size: 12px;
+  color: var(--text-faint);
 }
 
 /* A footnote to the channel field, not a control of the panel's own standing:
-   it is pulled back up against the field it speaks about, and reads in the
-   dimmer ink of an annotation. The bare label text escapes the silkscreen
-   treatment `controls.css` gives to `label > span`. */
+   it says what becomes of the name typed there, and reads in the dimmer ink of
+   an annotation. The bare label text escapes the silkscreen treatment
+   `controls.css` gives to `label > span`. */
 .remember {
   display: flex;
   align-items: center;
   gap: var(--s-2);
-  margin-top: -6px;
+  margin: 0;
   font-size: 12px;
   color: var(--text-dim);
   cursor: pointer;
 }
 
-/* Same reservation as `.field-error`, for the same reason: the link appears
-   with whatever channel and period are typed, and must push neither the sweep
-   button nor the rest of the panel. One line plus the indent the link carries
-   itself. */
-.channel-hint {
+.ticket-dates {
   display: flex;
-  min-height: calc(1.55em + var(--s-3));
+  align-items: baseline;
+  gap: var(--s-2);
+  margin: 0;
+}
+
+/* The link sits at the end of a line of type, not at the head of a stack: the
+   bottom padding meant for links filed in a panel would push the row apart. */
+.ticket-dates .link {
+  padding: 0;
+}
+
+/* The two date fields and what they can be wrong about. Two columns, and the
+   alert across both — it is about the pair, not about either. */
+.ticket-fields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-2);
+}
+
+.ticket-fields .field-error {
+  grid-column: 1 / -1;
+}
+
+/* Without `min-width: 0`, the intrinsic width of an `input[type=date]` — with
+   its picker icon — overruns its column and pushes the grid. */
+.ticket-fields > * {
+  margin: 0;
+  min-width: 0;
+}
+
+/* The space is permanently reserved — a one-line `min-height`, taken from
+   `line-height` — so the message appears without pushing the fields around it.
+   The paragraph is rendered empty the rest of the time. */
+.field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 1.45em;
   margin: 0;
   font-size: 12px;
+  line-height: 1.45;
+  color: var(--danger-ink);
 }
 
-/* A rare action, so discreet — but discreet in colour, not in size: the rail
-   lines up full-width buttons, and an off-template one would break the column's
-   rhythm and make the layout jump from one state to the next. */
-.disconnect {
-  color: var(--text-dim);
-  border-color: var(--rule);
-  background: transparent;
+.field-error .icon {
+  margin-top: 2px;
+  color: var(--danger-mark);
 }
 
-.disconnect:hover:not(:disabled) {
-  background: var(--surface-raised);
-  border-color: var(--red);
-  color: var(--red-strong);
-}
+/* ---- under the ticket ----
+   The channel of the last search of this session. Its place is held whether it
+   is offered or not: it appears and disappears with whatever is being typed,
+   and would otherwise shift everything under it on a keystroke. */
 
-.disconnect .icon {
+.ticket-recent {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 34px;
+  margin: 0;
+  font-size: var(--t-2);
   color: var(--text-faint);
 }
 
-.disconnect:hover .icon {
-  color: var(--red);
+/* One breakpoint, and it is the width at which the button stops fitting beside
+   the shortcuts rather than a round number. */
+@media (max-width: 760px) {
+  .ticket-open {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .channel-input {
+    height: 58px;
+    padding: 0 14px;
+  }
+
+  .channel-input input:not([type='checkbox']) {
+    font-size: var(--t-6);
+  }
+
+  .channel-prefix {
+    font-size: var(--t-3);
+  }
+
+  .ticket-run {
+    justify-self: stretch;
+  }
 }

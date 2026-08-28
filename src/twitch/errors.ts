@@ -7,7 +7,7 @@ import type { T } from '../i18n/translate'
  * reports.
  *
  * The network layer sits far from the interface and does not know which language
- * is being served: it therefore carries a **key**, and the sweep log — the only
+ * is being served: it therefore carries a **key**, and the search log — the only
  * place these errors are read — renders it. The `message` stays the key, so a
  * console trace is never empty.
  */

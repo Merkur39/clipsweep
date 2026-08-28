@@ -1,12 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { LocaleToggle } from './LocaleToggle'
 import { LocaleProvider } from '../i18n/LocaleProvider'
 import { persistedKey } from '../hooks/usePersistedState'
 
-afterEach(cleanup)
 beforeEach(() => {
   localStorage.clear()
   vi.spyOn(navigator, 'languages', 'get').mockReturnValue(['fr-FR'])

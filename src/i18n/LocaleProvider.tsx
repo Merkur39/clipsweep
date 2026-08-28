@@ -29,7 +29,7 @@ const TranslationContext = createContext<Translation | null>(null)
  * cannot hold its state.
  *
  * `localStorage` and not `sessionStorage`: this is a preference, on the same
- * footing as the theme, not a sweep parameter.
+ * footing as the theme, not a search parameter.
  */
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const [stored, setStored] = usePersistedState('locale', 'auto')

@@ -1,11 +1,10 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen } from '@testing-library/react'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { LocaleProvider, useTranslation } from './LocaleProvider'
 import { persistedKey } from '../hooks/usePersistedState'
 
-afterEach(cleanup)
 beforeEach(() => localStorage.clear())
 
 /** The test's browser: `navigator.languages` is read-only. */
@@ -46,7 +45,7 @@ describe('LocaleProvider', () => {
     mount()
 
     expect(screen.getByText('fr / auto')).toBeInTheDocument()
-    expect(screen.getByText('Déconnecté de Twitch.')).toBeInTheDocument()
+    expect(screen.getByText('Déconnecté de Twitch')).toBeInTheDocument()
   })
 
   it('serves English to an untranslated browser', () => {
@@ -54,7 +53,7 @@ describe('LocaleProvider', () => {
     mount()
 
     expect(screen.getByText('en / auto')).toBeInTheDocument()
-    expect(screen.getByText('Disconnected from Twitch.')).toBeInTheDocument()
+    expect(screen.getByText('Disconnected from Twitch')).toBeInTheDocument()
   })
 
   it('reads back a stored choice, against the browser', () => {

@@ -18,81 +18,131 @@
 :root {
   color-scheme: light dark;
 
-  /* Light: warm paper, graphite hairlines. Dark: cold graphite tinted
-     blue-violet — the chassis, not Twitch's background.
+  /* Light: cool paper. Dark: graphite tinted blue, calm rather than inky.
      In both cases depth runs from the page ground towards the work surface:
-     `--ground` is the furthest back, `--surface` carries the readout. */
-  --ground: light-dark(#f3f1ed, #090b12);
-  --chassis: light-dark(#f9f8f5, #0f121c);
-  --surface: light-dark(#ffffff, #141824);
-  --surface-raised: light-dark(#ffffff, #1b2030);
-  --surface-hover: light-dark(#ebe8e2, #212739);
+     `--ground` is the furthest back, `--surface` carries the readout.
+
+     Every light value is RESOLVED to hold the contrast ratio its dark twin
+     holds — not obtained by inverting lightness, which lands the three inks
+     two to four points too dark and flattens the hierarchy. The numbers are
+     enforced by `scripts/contrast`, not asserted here. */
+  --ground: light-dark(#f4f6f8, #0f1115);
+  --chassis: light-dark(#edf0f3, #14171d);
+  --surface: light-dark(#ffffff, #191d24);
+  --surface-raised: light-dark(#f8fafb, #1f242c);
+  /* The lightest surface of the dark world, therefore the one that decides
+     how pale the faintest ink may be. */
+  --surface-hover: light-dark(#edf0f3, #212731);
   /* A pressed button sinks: in light it cannot do so by climbing towards
-     white, it needs its own notch below hover. */
-  --surface-sunken: light-dark(#ded9d1, #141824);
+     white, it needs its own notch below hover. Nothing writes on it. */
+  --surface-sunken: light-dark(#e4e8ec, #14171d);
 
-  /* Two levels of hairline: the separating stroke and the structural seam. */
-  --rule: light-dark(#ddd8d0, #262c3d);
-  --rule-strong: light-dark(#b6ada0, #39415c);
+  /* Three hairlines, and only the third has a threshold. `--rule` separates
+     and `--rule-strong` seams — neither claims to be a boundary. A chip or a
+     ghost button has nothing BUT its border to say it is a control, so that
+     one owes 3:1 (WCAG 1.4.11) and gets a token of its own; `--rule-strong`
+     holds 1.33 on the raised surface and could never serve. */
+  --rule: light-dark(#dee1e5, #262c36);
+  --rule-strong: light-dark(#c3c7cd, #333b47);
+  --rule-control: light-dark(#818488, #6c7178);
 
-  --text: light-dark(#1b1d24, #e7e9f1);
-  --text-dim: light-dark(#5b6070, #a2a9bd);
+  --text: light-dark(#21242a, #e8ebf0);
+  --text-dim: light-dark(#4d5157, #a3abb8);
   /* The dimmest of the three must still hold 4.5:1 on the hovered row, not
      only on the resting background: that is where a date gets read.
-     It is that constraint which fixes the light value, not the reverse. */
-  --text-faint: light-dark(#62677a, #8d97b0);
+     It is that constraint which fixes both values, not the reverse. */
+  --text-faint: light-dark(#65686f, #858e9c);
 
-  /* Three inks, three meanings. Nothing else takes colour.
-     violet = the normal trace · amber = split · red = lost
+  /* Three families, three meanings. Nothing else takes colour.
+     mint = the normal trace · amber = split · red = lost
 
-     The dark values have no light equivalent by simple inversion: none of the
-     three holds 4.5:1 on paper (violet 2.9:1, amber 2.1:1, red 3.0:1). The
-     light world therefore has its own inks, chosen to hold that threshold on
-     the hovered row — not to resemble the others. */
-  --violet: light-dark(#6b3fd4, #a481ff);
-  --violet-strong: light-dark(#4e2ba0, #c3aaff);
-  --violet-press: light-dark(#3d2080, #6a45c8);
-  --violet-fill: light-dark(#ded0fa, #6a45c8);
-  /* The half-drawn trace, in `<Mark />`: the notch between the neutral hairline
-     and the full ink. The slab flat cannot hold it — pale on paper, it would
-     fade off the plate. */
-  --violet-half: light-dark(#8f6ae8, #6a45c8);
-  --violet-wash: light-dark(rgb(107 63 212 / 10%), rgb(164 129 255 / 14%));
-  --amber: light-dark(#925506, #f0a63c);
-  --amber-fill: light-dark(#f5e0c0, #6a4611);
-  --red: light-dark(#cf2b2b, #ff5d5d);
-  --red-strong: light-dark(#a81b1b, #ff9494);
-  --red-fill: light-dark(#e0a0a0, #6d1f28);
-  --red-wash: light-dark(rgb(207 43 43 / 6%), rgb(255 93 93 / 7%));
+     Each family carries THREE roles, because one value cannot hold them all.
+     The mint `#47d7b8` reads 10.5:1 on the dark ground and is unusable twice
+     over in the light world: 1.80 as ink on white, and 1.80 again under a
+     white label. The same number condemns it in both directions, which is
+     what forces the split rather than a reteinted single accent.
+
+       -ink    what writes — a link, a zero view count, a live figure
+       -mark   what must be SEEN without being read — a border, a focus ring,
+               a chart bar, the underline of a link
+       (bare)  the flat that carries a label, held to 4.5 against that label
+               AND to 3 against the surface behind it, since a primary button
+               whose fill vanishes is no longer a button */
+  --accent: light-dark(#007662, #47d7b8);
+  --accent-mark: light-dark(#00957d, #47d7b8);
+  --accent-ink: light-dark(#007662, #47d7b8);
+  /* Hover. It has to move visibly from `--accent-ink` while staying an ink,
+     otherwise a link stops answering the pointer. */
+  --accent-strong: light-dark(#00544a, #7ce8d2);
+  --accent-press: light-dark(#00453b, #2a9c85);
+  --accent-fill: light-dark(#b9e4da, #2f6f60);
+  --accent-wash: light-dark(rgb(0 149 125 / 8%), rgb(71 215 184 / 12%));
+
+  --warn-ink: light-dark(#955a00, #ffb057);
+  --warn-mark: light-dark(#bd7300, #ffb057);
+  --warn-fill: light-dark(#f3e2c4, #5c3f12);
+
+  --danger-ink: light-dark(#c13038, #ff6b6b);
+  --danger-mark: light-dark(#e35254, #ff6b6b);
+  --danger-fill: light-dark(#e8b3b5, #6d1f28);
+  --danger-wash: light-dark(rgb(193 48 56 / 6%), rgb(255 107 107 / 8%));
 
   /* The only text that is not a shade of `--text`: the label set on the full
-     violet flat, which has to stand out against it. */
-  --on-violet: light-dark(#f7f4ff, #17102c);
-  /* No `light-dark()`, and that is the point: the pressed flat is dark in both
-     worlds, so its label is light in both. */
-  --on-violet-press: #e7e9f1;
+     accent flat, which has to stand out against it. */
+  --on-accent: light-dark(#ffffff, #06231d);
+  /* The palette this one replaced gave the pressed flat a label of its own: a
+     violet dark enough to read as pressed was dark in BOTH worlds and wanted a
+     light label in both. A mint pressed flat is not — it stays lighter than the
+     dark ground, so a light label on it reads 2.84, which the gate caught.
+     Pressed therefore takes the same label as resting, and the token survives
+     only as the name the control sheet already calls. */
+  --on-accent-press: var(--on-accent);
 
-  /* What is neither flat nor hairline: lamp glows, the table zebra, the
-     floating panel's shadow. Each of them hangs on a ratio to the background,
-     not on a hue — which is what makes them unable to cross a theme change
-     without being named.
+  /* What is neither flat nor hairline: lamp glows, the floating panel's
+     shadow. Each of them hangs on a ratio to the background, not on a hue —
+     which is what makes them unable to cross a theme change without being
+     named.
 
      The glow keeps its geometry in light: a saturated ink diffusing into paper
      is ink that bleeds, not a blot. It is the pale glow on a pale background
      that would have turned to mush. */
-  --glow-violet: light-dark(rgb(107 63 212 / 45%), rgb(164 129 255 / 55%));
-  --glow-red: light-dark(rgb(207 43 43 / 45%), rgb(255 93 93 / 55%));
-  --zebra: light-dark(rgb(0 0 0 / 3%), rgb(255 255 255 / 2.2%));
-  --shadow-panel: light-dark(rgb(58 48 36 / 18%), rgb(0 0 0 / 65%));
+  --glow-accent: light-dark(rgb(0 149 125 / 40%), rgb(71 215 184 / 50%));
+  --glow-danger: light-dark(rgb(193 48 56 / 45%), rgb(255 107 107 / 55%));
+  --shadow-panel: light-dark(rgb(33 36 42 / 16%), rgb(0 0 0 / 65%));
   /* What puts the page behind the player. Dark in both worlds — a scrim's job is
      to push back, and paper pushed back with paper pushes nothing. It is read
      from `::backdrop`, which inherits the custom properties of its originating
-     element in every browser that can resolve `light-dark()` at all. */
-  --scrim: light-dark(rgb(38 32 24 / 52%), rgb(0 0 0 / 66%));
+     element in every browser that can resolve `light-dark()` at all.
+     ⚠️ The light value is 62%, not the 46% the plate drew, and the difference
+     is measured rather than tasted: at 46% over a white page the scrim
+     composes to #999A9D, and the metadata the player writes on it read
+     **1.95**. Nothing short of the full ink survives a mid grey. Darkened, it
+     lets the player write in white — which is what a projection does.
+     The gate cannot see this: it measures flat tokens, and a scrim is a
+     colour laid over whatever the page happens to hold. */
+  --scrim: light-dark(rgb(0 0 0 / 62%), rgb(0 0 0 / 66%));
 
+  /* Manrope: humanist, round, comfortable over an hour of sorting — which is
+     what a video editor actually does here. The stack behind it is a real
+     fallback, not a formality: `font-display: swap` means the first paint is
+     rendered in it, and a stack ending at bare `sans-serif` would reflow into
+     something else entirely on that first frame. */
   --sans:
-    system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+    'Manrope Variable', system-ui, -apple-system, 'Segoe UI', Roboto, Ubuntu, Cantarell,
+    'Helvetica Neue', sans-serif;
   --mono: ui-monospace, 'Cascadia Mono', 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  /* The scale. No half-pixel: 12.5px asks the rasteriser to invent a stem
+     weight, and it invents a different one per platform.
+       t-1 label · t-2 meta · t-3 body · t-4 tile title
+       t-5 section · t-6 screen title · t-7 the one figure that matters */
+  --t-1: 11px;
+  --t-2: 13px;
+  --t-3: 14px;
+  --t-4: 16px;
+  --t-5: 20px;
+  --t-6: 28px;
+  --t-7: 38px;
 
   --s-1: 4px;
   --s-2: 8px;
@@ -102,10 +152,69 @@
   --s-6: 32px;
   --s-7: 48px;
 
-  /* An instrument facade has no soft corners. */
-  --r: 2px;
+  /* The margin between the page and the window, and the one figure that says
+     how wide the application is: there is no measure to cap it at. The plate
+     is drawn edge to edge — a readout of images has no reason to stop at a
+     column width, and the two things on screen that do read as prose (the
+     lede, the legal note) carry their own `max-width` instead.
+
+     It is a step of its own rather than a `--s-*`, because it is not spacing
+     between two things: it is where the page begins. Two overrides below, one
+     per layout the plates were drawn at. */
+  --gutter: 40px;
+
+  /* Three radii, because one value cannot serve a 15px checkbox and a dialog:
+     8px on a checkbox is a pill, 5px on a panel is a sharp plate. `--r` keeps
+     the control value, so a rule that says nothing still gets the right one.
+       --r       controls — input, button, segmented, dropdown row
+       --r-card  anything raised off the ground — panel, tile, popover, dialog
+       --r-chip  what is barely taller than its own text — badge, checkbox */
+  --r: 8px;
+  --r-card: 12px;
+  --r-chip: 5px;
+
+  /* The one shadow of the system, in two layers: a 1px contact line that says
+     the card touches the ground, and a wide soft drop that says how far it
+     stands off it. A card is lifted by a hairline AND a shadow, never by the
+     shadow alone — the hairline is what survives on a screen where the drop
+     is invisible.
+
+     The colours are tokens and so is each geometry, because a lift copied by
+     hand into three files is a lift that drifts between them. `light-dark()`
+     takes exactly two arguments, so a shadow list — which already contains a
+     comma — cannot be passed to it whole: the colour goes through the token,
+     the geometry sits beside it. */
+  --shadow-contact: light-dark(rgb(33 36 42 / 8%), rgb(0 0 0 / 45%));
+  --shadow-drop: light-dark(rgb(33 36 42 / 26%), rgb(0 0 0 / 72%));
+  --shadow-card: 0 1px 2px var(--shadow-contact), 0 10px 26px -14px var(--shadow-drop);
+  /* The two heights anything lifted off the page stands at: a popover opened
+     from the control it belongs to, and a bar or button floating clear of
+     everything. The second lifts further because nothing under it explains
+     where it came from. */
+  --shadow-popover: 0 12px 28px -6px var(--shadow-panel);
+  --shadow-float: 0 18px 44px -14px var(--shadow-panel);
+
+  /* Raking light across the top of the page: the only gradient in the system,
+     and it is page-anchored rather than fixed to the viewport — it belongs to
+     the head of the document, so it scrolls away with it. */
+  --sheen: light-dark(rgb(33 36 42 / 3.5%), rgb(255 255 255 / 3.5%));
 
   --ease: cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+/* Forty pixels is a desktop margin. On a laptop it is a quarter of a tile, and
+   on a phone it is a tenth of the screen — so the gutter closes in two steps,
+   landing on the 16px the mobile plates were drawn with. */
+@media (max-width: 960px) {
+  :root {
+    --gutter: 24px;
+  }
+}
+
+@media (max-width: 700px) {
+  :root {
+    --gutter: 16px;
+  }
 }
 
 /* The explicit choice, set on `<html>` by `applyTheme`. It rewrites no token:
@@ -125,29 +234,36 @@
 
 body {
   margin: 0;
-  background: var(--ground);
+  background-color: var(--ground);
+  background-image: linear-gradient(180deg, var(--sheen), transparent 180px);
+  background-repeat: no-repeat;
   color: var(--text);
   font:
-    14px/1.55 var(--sans),
+    var(--t-3) / 1.55 var(--sans),
     sans-serif;
+  /* Manrope's proportional figures are narrower on 1 than on 8, which makes a
+     column of view counts wobble as it scrolls. Set once here rather than at
+     each of the dozen places digits line up — nothing in this interface wants
+     proportional figures. */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 a {
-  color: var(--violet);
+  color: var(--accent-ink);
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--violet-fill);
+  text-decoration-color: var(--accent-fill);
 }
 
 a:hover {
-  color: var(--violet-strong);
+  color: var(--accent-strong);
   text-decoration-color: currentcolor;
 }
 
 :focus-visible {
-  outline: 2px solid var(--violet-strong);
+  outline: 2px solid var(--accent-strong);
   outline-offset: 2px;
 }
 
@@ -164,8 +280,14 @@ a:hover {
   white-space: nowrap;
 }
 
+/* The pseudo-elements are named, and it is not belt and braces: `*` does not
+   match them. The one animation the interface runs indefinitely — the sheen
+   crossing the progress bar — is drawn on an `::after`, so the bare universal
+   selector let the very motion this rule exists for run for a whole search. */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     animation: none !important;
     transition: none !important;
   }

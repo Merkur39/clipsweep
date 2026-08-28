@@ -8,8 +8,10 @@ const t = makeT('fr')
 const label = (value: string) => (value === '1' ? 'Cult of the Lamb' : value)
 
 describe('describeSelection', () => {
-  it('announces "All" when nothing is checked', () => {
-    expect(describeSelection([], label, t)).toBe('Tous')
+  // A chip with nothing checked is the filter switched off, not a filter whose
+  // value happens to be "all": it stays a bare word.
+  it('says nothing while nothing is checked', () => {
+    expect(describeSelection([], label, t)).toBeNull()
   })
 
   it('names the single value rather than counting it', () => {
