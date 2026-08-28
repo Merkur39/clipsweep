@@ -1,12 +1,10 @@
 // @vitest-environment jsdom
-import { cleanup, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { render } from '../test-render'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { ThemeToggle } from './ThemeToggle'
 import type { Theme } from '../domain/theme'
-
-afterEach(cleanup)
 
 const setup = (theme: Theme = 'system') => {
   const onChange = vi.fn()

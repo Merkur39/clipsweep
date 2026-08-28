@@ -1,44 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { describeAccess, describeTokenLife } from './access'
+import { describeAccess } from './access'
 import { makeT } from '../i18n/translate'
 
 const t = makeT('fr')
-
-describe('describeTokenLife', () => {
-  // A Twitch token lasts some sixty days: expressing it in hours gives "1477 h",
-  // which does not read and spills onto two lines.
-  it('counts in days beyond two days', () => {
-    expect(describeTokenLife(5_317_200, t)).toBe('62 j restants')
-  })
-
-  it('counts in hours below two days', () => {
-    expect(describeTokenLife(10_800, t)).toBe('3 h restantes')
-  })
-
-  it('counts in minutes below an hour', () => {
-    expect(describeTokenLife(2_520, t)).toBe('42 min restantes')
-  })
-
-  it('switches to days at exactly forty-eight hours', () => {
-    expect(describeTokenLife(172_800, t)).toBe('2 j restants')
-  })
-
-  it('agrees the singular', () => {
-    expect(describeTokenLife(3_600, t)).toBe('1 h restante')
-  })
-
-  // Better to announce the last minute than "0 min".
-  it('never drops below the minute', () => {
-    expect(describeTokenLife(30, t)).toBe('1 min restante')
-  })
-
-  // The unit changes symbol between the two languages: "j" for jours, "d" for
-  // days.
-  it('serves the language’s own unit', () => {
-    expect(describeTokenLife(5_317_200, makeT('en'))).toBe('62 d left')
-  })
-})
 
 const input = {
   authError: null,
@@ -71,7 +36,7 @@ describe('describeAccess', () => {
     const state = describeAccess({ ...input, hasStoredToken: true }, t)
 
     // Same prefix as the confirmed message, which will only add the duration.
-    expect(state.message).toBe('Connecté.')
+    expect(state.message).toBe('Connecté')
     expect(state.presumedConnected).toBe(true)
     expect(state.kind).toBe('ok')
   })
@@ -81,7 +46,7 @@ describe('describeAccess', () => {
   it('states the state, without restating the action the button carries', () => {
     const state = describeAccess(input, t)
 
-    expect(state.message).toBe('Déconnecté de Twitch.')
+    expect(state.message).toBe('Déconnecté de Twitch')
     expect(state.presumedConnected).toBe(false)
     expect(state.kind).toBe('')
   })

@@ -1,82 +1,175 @@
-/* FiltersBar.tsx, NumberField.tsx, MultiSelect.tsx — the filter row.
-   It is welded to the top of the table (bottom border removed, radius cut):
-   the two form a single panel, not two stacked cards. */
+/* FiltersBar.tsx, FilterChip.tsx, NumberField.tsx, MultiSelect.tsx — the filter
+   row and what its chips open.
 
-.result-count {
-  margin: 0 0 var(--s-3);
-  font-family: var(--mono);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-dim);
+   A loose row on the ground, no longer a panel welded to the top of the
+   readout. Six labelled fields used to stand there permanently, costing a band
+   of the readout's height at all times for controls that are empty most of the
+   time; four chips read at rest exactly what their filter is worth, and ask for
+   room only while one is being set. */
+
+/* One row for everything that acts on what is already found: the order, the
+   four filters, the blanket reset, and how tightly it is all drawn. They used to
+   sit in three places — a label, a row, and a strip above the grid — which is
+   three places to look for one kind of thing.
+
+   Chips wrap onto a second line rather than shrink: one carries the value its
+   filter bites at, and a shrunken chip would ellipsise the very thing it exists
+   to show. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  margin-bottom: var(--s-3);
 }
 
-/* The blanket check, filed at the end of the counts it acts on. In the sans, on
-   a line otherwise set in the mono: the counts are a readout, this is an
-   action, and `button.link` would inherit the readout's family. Its bottom
-   padding — meant for links stacked in a panel — would push the line apart. */
-.result-count .link {
-  margin-left: var(--s-2);
-  padding: 0;
-  font-family: var(--sans);
-  font-size: 12px;
-}
-
-/* Six controls hold on one line provided they are not given the same template:
-   a views field houses six digits, a date field does not go below 137px (its
-   segments, its calendar and its cross), and the facets want everything that
-   is left — they are the ones that truncate ("SpiZ, Ori +3"). Each basis is
-   therefore calibrated on its content, each growth capped: it is the cap that
-   keeps a wrapped control from stretching alone across the full width, which
-   is what the row did before. */
 .filters {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s-3);
-  align-items: end;
-  padding: var(--s-3) var(--s-4);
-  border: 1px solid var(--rule);
-  border-bottom: 0;
-  border-radius: var(--r) var(--r) 0 0;
-  background: var(--chassis);
+  align-items: center;
+  gap: var(--s-2);
 }
 
-.field,
-.multiselect {
+/* At the far end: it is not a filter but how whatever survives them is drawn.
+   It carries no margin of its own, though — the search chip before it opens the
+   right-hand group, and both are pushed over together.
+
+   ⚠️ Two `margin-left: auto` in one flex row **share** the free space rather
+   than one of them taking it: the search chip ended up stranded in the middle,
+   with six hundred pixels of nothing on either side of it. One spacer, as the
+   plate draws it. */
+.toolbar .view-toggle {
+  margin-left: 0;
+}
+
+/* Boxed like the chips it stands beside, rather than at the smaller size it
+   wore inside a line of type. The height is stated rather than padded to:
+   these segments hold an icon, not a line of text, so the padding that brings a
+   labelled control to 34 leaves this one five pixels short. */
+.toolbar .view-toggle button {
+  height: 32px;
+  padding: 0 10px;
+}
+
+/* ---- the chip ---- */
+
+/* The panel hangs off it, and a click outside is measured against it. */
+.filter-chip-root {
+  position: relative;
+}
+
+/* What the shared `.chip` cannot know: this one hangs a panel off itself.
+
+   `[aria-expanded]` weighs 0,3,0, the same as `.chip.is-on`, and it is written
+   in a sheet imported after `controls.css` — so an open chip takes the accent
+   edge whether it is set or not, which is what it is for. The one rule that
+   outweighs it is `.chip.is-on:hover` at 0,4,0, deliberately: a set chip
+   answers the pointer even while its panel is out. */
+
+/* Open, set or not: while the panel is out, the chip is its frame. */
+.filter-chip[aria-expanded='true']:not(:disabled) {
+  border-color: var(--accent-mark);
+}
+
+.filter-chip .icon {
+  color: var(--text-faint);
+  transition: transform 0.16s var(--ease);
+}
+
+.filter-chip[aria-expanded='true'] .icon {
+  transform: rotate(180deg);
+}
+
+/* ---- the search chip ----
+   Apart from the four facets, and after them: a title is not a list of values,
+   so this one opens on a field rather than on a catalogue. It is also the only
+   filter with a key of its own, and that key is drawn on it. */
+
+.search-chip-root {
+  margin-left: auto;
+}
+
+/* The lens takes the ink of the label it precedes, not the accent: it says
+   which chip this is, it does not say that the chip is on. */
+.search-chip-root .filter-chip .icon:first-child {
+  color: inherit;
+}
+
+/* The shortcut, on the control it works — never in a help page. It gives the
+   room up the moment there is a value to read there instead. */
+.search-chip-root kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-chip);
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 15px;
+}
+
+/* The panel of a field, not of a catalogue: it needs the width of a title, not
+   the height of a list. */
+.search-chip-root .filter-panel {
+  right: 0;
+  left: auto;
+  min-width: 280px;
+}
+
+.search-field {
+  margin: 0;
+  padding: 7px;
+}
+
+/* Chrome draws its own clear button on a search field, in its own grey, at its
+   own size, and only while the field has focus. */
+.search-field input::-webkit-search-cancel-button {
+  appearance: none;
+}
+
+/* ---- what a chip opens ----
+   One panel for the four of them: a pair of fields, or a windowed catalogue.
+   The panel holds the cap; the list inside it is what scrolls. */
+
+.filter-panel {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 5px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 230px;
+  max-height: 280px;
+  overflow: hidden;
+  padding: 5px;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-popover);
+}
+
+.filter-panel .link {
+  flex: none;
+  width: 100%;
+  padding: 4px 8px 8px;
+}
+
+/* The two halves of one filter — a floor and a ceiling, a start and an end.
+   Stacked rather than set side by side: a date field does not go below 137px on
+   its own, and two of those would make a panel wider than the row it hangs
+   from. */
+.filter-fields {
+  display: grid;
+  gap: var(--s-3);
+  padding: 7px;
+}
+
+.filter-fields .field {
   margin: 0;
   min-width: 0;
 }
 
-.filters .field {
-  flex: 1 1 90px;
-  max-width: 130px;
-}
-
-/* `min-width` as much as `flex-basis`: below 137px the date segments would get
-   clipped by the native calendar. */
-.filters .field.date {
-  flex: 1 1 137px;
-  min-width: 137px;
-  max-width: 148px;
-}
-
-/* Low basis, high cap: a facet needs no more than 73px for its minimal
-   content, and it is the one that takes back all the space available. */
-.filters .multiselect {
-  flex: 1 1 110px;
-  max-width: 240px;
-}
-
-/* Three native controls, three intrinsic heights under Chromium (33px for a
-   number field, 34 for the button, 35 for a date field, which yields neither to
-   `line-height` nor to styling its shadow DOM). Without a common height, the
-   labels of the row do not line up. */
-.filters .field-control input,
-.filters .multiselect-button {
-  height: 35px;
-}
-
 /* The clear button is overlaid, not inserted: its appearing must move neither
-   the field nor its neighbours. */
+   the field nor its neighbour. */
 .field-control {
   position: relative;
   display: block;
@@ -91,10 +184,6 @@
    the opening of the picker by mouse, the only route that opens it. */
 .field-control.date input {
   padding-right: 26px;
-}
-
-.field-control.date .field-clear {
-  right: 4px;
 }
 
 /* The native arrows steal the button's place. */
@@ -123,92 +212,54 @@
 }
 
 .field-clear:hover:not(:disabled) {
-  background: var(--surface-raised);
+  background: var(--surface-hover);
   border-color: transparent;
   color: var(--text);
 }
 
-/* Set at the end of the "Results" label, after the hairline its `::after`
-   draws — hence the `order`, without which the hairline would run to the right
-   of the button instead of pushing it. */
-.section-label .filters-reset {
-  order: 1;
-  width: auto;
-  padding: 0;
-  font-size: 11px;
+/* Silkscreened, not boxed: it undoes the chips beside it rather than adding to
+   them, and a sixth chip is what it must not look like. */
+.toolbar .filters-reset {
+  padding: 0 var(--s-2);
+  font-size: var(--t-1);
+  font-weight: 650;
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-/* ---- multiselect ---- */
+/* ---- what the sort chip opens ----
+   One line per key, the one in force keeping its caret: a second click on it
+   turns the order round, which is why the panel does not shut on a choice. */
 
-.multiselect {
-  position: relative;
-}
-
-.multiselect-button {
-  gap: var(--s-2);
-  width: 100%;
-  padding: 8px 10px;
-  background: var(--ground);
-  border: 1px solid var(--rule);
-  color: var(--text);
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 400;
-  text-align: left;
-  justify-content: flex-start;
-}
-
-.multiselect-button:hover:not(:disabled) {
-  background: var(--ground);
-  border-color: var(--rule-strong);
-}
-
-.multiselect-button[aria-expanded='true'] {
-  border-color: var(--violet);
-}
-
-.multiselect-button .icon {
-  color: var(--text-faint);
-  transition: transform 0.16s var(--ease);
-}
-
-.multiselect-button[aria-expanded='true'] .icon {
-  transform: rotate(180deg);
-}
-
-.multiselect-value {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* The panel holds the cap; the list inside it is what scrolls. */
-.multiselect-panel {
-  position: absolute;
-  z-index: 10;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
+.sort-options {
   display: flex;
   flex-direction: column;
-  min-width: 230px;
-  max-height: 280px;
-  overflow: hidden;
-  padding: 5px;
-  background: var(--surface-raised);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r);
-  box-shadow: 0 12px 28px -6px var(--shadow-panel);
+  padding: 3px;
 }
 
-.multiselect-panel .link {
-  flex: none;
+.sort-option {
+  justify-content: space-between;
   width: 100%;
-  padding: 4px 8px 8px;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  border-radius: var(--r);
+  color: var(--text);
+  font-size: var(--t-2);
+  font-weight: 500;
 }
+
+.sort-option:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: transparent;
+}
+
+.sort-option[aria-pressed='true'] {
+  color: var(--accent-ink);
+  font-weight: 650;
+}
+
+/* ---- the facet catalogue ---- */
 
 /* `min-height: 0` is what lets the list shrink under the spacer standing in for
    the options not mounted — without it the flex item would take the height of
@@ -272,8 +323,59 @@
    has to be able to read what one is unchecking.
 
    Deliberately not `.zero`, which this sheet spends on the opposite errand:
-   amber, for the clip at zero views that the sweep exists to unearth. There the
+   amber, for the clip at zero views that the search exists to unearth. There the
    eye is called; here it is meant to pass over. */
 .multiselect-option.is-spent .multiselect-option-name {
   color: var(--text-faint);
+}
+
+/* ---- the toolbar on a phone ----
+   Five controls on 358px of row: the sort drops the key it sorts on, the four
+   facets fold into one chip, and the density loses the middle position — five
+   columns of thumbnails is not a reading a phone can offer, and the grid gives
+   one column there whatever the button says. */
+
+.chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* The four, stacked in the panel the folded chip opens. Each keeps its own
+   panel, which opens over this one — a filter is set where it is read. */
+.filters-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s-2);
+  padding: 5px;
+}
+
+.filters-stack .filter-chip {
+  width: 100%;
+  justify-content: flex-start;
+}
+
+@media (max-width: 700px) {
+  .sort-value {
+    display: none;
+  }
+
+  .toolbar .view-toggle button[data-view='grid'] {
+    display: none;
+  }
+
+  /* The search keeps its key drawn on it, and the key is the one thing a phone
+     has no use for. */
+  .search-chip-root kbd {
+    display: none;
+  }
 }

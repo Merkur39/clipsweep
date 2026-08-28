@@ -34,6 +34,21 @@ export interface TwitchUser {
 export interface Progress {
   windowsDone: number
   windowsTotal: number
+  /**
+   * Milliseconds of the searched period behind the search — the one measure of
+   * it that only ever grows.
+   *
+   * A count of slices cannot: the total grows every time a saturated window is
+   * halved, and `(done + 1) / (total + 2)` is smaller than `done / total`
+   * whenever `total < 2 × done`. Dense years are the recent ones, so they split
+   * late, which is exactly when that condition holds — and the bar slid
+   * backwards. Only windows finished WITHOUT splitting are counted here; a
+   * window that split has walked no ground, and its two halves will credit
+   * between them precisely what it did not.
+   */
+  coveredMs: number
+  /** Milliseconds of the whole seeded period. Fixed before the first request. */
+  periodMs: number
   clipsFound: number
   requests: number
 }

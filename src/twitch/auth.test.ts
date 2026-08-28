@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
   authorizeUrl,
+  captureRedirect,
   normalizeRedirectUri,
   parseAuthFragment,
   revokeToken,
@@ -154,5 +155,62 @@ describe('tokenStore', () => {
 
     expect(tokenStore.read()).toBeNull()
     expect(localStorage.getItem('getclip.token')).toBeNull()
+  })
+})
+
+/**
+ * The bootstrap that runs before React mounts. What it does with the token is
+ * half of it; the other half is what it takes out of the address bar, and that
+ * half has no interface to say it went wrong.
+ */
+describe('captureRedirect', () => {
+  const arriveWith = (hash: string) => {
+    const replaceState = vi.fn()
+    vi.stubGlobal('location', {
+      hash,
+      origin: 'https://clipsweep.example',
+      pathname: '/',
+    })
+    vi.stubGlobal('history', { replaceState })
+    return replaceState
+  }
+
+  it('stashes the token the implicit flow left in the fragment', () => {
+    arriveWith('#access_token=abc123&scope=&token_type=bearer')
+
+    expect(captureRedirect()).toBeNull()
+    expect(tokenStore.read()).toBe('abc123')
+  })
+
+  /* ⚠️ The one thing here nothing else can catch. A Twitch token lasts two
+     months: left in the fragment it would sit in the address bar, in the
+     browser's history, and in the `Referer` of everything the page loads next.
+     The scrub is written above the error return so that BOTH ways out of the
+     redirect take it — moving it below would leave the token behind on the
+     path nobody looks at, with this file still green. */
+  it('scrubs the token out of the address bar', () => {
+    const replaceState = arriveWith('#access_token=abc123&scope=&token_type=bearer')
+
+    captureRedirect()
+
+    expect(replaceState).toHaveBeenCalledWith(null, '', 'https://clipsweep.example/')
+  })
+
+  it('scrubs a refusal out of it too, and keeps nothing', () => {
+    const replaceState = arriveWith('#error=access_denied&error_description=User+denied')
+
+    expect(captureRedirect()).toBe('User denied')
+    expect(replaceState).toHaveBeenCalledWith(null, '', 'https://clipsweep.example/')
+    expect(tokenStore.read()).toBeNull()
+  })
+
+  // An ordinary visit, which is most of them: nothing to take, and no history
+  // entry to rewrite — the address bar is already the one the visitor typed.
+  it('leaves an ordinary visit alone', () => {
+    const replaceState = arriveWith('')
+
+    expect(captureRedirect()).toBeNull()
+    expect(replaceState).not.toHaveBeenCalled()
+    expect(tokenStore.read()).toBeNull()
   })
 })

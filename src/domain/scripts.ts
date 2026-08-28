@@ -47,6 +47,23 @@ function slug(channel: string): string {
   return channel.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 64) || 'clips'
 }
 
+/**
+ * The name the script lands under, which is the last thing this tool controls.
+ *
+ * Past the download there is no interface left — only a row in a folder — and
+ * `kaliyami_2026-08-28.bat` says nothing there about what the file is for or
+ * what to do with it. The name opens on the verb instead, so it survives being
+ * truncated in a list, and keeps the date at the end where a second export still
+ * gets its own file.
+ *
+ * ASCII, like everything under `script.`: this one is not read by a console, but
+ * a file travels — through an archive, a share, a file system that transliterates
+ * — and an accent is the first thing such a trip loses.
+ */
+export function scriptFileName(flavor: ScriptFlavor, channel: string, day: string, t: T): string {
+  return `${t('script.filename', { channel: slug(channel) })}-${day}.${flavor}`
+}
+
 function batScript(channel: string, urls: string[], t: T): string {
   const folder = `clips_${slug(channel)}`
   const lines = [

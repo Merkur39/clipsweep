@@ -74,7 +74,7 @@ export async function revokeToken(clientId: string, accessToken: string): Promis
 
 /**
  * Durable, unlike the channel and the period: a token is not a parameter of a
- * sweep but the right to run one at all, and signing in again at every visit
+ * search but the right to run one at all, and signing in again at every visit
  * bought nothing. What it costs, a token outliving the tab on a shared machine,
  * is what `revokeToken` answers — the two go together and neither stands alone.
  * Durable without revocation would leave a sixty-day token with no way to end

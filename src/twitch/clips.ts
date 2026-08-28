@@ -39,7 +39,7 @@ export interface CollectClipsOptions {
   onWindow?: (report: WindowReport) => void
   /**
    * The clips known after each period, already deduplicated — the table fills in
-   * as it goes rather than staying empty for the whole sweep.
+   * as it goes rather than staying empty for the whole search.
    */
   onClips?: (clips: Clip[]) => void
   signal?: AbortSignal
@@ -70,6 +70,31 @@ export async function collectClips({
   let windowsTotal = queue.length
   let requests = 0
 
+  // Summed from the seed windows themselves rather than from the bounds the
+  // search was asked for. The two coincide on the path the application takes,
+  // both ends of a period landing on a whole second — but `toRfc3339` drops the
+  // milliseconds off every window it emits, so a denominator read from the raw
+  // bounds is one the numerator has no way of reaching. A bar stopping a
+  // millisecond short of its end never reads as finished, and nothing would
+  // show it until a caller passed bounds carrying milliseconds.
+  const spanOf = (window: DateWindow) => Date.parse(window.endedAt) - Date.parse(window.startedAt)
+  const periodMs = windows.reduce((total, window) => total + spanOf(window), 0)
+  let coveredMs = 0
+
+  // Said before the first request rather than after the first window: a window
+  // is a calendar year, and a dense one costs ten sequential requests before it
+  // can report anything. Until it does, a bar with no denominator has nothing
+  // to draw and a reader has nothing to read — over the longest stretch of the
+  // whole search.
+  onProgress?.({
+    windowsDone: 0,
+    windowsTotal,
+    coveredMs: 0,
+    periodMs,
+    clipsFound: 0,
+    requests: 0,
+  })
+
   while (queue.length > 0 && !signal?.aborted) {
     const { window, depth } = queue.shift()!
     let cursor: string | undefined
@@ -82,6 +107,22 @@ export async function collectClips({
       for (const clip of page.clips) byId.set(clip.id, clip)
       collected += page.clips.length
       cursor = page.cursor
+      // The count is the figure the run block is built around, and a window is
+      // far too coarse to move it: it would sit at zero for a whole year of
+      // clips, which reads as a search that found nothing rather than one that
+      // has not answered yet. The pages are what land, so the pages report.
+      //
+      // Only the counters, though — the clips themselves still come out one
+      // window at a time, below, so the table is not re-rendered per request
+      // for a handful of extra rows.
+      onProgress?.({
+        windowsDone,
+        windowsTotal,
+        coveredMs,
+        periodMs,
+        clipsFound: byId.size,
+        requests,
+      })
 
       if (signal?.aborted || !cursor || page.clips.length === 0) break
       if (collected >= pageCap) {
@@ -107,11 +148,35 @@ export async function collectClips({
     reports.push(report)
     onWindow?.(report)
 
+    // The ground the search has actually walked, and the whole reason the bar
+    // can no longer slide backwards. Three cases, and the condition holds all
+    // three:
+    //
+    //   · split — no credit. It has walked nothing that will not be walked
+    //     again, and its two halves tile it exactly, so they will credit
+    //     between them precisely what it did not.
+    //   · saturated but too small to halve — full credit. It is a leaf. What
+    //     the bar measures is the period walked, not how exhaustively; that
+    //     verdict is `incomplete`'s to give, and the ticket gives it. Credited
+    //     on `saturated` instead, the bar would never reach its own end.
+    //   · cut short by a stop — no credit. `signal.aborted` is tested before
+    //     the cap is, so an interrupted window comes back `split: false` and
+    //     would otherwise take credit for a whole year at the very moment the
+    //     search was called off.
+    if (!report.split && !signal?.aborted) coveredMs += spanOf(window)
+
     windowsDone += 1
     // One period, one delivery: per-page would be finer grained, but would make
     // the table render on every request for a handful of extra rows.
     onClips?.([...byId.values()])
-    onProgress?.({ windowsDone, windowsTotal, clipsFound: byId.size, requests })
+    onProgress?.({
+      windowsDone,
+      windowsTotal,
+      coveredMs,
+      periodMs,
+      clipsFound: byId.size,
+      requests,
+    })
   }
 
   return {

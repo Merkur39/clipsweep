@@ -1,53 +1,64 @@
-/* ClipTable.tsx — the readout table, the main work surface: visible rules,
-   numeric columns right-aligned, one row followed by the cursor.
+/* ClipTable.tsx — the list, the readout of whoever is working through nine
+   hundred clips rather than looking at them: every fact about a clip on one
+   line, numeric columns right-aligned, one row followed by the cursor.
 
-   Careful: `ROW_HEIGHT` lives in `ClipTable.tsx` and drives the virtualiser.
-   A row's height is set over there, not here. */
+   The title leads and takes what is left. The counts and the dates used to open
+   the row, from the days when this was a search report; a readout leads with the
+   thing itself, and a clip is recognised by its title.
 
-.table {
-  border: 1px solid var(--rule);
-  border-radius: 0 0 var(--r) var(--r);
-  overflow: hidden;
-  background: var(--surface);
-}
+   No card around it: the list flows in the page and the page is what scrolls,
+   so the rows run edge to edge and the only rules on screen are the ones
+   between them.
 
+   Careful: `ROW_HEIGHT` lives in `ClipTable.tsx` and drives the virtualiser,
+   which applies it inline. A row's height is set over there, not here — nothing
+   in this sheet may fight it. */
+
+/* Eight tracks, in the order `COLUMNS` lists them: the box, the title, the six
+   facts, and the play control. Each fixed width is cut to its own content at
+   the body size — a view count of seven digits, a date of ten characters, a
+   length of five — and the title takes everything that is left, which at full
+   width is more than the four other text columns together. */
 .table-head,
 .table-row {
   display: grid;
-  grid-template-columns: 30px 84px 104px minmax(0, 1fr) 152px 26px;
+  grid-template-columns: 34px minmax(0, 1fr) 96px 150px 160px 130px 74px 26px;
   align-items: center;
   gap: var(--s-3);
-  padding: 0 var(--s-3) 0 var(--s-4);
+  padding: 0 10px;
 }
 
+/* Stuck to the top of the screen: the list has no box of its own to stick to
+   any more, so what the rows run under is the window. The opaque flat and the
+   z-index are what that costs. */
 .table-head {
-  height: 34px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 38px;
   background: var(--chassis);
   border-bottom: 1px solid var(--rule-strong);
-  font-size: 10px;
+  font-size: var(--t-1);
   font-weight: 650;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-faint);
-}
-
-.table-body {
-  height: clamp(300px, 52vh, 760px);
-  overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
 }
 
 /* The whole row ticks the box: see `rowClick` in ClipTable.tsx for the three
    targets excluded from it. */
 .table-row {
   border-bottom: 1px solid var(--rule);
-  font-size: 13px;
+  font-size: var(--t-3);
   cursor: pointer;
 }
 
-.table-row:nth-child(even) {
-  background: var(--zebra);
+/* The band follows the row's rank in the *list*, and is applied from
+   `ClipTable.tsx` rather than by `:nth-child`: the slice starts one row further
+   on with every scroll step, so a positional selector would repaint every
+   stripe in the readout each time the window moved. */
+.table-row.is-banded {
+  background: var(--surface);
 }
 
 .table-row:hover {
@@ -59,46 +70,54 @@
   align-items: center;
 }
 
+/* The key in force, in the ink that writes accent: on a strip of eight labels
+   all set in the same faint capitals, weight alone would not find it. */
 .table-head [aria-sort='ascending'],
 .table-head [aria-sort='descending'] {
-  color: var(--text);
+  color: var(--accent-ink);
 }
 
 /* Numeric column: the label must line up with its values, so the arrow files
    to its left rather than pushing the header away from the edge. */
 .table-head .col-views .sort-key,
-.table-head .col-date .sort-key {
+.table-head .col-date .sort-key,
+.table-head .col-length .sort-key {
   flex-direction: row-reverse;
   justify-content: flex-start;
 }
 
 .col-views {
   font-family: var(--mono);
-  font-size: 12.5px;
+  font-size: var(--t-2);
   font-variant-numeric: tabular-nums;
   text-align: right;
   color: var(--text-dim);
 }
 
+/* The one figure a row is scanned by, so it is the one that carries weight —
+   nothing else on the line does. */
 .table-row .col-views {
+  font-weight: 600;
   color: var(--text);
 }
 
-/* Zero views: the case the sweep exists to unearth. */
+/* Zero views: the case the search exists to unearth. */
 .table-row .col-views.zero {
-  color: var(--amber);
+  color: var(--warn-ink);
 }
 
-.col-date {
+.col-date,
+.col-length {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--t-2);
   font-variant-numeric: tabular-nums;
   text-align: right;
   color: var(--text-faint);
 }
 
 .col-title,
-.col-author {
+.col-author,
+.col-game {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -112,19 +131,26 @@
 }
 
 .table-row .col-title a:hover {
-  color: var(--violet-strong);
+  color: var(--accent-strong);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .col-author {
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: var(--t-2);
+}
+
+/* One step behind the creator, which is one behind the title: three text
+   columns, three inks, and the eye runs down them in that order. */
+.col-game {
+  color: var(--text-faint);
+  font-size: var(--t-2);
 }
 
 /* ---- the play control ----
    The row's second control. It stays quiet on a resting row — a column of
-   violet triangles would out-shout the readout it serves — but it must never
+   accent triangles would out-shout the readout it serves — but it must never
    leave a doubt about what the cursor is over: the whole row is clickable and
    ticks the box, so the one place that does something else has to draw its own
    edge. Hence the box, held at 26 px and outlined as soon as the row is
@@ -153,23 +179,39 @@
 }
 
 .table-row:hover .row-play {
-  border-color: var(--rule-strong);
-  color: var(--violet);
+  border-color: var(--rule-control);
+  color: var(--accent-ink);
   opacity: 1;
 }
 
 .row-play:hover:not(:disabled),
 .row-play:focus-visible {
   background: var(--surface-raised);
-  border-color: var(--violet);
-  color: var(--violet-strong);
+  border-color: var(--accent-ink);
+  color: var(--accent-strong);
   opacity: 1;
+}
+
+/* Narrow: the columns leave in the order they are least missed — the game and
+   the length first, both of which their own filter or the tiles can give back,
+   then the creator. The title, the count and the date stay: they are what a row
+   is recognised, sorted and dated by. */
+@media (max-width: 1180px) {
+  .table-head,
+  .table-row {
+    grid-template-columns: 30px minmax(0, 1fr) 96px 150px 104px 26px;
+  }
+
+  .col-game,
+  .col-length {
+    display: none;
+  }
 }
 
 @media (max-width: 960px) {
   .table-head,
   .table-row {
-    grid-template-columns: 26px 58px 80px minmax(0, 1fr) 26px;
+    grid-template-columns: 26px minmax(0, 1fr) 76px 96px 26px;
     gap: var(--s-2);
     padding: 0 var(--s-3);
   }

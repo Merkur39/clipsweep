@@ -44,8 +44,8 @@ describe('usePersistedState', () => {
     expect(sessionStorage.getItem('getclip.theme')).toBeNull()
   })
 
-  // What targets a sweep — channel and period — has no business outliving the
-  // tab: finding yesterday's target again would restart a sweep nobody chose.
+  // What targets a search — channel and period — has no business outliving the
+  // tab: finding yesterday's target again would restart a search nobody chose.
   it('writes to the store it is given, without touching the other', () => {
     renderHook(() => usePersistedState('channel', 'typed', sessionStorage))
 

@@ -13,8 +13,11 @@ export default tseslint.config(
       globals: { ...globals.browser, ...globals.node },
     },
   },
+  /* The hooks live in `.ts` files, so a rule set aimed at `.tsx` alone checked
+     none of them — and `purity` is exactly the rule that catches a clock read
+     during a render. It has one deliberate exception, marked where it stands. */
   {
-    files: ['src/**/*.tsx'],
+    files: ['src/**/*.{ts,tsx}'],
     extends: [reactHooks.configs.flat.recommended],
   },
 )

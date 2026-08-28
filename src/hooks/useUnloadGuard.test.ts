@@ -1,10 +1,8 @@
 // @vitest-environment jsdom
-import { cleanup, renderHook } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { renderHook } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
 
 import { useUnloadGuard } from './useUnloadGuard'
-
-afterEach(cleanup)
 
 /** The browser only asks for confirmation if the event is cancelled. */
 const leave = () => {

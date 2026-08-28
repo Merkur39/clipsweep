@@ -1,9 +1,19 @@
 /* The shell of App.tsx: nameplate, chassis columns, facade labels. */
 
+/* No measure and no centring: the plate runs to the window, held off it by the
+   one gutter. A board of thumbnails is not prose — capping it at 1360 left a
+   quarter of a wide screen unpainted on either side and cost a column of
+   tiles. What does read as prose says so for itself, in `ch`.
+
+   A column at least as tall as the window, so the footer can be pushed to the
+   bottom of it — see `.footer`. `dvh` and not `vh`: on a phone the browser's
+   own bars come and go, and `vh` measures the tallest state, which puts the
+   foot of the page just off the bottom of the screen at rest. */
 .page {
-  max-width: 1360px;
-  margin: 0 auto;
-  padding: 0 var(--s-5) var(--s-7);
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding: 0 var(--gutter) var(--s-7);
 }
 
 /* ---- nameplate ---- */
@@ -27,9 +37,11 @@
   letter-spacing: -0.015em;
 }
 
+/* The mark takes the accent as a mark takes it: to be seen, not read. */
 .masthead-mark {
   flex: none;
   display: block;
+  color: var(--accent-mark);
 }
 
 .lede {
@@ -39,6 +51,88 @@
   color: var(--text-dim);
 }
 
+/* ---- the account ----
+   Who you are, filed with what holds for the session. It reads as a lamp and
+   an exit, not as a step of the task: the search below it never asks again.
+
+   Bounded measure, and it is the error states that fix it: "no application
+   configured" runs to three lines of mono and would otherwise stretch the
+   plate to the width of the page. */
+
+.account {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+/* An instrument panel signals its state with a lamp, not with a coloured strip
+   stuck on the edge of a box. */
+.status {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  max-width: 46ch;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 9px 11px;
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
+  color: var(--text-dim);
+  background: var(--chassis);
+}
+
+.status::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: var(--rule-strong);
+}
+
+.status.ok::before {
+  background: var(--accent-ink);
+  box-shadow: 0 0 7px 1px var(--glow-accent);
+}
+
+.status.bad {
+  border-color: var(--danger-fill);
+  background: var(--danger-wash);
+  color: var(--danger-ink);
+}
+
+.status.bad::before {
+  background: var(--danger-mark);
+  box-shadow: 0 0 7px 1px var(--glow-danger);
+}
+
+/* A rare action, so discreet — but discreet in colour, not in size: it stands
+   in a row of controls, and an off-template one would break its rhythm. */
+.disconnect {
+  flex: none;
+  color: var(--text-dim);
+  border-color: var(--rule-control);
+  background: transparent;
+}
+
+.disconnect:hover:not(:disabled) {
+  background: var(--surface-raised);
+  border-color: var(--danger-mark);
+  color: var(--danger-ink);
+}
+
+.disconnect .icon {
+  color: var(--text-faint);
+}
+
+.disconnect:hover .icon {
+  color: var(--danger-mark);
+}
+
 /* ---- preference rows ----
    Display preferences, not actions of the task: they file at the end of the
    plate and weigh no more than their pills. The chassis aligns on the
@@ -46,10 +140,18 @@
 
    The two rows share the same shape because they have the same standing: a
    three-position state whose current one reads without acting. */
-.masthead-prefs {
+.masthead-side {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   align-self: center;
   margin-left: auto;
+  gap: var(--s-3) var(--s-4);
+}
+
+.masthead-prefs {
+  display: flex;
   gap: var(--s-3);
 }
 
@@ -57,7 +159,7 @@
    as it already did at the edge of the rail. */
 .segmented {
   display: flex;
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-control);
   border-radius: var(--r);
 }
 
@@ -81,7 +183,22 @@
   border-right: 0;
 }
 
-/* The bare button turns violet on its border; here the border is a seam shared
+/* At a 2px radius the square corner of a filled segment hid inside the parent's
+   own curve; at 8px it juts out of it, and the group reads as a rectangle badly
+   drawn over a rounded box. `overflow: hidden` would cut it — and the focus
+   ring with it, which the rule above refuses — so the two end segments take the
+   INNER radius instead: the parent's, less its 1px border. */
+.segmented button:first-child {
+  border-start-start-radius: calc(var(--r) - 1px);
+  border-end-start-radius: calc(var(--r) - 1px);
+}
+
+.segmented button:last-child {
+  border-start-end-radius: calc(var(--r) - 1px);
+  border-end-end-radius: calc(var(--r) - 1px);
+}
+
+/* The bare button takes the accent on its border; here the border is a seam shared
    between three pills, it does not follow the hover of any one of them. */
 .segmented button:hover:not(:disabled) {
   background: var(--surface-hover);
@@ -90,89 +207,33 @@
 }
 
 .segmented button[aria-pressed='true'] {
-  background: var(--violet-wash);
-  color: var(--violet);
-}
-
-/* Filed at the very end of the "Results" label, past the reset: the choice of
-   readout governs what is drawn below, not the filters beside it. Slimmer than
-   the pills of the masthead — this one joins a line of type, not a row of
-   preferences. */
-.section-label .view-toggle {
-  order: 2;
-}
-
-.section-label .view-toggle button {
-  padding: 4px 8px;
+  background: var(--accent-wash);
+  color: var(--accent-ink);
 }
 
 /* ---- chassis ---- */
 
+/* One column, where a 296px rail used to run down the left. The query is no
+   longer a thing set aside from the readout: it sits above it, on the same
+   axis, and the readout gets the whole width — which is what the table and the
+   tile grid were always short of. */
 .layout {
   display: grid;
-  grid-template-columns: 296px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
 }
 
-/* The seam runs the full height: a chassis is not cut short at the point where
-   its left panel stops having content. */
-.rail {
-  border-right: 1px solid var(--rule-strong);
-  padding: var(--s-5) 0 var(--s-6);
-}
-
-/* `overflow-y: auto` moves `overflow-x` from `visible` to `auto`: the slightest
-   horizontal overflow — a focus ring, the intrinsic width of a date field —
-   brings out a scrollbar. The gutters are therefore inside the container that
-   scrolls, not on the panel.
-
-   The left one is worth the exact reach of the focus ring, `outline-width` plus
-   `outline-offset`: what overflows to the left of a scrolling container is
-   clipped, and not recoverable by scrolling. The negative margin cancels the
-   shift this gutter would impose on the content. */
-.rail-inner {
-  position: sticky;
-  top: 0;
-  max-height: 100vh;
-  overflow-y: auto;
-  padding: 4px var(--s-5) 0 4px;
-  margin-left: -4px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
-}
-
+/* The stage no longer sits beside anything, so it keeps no left gutter and no
+   seam. */
 .stage {
-  padding: var(--s-5) 0 0 var(--s-5);
+  padding: var(--s-3) 0 0;
   min-width: 0;
 }
 
-/* ---- facade labels ----
-   Silkscreen: small drawn capitals, extended by a hairline that runs to the
-   edge of the panel. That is what organises the surface — not cards. */
-
-.section-label {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  margin: var(--s-6) 0 var(--s-3);
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-}
-
-.section-label::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
-}
-
-.rail-inner .section-label:first-child,
-.stage > .section-label:first-child {
-  margin-top: 0;
-}
+/* The silkscreen labels that used to head each block of the stage are gone with
+   the last of them, in the technical drawer: a timeline is recognised as a
+   timeline and a column of monospaced lines as a log, and a caption over each
+   only said again what the thing under it was. */
 
 /* ---- what the two readouts share ----
    Why there is nothing on screen: the table and the grid go empty for exactly
@@ -186,7 +247,6 @@
 }
 
 .results-empty .link {
-  width: auto;
   padding: 0;
   font-size: 13px;
 }
@@ -195,14 +255,30 @@
 
 /* The counterpart of the nameplate: the same seam hairline, above rather than
    below. Both close the page on the same line, one announces, the other
-   accounts. */
-.colophon {
-  margin-top: var(--s-6);
+   accounts.
+
+   `margin-top: auto` is what puts it at the foot of the *window* rather than at
+   the foot of the *content*: on a short page — the wall, an empty readout — it
+   used to stop wherever the content did and leave a band of ground under it,
+   which reads as the page having been cut off. It takes the spare room, and
+   there is none to take once the page scrolls, so it goes back to closing the
+   document. The minimum is kept as a margin so a full page does not weld it to
+   the last row. */
+.footer {
+  margin-top: auto;
   padding: var(--s-4) 0 var(--s-5);
   border-top: 1px solid var(--rule-strong);
 }
 
-.colophon-links {
+/* The air above the seam, which the footer can no longer carry itself: its top
+   margin is spent pushing it to the bottom of the window. Whatever ends the
+   page owes it instead, or a full readout welds its last row to the rule. */
+.layout,
+.door {
+  padding-bottom: var(--s-6);
+}
+
+.footer-links {
   display: flex;
   flex-wrap: wrap;
   gap: var(--s-3) var(--s-5);
@@ -211,7 +287,7 @@
 
 /* Silkscreened like the section labels: they are markers, not invitations. The
    underline on hover is enough to say they are alive. */
-.colophon-links a {
+.footer-links a {
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.14em;
@@ -220,14 +296,14 @@
   text-decoration: none;
 }
 
-.colophon-links a:hover {
-  color: var(--violet-strong);
+.footer-links a:hover {
+  color: var(--accent-strong);
   text-decoration: underline;
 }
 
-/* Bounded measure: a legal notice reads in one go, not by sweeping 1600px from
+/* Bounded measure: a legal notice reads in one go, not by searching 1600px from
    one temple to the other. */
-.colophon-note {
+.footer-note {
   max-width: 78ch;
   margin: 0;
   font-size: 12px;
@@ -235,28 +311,40 @@
   color: var(--text-faint);
 }
 
+/* The notes' own ink, one point down: it is owed, not read, and it is not a
+   fourth disclaimer either — the size is what tells it apart from the three
+   above without giving it a colour of its own. Set off by its own space rather
+   than by a rule; a second seam under the one that already opens the footer
+   would close a block four lines tall. */
+.footer-copyright {
+  margin: var(--s-3) 0 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--text-faint);
+}
+
 @media (max-width: 960px) {
+  /* The side gutters close on their own, from `--gutter`; only the foot of the
+     page is worth taking in here. */
   .page {
-    padding: 0 var(--s-4) var(--s-6);
+    padding-bottom: var(--s-6);
+  }
+}
+
+/* On a phone the plate keeps its name, its preferences and its account, and
+   drops the line that says what the tool is for: whoever has it open knows, and
+   two lines of tagline is a fifth of the screen spent on a subtitle. */
+@media (max-width: 700px) {
+  .masthead {
+    padding: var(--s-4) 0 var(--s-3);
   }
 
-  .layout {
-    grid-template-columns: 1fr;
+  .lede {
+    display: none;
   }
 
-  .rail {
-    border-right: 0;
-    border-bottom: 1px solid var(--rule-strong);
-    padding: var(--s-5) 0 var(--s-5);
-  }
-
-  .rail-inner {
-    position: static;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .stage {
-    padding: var(--s-5) 0 0;
+  .masthead-side {
+    margin-left: 0;
+    justify-content: flex-start;
   }
 }

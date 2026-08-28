@@ -1,0 +1,35 @@
+/* The typeface, self-hosted.
+ *
+ * Self-hosted rather than linked from a font CDN: the application is served
+ * from one origin to visitors who did not ask to be announced to a second
+ * one, and a render-blocking third-party request is a poor trade for a file
+ * the deployment can serve itself.
+ *
+ * One `@font-face`, not the package's own sheet. That sheet declares six
+ * unicode subsets; `unicode-range` means a French or English visitor only
+ * ever downloads `latin`, but the build still emits the other five — 48 kB of
+ * files nothing will ever fetch. The interface ships in two languages
+ * (`src/i18n/locales.ts`) and latin carries every letter both of them need,
+ * œ and the accented vowels included.
+ *
+ * Naming the file directly makes the dependency loud rather than silent: if
+ * the package renames it, Vite fails to resolve the url and the build stops.
+ * The alternative fails by quietly serving the fallback stack instead.
+ *
+ * One axis, `wght` 200–800, so every weight the interface uses comes from the
+ * same file. No faux-bold, no second download for the heavy titles.
+ */
+@font-face {
+  font-family: 'Manrope Variable';
+  font-style: normal;
+  font-weight: 200 800;
+  /* `swap`, not `block`: the readout is worth reading in the fallback for one
+     frame more than it is worth withholding. Every height the virtualiser
+     reserves is declared in absolute pixels, so the swap cannot move a row. */
+  font-display: swap;
+  src: url('@fontsource-variable/manrope/files/manrope-latin-wght-normal.woff2')
+    format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}

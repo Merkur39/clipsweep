@@ -76,7 +76,7 @@ describe('fetchGameNames', () => {
 
   // An id Helix has no row for comes back missing, exactly like one lost to a
   // failed request — but nothing went wrong, and saying so would cry wolf on
-  // every sweep touching a retired category.
+  // every search touching a retired category.
   it('leaves an id it does not know unnamed, without calling that a failure', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok([])))
 
@@ -101,5 +101,74 @@ describe('fetchGameNames', () => {
     expect(fetch).not.toHaveBeenCalled()
     expect(names.size).toBe(0)
     expect(incomplete).toBe(false)
+  })
+})
+
+/**
+ * Helix answers 429 when the minute's points run out, and the client waits it
+ * out — for up to a minute. Waiting is right; waiting in silence is not: the
+ * interface has to be told, or a search that stops moving reads as one that has
+ * hung.
+ */
+describe('the pause Helix asks for', () => {
+  const throttled = (resetEpochSeconds: number) =>
+    ({
+      ok: false,
+      status: 429,
+      headers: new Headers({ 'ratelimit-reset': String(resetEpochSeconds) }),
+      json: () => Promise.resolve({}),
+    }) as unknown as Response
+
+  afterEach(() => vi.useRealTimers())
+
+  const announce = async (resetIn: number) => {
+    vi.useFakeTimers()
+    const now = Date.now()
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce(throttled(Math.floor(now / 1000) + resetIn))
+        .mockResolvedValue(ok([])),
+    )
+    const announced: (number | null)[] = []
+
+    /* The rejection is swallowed here rather than after the timers, and the
+       difference is the whole point: `fetchUser` settles *during*
+       `advanceTimersByTimeAsync`, so a handler attached afterwards arrives too
+       late and Node reports an unhandled rejection — which fails the run while
+       every assertion still passes. */
+    const pending = new TwitchApi(session, undefined, (until) => announced.push(until))
+      .fetchUser('kaliyami')
+      .catch(() => undefined)
+    await vi.advanceTimersByTimeAsync(70_000)
+    await pending
+
+    return { announced, now }
+  }
+
+  it('says when it will resume, then says it has', async () => {
+    const { announced, now } = await announce(30)
+
+    expect(announced).toHaveLength(2)
+    // The header carries whole seconds, so the moment announced lands within a
+    // second of the reset it names — the margin the client adds included.
+    expect(announced[0]).toBeGreaterThan(now + 29_000)
+    expect(announced[0]).toBeLessThan(now + 31_000)
+    expect(announced[1]).toBeNull()
+  })
+
+  // Whatever Helix says, the wait is capped at a minute: a reset that lands an
+  // hour out is a header to distrust, not an hour to sit through.
+  it('never announces more than the minute it is willing to wait', async () => {
+    const { announced, now } = await announce(3600)
+
+    expect(announced[0]).toBeLessThanOrEqual(now + 60_000)
+  })
+
+  it('retries once the pause is over', async () => {
+    await announce(30)
+
+    expect(fetch).toHaveBeenCalledTimes(2)
   })
 })

@@ -70,7 +70,7 @@ describe('formatDay', () => {
     expect(formatDay('2026-08-03', 'en')).toBe('08/03/2026')
   })
 
-  // The sweep bounds, `created_at` and the windows arrive sometimes as a bare
+  // The search bounds, `created_at` and the windows arrive sometimes as a bare
   // day, sometimes as a full timestamp.
   it('accepts a full timestamp like a bare day', () => {
     expect(formatDay('2026-08-03T22:41:07Z', 'fr')).toBe('03/08/2026')

@@ -2,21 +2,11 @@ import type { T } from '../i18n/translate'
 
 export type AccessKind = 'ok' | 'bad' | ''
 
-/**
- * A token's remaining life, in whichever unit actually reads.
- *
- * A Twitch token lasts some sixty days: "1477 h" is exact, unreadable, and spills
- * out of the panel onto two lines. The unit therefore follows the magnitude.
- */
-export function describeTokenLife(expiresInSeconds: number, t: T): string {
-  const minutes = Math.round(expiresInSeconds / 60)
-  if (minutes < 60) return t('access.life.minutes', { n: Math.max(minutes, 1) })
-
-  const hours = Math.round(expiresInSeconds / 3600)
-  if (hours < 48) return t('access.life.hours', { n: hours })
-
-  return t('access.life.days', { n: Math.round(expiresInSeconds / 86_400) })
-}
+/* No `describeTokenLife` any more, and no unit that follows the magnitude. The
+   plate said "Connected — 61 d left", which is a countdown from two months in
+   the one line of the page that has to be read at a glance: a figure nobody can
+   act on, and one that will still be reassuring the day before it is not. What
+   the expiry costs is one click, and the screen that asks for it says so then. */
 
 export interface AccessInput {
   /** The refusal Twitch just returned on the redirect, if there is one. */

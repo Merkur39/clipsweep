@@ -9,6 +9,8 @@ export interface ClipFilters {
   /** Empty means no restriction; several values are OR-ed together. */
   creators: readonly string[]
   gameIds: readonly string[]
+  /** Free text, matched against the title. Empty means no restriction. */
+  query: string
 }
 
 export const NO_FILTERS: ClipFilters = {
@@ -18,10 +20,25 @@ export const NO_FILTERS: ClipFilters = {
   to: null,
   creators: [],
   gameIds: [],
+  query: '',
 }
 
 /** A clip's day, as the Date column shows it. */
 const day = (clip: Clip) => clip.created_at.slice(0, 10)
+
+/**
+ * Text as it gets compared: lower case, and stripped of its diacritics.
+ *
+ * Both directions matter. A reader typing "derniere" must reach "dernière", and
+ * one who does type the accent must not be punished for it — a French interface
+ * where the accented spelling finds less than the flat one is a search that
+ * penalises correctness.
+ */
+const fold = (text: string) =>
+  text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
 
 /** Filtering only: ordering belongs to `sortClips`, which the user drives. */
 export function applyFilters(clips: Clip[], filters: ClipFilters): Clip[] {
@@ -29,6 +46,9 @@ export function applyFilters(clips: Clip[], filters: ClipFilters): Clip[] {
   // and this runs against the whole catalogue on every keystroke.
   const creators = new Set(filters.creators)
   const gameIds = new Set(filters.gameIds)
+  // Folded once, here, rather than once per clip: this runs against the whole
+  // catalogue on every keystroke.
+  const query = fold(filters.query.trim())
 
   const kept = clips.filter((clip) => {
     if (filters.minViews !== null && clip.view_count < filters.minViews) return false
@@ -41,6 +61,9 @@ export function applyFilters(clips: Clip[], filters: ClipFilters): Clip[] {
     if (filters.to !== null && day(clip) > filters.to) return false
     if (creators.size > 0 && !creators.has(clip.creator_name)) return false
     if (gameIds.size > 0 && !gameIds.has(clip.game_id)) return false
+    // Last, and on the title alone: the creator and the game have facets of
+    // their own, where a list of real values beats a guess at a substring.
+    if (query !== '' && !fold(clip.title).includes(query)) return false
     return true
   })
   return kept
@@ -54,7 +77,7 @@ export interface DateExtent {
 /**
  * The actual extent of the collected clips, to bound the range fields.
  *
- * It comes from the clips, not from the period swept: a sweep started in 2019
+ * It comes from the clips, not from the period searched: a search started in 2019
  * over a channel created in 2021 would otherwise offer two years of dates none
  * of which can return anything. Same stance as [facets], which drops empty
  * values.
@@ -75,13 +98,13 @@ export function dateExtent(clips: readonly Clip[]): DateExtent | null {
 /**
  * The display range reduced to what it actually hides.
  *
- * A sweep opens the range on the period it covers, so both bounds are set from
+ * A search opens the range on the period it covers, so both bounds are set from
  * the start without holding back a single clip. A bound that reaches past the
  * clips in hand restricts nothing, and must be named neither as the reason for
  * an empty table nor as the thing to reopen — the threshold on views, or the
  * creator, would then be the real culprit and would go unsaid.
  *
- * The judge is the extent of the clips collected, not the period swept: a sweep
+ * The judge is the extent of the clips collected, not the period searched: a search
  * over a month that only returned clips from its last week is just as unhindered
  * by a range covering the whole month.
  */
@@ -107,7 +130,7 @@ export interface Facet {
  * dropped: an option nothing can be selected by is worse than no option.
  *
  * The two lists it reads part company as soon as another filter is on. `all` is
- * everything the sweep turned up and settles **which options exist**; `matching`
+ * everything the search turned up and settles **which options exist**; `matching`
  * is what the other filters leave standing and settles **what each is worth**.
  * A count taken from `all` would promise clips that the range on dates has
  * already ruled out — "SpiZ 584" on a range holding none of his, and an empty
@@ -189,4 +212,21 @@ export function panelOrder(all: Facet[], isNamed: (value: string) => boolean): F
       isNamed,
     ),
   ]
+}
+
+/**
+ * A views threshold as its field holds it: raw text, empty while unset.
+ *
+ * The one parser of those two fields. [applyFilters] gets its bound from here
+ * and so does the chip that reads the pair back — a second parser would let the
+ * chip announce a threshold the filter does not apply, and an empty table would
+ * then name the wrong culprit.
+ *
+ * What is not a number is no threshold, never zero: `Number('abc')` is `NaN`,
+ * and a `NaN` bound compares false against every clip — the table would empty
+ * itself on a typo, with nothing on screen saying why.
+ */
+export function parseThreshold(raw: string): number | null {
+  const value = Number(raw.trim())
+  return raw.trim() === '' || !Number.isFinite(value) ? null : value
 }

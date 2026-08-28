@@ -4,9 +4,17 @@
  * font stack happens to carry, which is not a decision anyone made.
  */
 
-interface IconProps {
+/* Two shapes rather than one holding both: an icon that turns does not resize
+   and an icon that resizes does not turn, and a single interface let the wrong
+   prop through to be dropped on the floor — `<CaretIcon size={20} />` compiled,
+   and rendered at nine pixels. */
+
+interface TurnableIcon {
   /** Rotation in degrees, for the carets that point four ways. */
   turn?: number
+}
+
+interface SizedIcon {
   /** Drawn side, in pixels. The default is the size the glyph was drawn for. */
   size?: number
 }
@@ -24,7 +32,7 @@ const base = {
   'aria-hidden': true,
 } as const
 
-export function CaretIcon({ turn = 0 }: IconProps) {
+export function CaretIcon({ turn = 0 }: TurnableIcon) {
   return (
     <svg
       {...base}
@@ -37,7 +45,7 @@ export function CaretIcon({ turn = 0 }: IconProps) {
   )
 }
 
-export function ChevronIcon({ turn = 0 }: IconProps) {
+export function ChevronIcon({ turn = 0 }: TurnableIcon) {
   return (
     <svg {...base} style={turn ? { transform: `rotate(${turn}deg)` } : undefined}>
       <path d="M4 6.5 8 10.5l4-4" />
@@ -45,8 +53,19 @@ export function ChevronIcon({ turn = 0 }: IconProps) {
   )
 }
 
+/* The way back up, drawn as an arrow and not as the caret that means "sort":
+   the two glyphs point the same way and say different things, so the one that
+   moves the page carries a shaft. */
+export function ArrowUpIcon() {
+  return (
+    <svg {...base} width={15} height={15}>
+      <path d="M8 13.2V3.4M3.6 7.8 8 3.4l4.4 4.4" />
+    </svg>
+  )
+}
+
 /** 11 px in the fields it clears; the player asks for a bigger one. */
-export function CloseIcon({ size = 11 }: IconProps = {}) {
+export function CloseIcon({ size = 11 }: SizedIcon = {}) {
   return (
     <svg {...base} width={size} height={size}>
       <path d="M4 4l8 8M12 4l-8 8" />
@@ -62,6 +81,73 @@ export function PlayIcon() {
   return (
     <svg {...base} width={13} height={13} fill="currentColor" stroke="none">
       <path d="M4.6 3.1 12.4 8l-7.8 4.9Z" />
+    </svg>
+  )
+}
+
+/**
+ * Twitch's own mark, drawn on its own 24-unit grid and filled rather than
+ * stroked: it is a logo, not a member of this icon set, and redrawing it in the
+ * house weight would make it a different logo.
+ */
+export function TwitchIcon() {
+  return (
+    <svg
+      className="icon"
+      width={16}
+      height={16}
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-hidden="true"
+    >
+      <path d="M4.3 3 3 6.4v12.2h4.2V21h2.3l2.3-2.4h3.4L21 14.2V3H4.3Zm15 10.4-2.7 2.7h-3.4l-2.3 2.4v-2.4H6.7V4.6h12.6v8.8ZM15.6 7.4h1.7v4.8h-1.7V7.4Zm-4.5 0h1.7v4.8h-1.7V7.4Z" />
+    </svg>
+  )
+}
+
+/**
+ * A filled square, like every stop button ever pressed. Solid rather than
+ * outlined, and it has to be: an outlined square at 13px reads as an empty
+ * checkbox, which is the one other square in this interface.
+ */
+export function StopIcon() {
+  return (
+    <svg {...base} width={12} height={12} fill="currentColor" stroke="none">
+      <rect x="4" y="4" width="8" height="8" rx="1.6" />
+    </svg>
+  )
+}
+
+/** A lens and its handle: what is being looked through, not what is being found. */
+export function SearchIcon() {
+  return (
+    <svg {...base} width={13} height={13}>
+      <circle cx="7" cy="7" r="4.2" />
+      <path d="m10.2 10.2 3 3" />
+    </svg>
+  )
+}
+
+/** An arrow onto a floor: what comes down, and where it lands. */
+export function DownloadIcon() {
+  return (
+    <svg {...base} width={13} height={13}>
+      <path d="M8 2.5v7.5M8 10l3-3M8 10 5 7" />
+      <path d="M3 13h10" />
+    </svg>
+  )
+}
+
+/**
+ * A box you are stepping out of, arrow first: the clip opens somewhere that is
+ * not this page. It is the one glyph in the set that says "another tab", and
+ * the corner it leaves through is the one the arrow points at.
+ */
+export function ExternalIcon() {
+  return (
+    <svg {...base} width={13} height={13}>
+      <path d="M9.5 2.5H13.5v4M13.5 2.5 7.5 8.5" />
+      <path d="M12 9.5v3.5a.5.5 0 0 1-.5.5h-8a.5.5 0 0 1-.5-.5v-8a.5.5 0 0 1 .5-.5H7" />
     </svg>
   )
 }
@@ -100,9 +186,26 @@ export function GridIcon() {
   )
 }
 
+/* The tighter grid, and the glyph says so the only way a glyph can: more cells
+   in the same square, each smaller. Six against four, not nine — nine cells at
+   13px close up into a grey block, and the icon that means "denser" would be
+   the one that reads as nothing at all. */
+export function GridTightIcon() {
+  return (
+    <svg {...base} width={13} height={13} strokeWidth={1.3}>
+      <rect x="2.2" y="3" width="2.8" height="2.8" rx="0.5" />
+      <rect x="6.6" y="3" width="2.8" height="2.8" rx="0.5" />
+      <rect x="11" y="3" width="2.8" height="2.8" rx="0.5" />
+      <rect x="2.2" y="8.4" width="2.8" height="2.8" rx="0.5" />
+      <rect x="6.6" y="8.4" width="2.8" height="2.8" rx="0.5" />
+      <rect x="11" y="8.4" width="2.8" height="2.8" rx="0.5" />
+    </svg>
+  )
+}
+
 /* ---- the three themes ----
-   Sun and moon are the two assertions; the panel is the act of
-   n'en faire aucune et de suivre la machine. */
+   Sun and moon are the two assertions; the panel is the act of asserting
+   neither, and following the machine. */
 
 export function SunIcon() {
   return (
@@ -140,27 +243,41 @@ export function AlertIcon() {
 }
 
 /**
- * The mark is the mechanism: one span of time, halved, halved again — and one
- * segment that stayed saturated at the floor, which the tool declares rather
- * than hides. It is the frieze's legend, compressed.
+ * The mark is a run of clips, sorted: three bars falling away, and the tail the
+ * search could not reach — drawn as dashes rather than as a bar, because what is
+ * missing is exactly what cannot be drawn whole.
+ *
+ * It fades rather than changing hue: one accent, three weights. The mark it
+ * replaces spent four colours on a story about the algorithm — a span halved,
+ * halved again, one segment saturated at the floor — which is a diagram of how
+ * the tool works rather than of what it is for.
+ *
+ * ⚠️ Three files carry this shape, and `scripts/geometry/mark.test.ts` holds them
+ * to each other: this one, `public/favicon.svg`, and the rectangles
+ * `scripts/make-favicon.ts` rasterises. This one is the authority.
  */
 export function Mark() {
   return (
     <svg
       className="masthead-mark"
-      width={20}
+      width={24}
       height={20}
-      viewBox="0 0 16 16"
+      viewBox="0 0 28 24"
       fill="none"
       aria-hidden="true"
     >
-      <rect x="1" y="2.4" width="14" height="2.2" rx="0.6" fill="var(--rule-strong)" />
-      <rect x="1" y="6.9" width="6.4" height="2.2" rx="0.6" fill="var(--rule-strong)" />
-      <rect x="8.6" y="6.9" width="6.4" height="2.2" rx="0.6" fill="var(--violet-half)" />
-      <rect x="1" y="11.4" width="2.8" height="2.2" rx="0.6" fill="var(--violet-half)" />
-      <rect x="5" y="11.4" width="2.4" height="2.2" rx="0.6" fill="var(--violet)" />
-      <rect x="8.6" y="11.4" width="2.4" height="2.2" rx="0.6" fill="var(--violet)" />
-      <rect x="12.2" y="11.4" width="2.8" height="2.2" rx="0.6" fill="var(--red)" />
+      <rect x="2.5" y="3.4" width="23" height="2.9" rx="1.45" fill="currentColor" />
+      <rect x="2.5" y="9.2" width="17" height="2.9" rx="1.45" fill="currentColor" opacity="0.72" />
+      <rect x="2.5" y="15" width="10.5" height="2.9" rx="1.45" fill="currentColor" opacity="0.46" />
+      {/* Round caps on 1.9-long segments set 2.9 apart: the caps eat most of the
+          gap and leave half a unit of it, which is what makes four dashes read
+          as dashes at 24px rather than as one bar. */}
+      <path
+        d="M3.9 21.9h1.9m2.9 0h1.9m2.9 0h1.9m2.9 0h1.9"
+        stroke="var(--text-faint)"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
     </svg>
   )
 }

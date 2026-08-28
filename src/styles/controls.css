@@ -1,6 +1,14 @@
 /* The shared control vocabulary: fields, buttons, checkboxes, icons.
-   The components that specialise it (`.multiselect-button`, `.row-play`,
-   `.field-clear`) are imported after this file. */
+   The components that specialise it (`.filter-chip`, `.row-play`,
+   `.field-clear`) are imported after this file.
+
+   One border for all of them, `--rule-control`. A field, a ghost button, a
+   checkbox and a chip have nothing BUT their border to say they are controls —
+   no fill, no shadow, and a label that would read as prose on its own — so that
+   border owes 3:1 against the surface behind it (WCAG 1.4.11). The two
+   hairlines that separate and seam hold 1.33 on the raised surface and could
+   never serve here. A disabled control keeps `--rule`, which the same criterion
+   exempts, and whose faintness is part of what says it is switched off. */
 
 label {
   display: block;
@@ -27,7 +35,7 @@ input:not([type='checkbox']) {
   min-width: 0;
   padding: 8px 10px;
   background: var(--ground);
-  border: 1px solid var(--rule);
+  border: 1px solid var(--rule-control);
   border-radius: var(--r);
   color: var(--text);
   font-family: var(--mono);
@@ -38,29 +46,20 @@ input:not([type='checkbox']) {
     background 0.12s var(--ease);
 }
 
+/* Up from the control border, never down: hover has to add presence. The mark
+   role is what a border takes when it must be seen without being read, and it
+   is the same step the bare button already makes. */
 input:not([type='checkbox']):hover {
-  border-color: var(--rule-strong);
+  border-color: var(--accent-mark);
 }
 
 input:not([type='checkbox']):focus {
-  border-color: var(--violet);
+  border-color: var(--accent-ink);
   background: var(--chassis);
 }
 
 input::placeholder {
   color: var(--text-faint);
-}
-
-/* Without `min-width: 0`, the intrinsic width of an `input[type=date]` — with
-   its picker icon — overruns its column and pushes the grid. */
-.duo {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--s-2);
-}
-
-.duo > * {
-  min-width: 0;
 }
 
 button {
@@ -69,7 +68,7 @@ button {
   justify-content: center;
   gap: 7px;
   background: var(--surface-raised);
-  border: 1px solid var(--rule-strong);
+  border: 1px solid var(--rule-control);
   border-radius: var(--r);
   color: var(--text);
   cursor: pointer;
@@ -85,7 +84,7 @@ button {
 
 button:hover:not(:disabled) {
   background: var(--surface-hover);
-  border-color: var(--violet);
+  border-color: var(--accent-ink);
 }
 
 /* Pressed, therefore darker than hover. In light, `--surface` is the white of
@@ -95,38 +94,34 @@ button:active:not(:disabled) {
 }
 
 button.primary {
-  background: var(--violet);
-  border-color: var(--violet);
-  color: var(--on-violet);
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
+  color: var(--on-accent);
   font-weight: 650;
 }
 
 button.primary:hover:not(:disabled) {
-  background: var(--violet-strong);
-  border-color: var(--violet-strong);
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
 }
 
-/* `--violet-fill` is the flat that carries the ink — pale on paper. A pressed
-   button sinks: it needs the darkest violet of the two worlds. */
+/* `--accent-fill` is the flat that carries the ink — pale on paper. A pressed
+   button sinks: it needs the darkest accent of the two worlds. */
 button.primary:active:not(:disabled) {
-  background: var(--violet-press);
-  border-color: var(--violet-press);
-  color: var(--on-violet-press);
+  background: var(--accent-press);
+  border-color: var(--accent-press);
+  color: var(--on-accent-press);
 }
 
-/* The violet ring on a violet background is invisible: it gets lifted off. */
+/* The accent ring on an accent background is invisible: it gets lifted off. */
 button.primary:focus-visible {
   outline-color: var(--text);
-}
-
-button.wide {
-  width: 100%;
 }
 
 button.link {
   background: none;
   border: none;
-  color: var(--violet);
+  color: var(--accent-ink);
   font-size: 12px;
   font-weight: 500;
   padding: 0 0 var(--s-3);
@@ -136,7 +131,7 @@ button.link {
 
 button.link:hover:not(:disabled) {
   background: none;
-  color: var(--violet-strong);
+  color: var(--accent-strong);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -148,7 +143,7 @@ button.link:disabled {
 
 /* Written last, and it must stay that way: `button:disabled` has exactly the
    same specificity as `button.primary` (0,1,1), so only the order settles
-   between them. Placed before, the primary variant kept its full violet once
+   between them. Placed before, the primary variant kept its full accent once
    disabled — a dead button that looks like the most actionable on the page.
 
    Opacity takes the label below the contrast threshold: the switching-off is
@@ -158,6 +153,73 @@ button:disabled {
   border-color: var(--rule);
   color: var(--text-faint);
   cursor: not-allowed;
+}
+
+/* ---- chips ----
+   A pill that reads its own value at rest: a filter and what it bites at, a
+   period shortcut and whether it is the one in force. Nothing but its border
+   says it is a control — no fill, no shadow, and a label that would read as a
+   word of prose on its own — so that border owes 3:1 against what is behind it
+   (WCAG 1.4.11), which is `--rule-control` and neither of the two hairlines
+   that only separate.
+
+   ⚠️ The state rules below are deliberately given the same weight, one class
+   over the bare `.chip`, so that **reading down the sheet reads the
+   precedence**. Written the other way round it goes wrong in the browser and
+   nowhere else: `:hover:not(:disabled)` outweighs a plain `.is-on`, and a set
+   chip loses its accent edge the moment the pointer crosses it. No jsdom test
+   can catch that. */
+
+.chip {
+  height: 34px;
+  gap: 7px;
+  padding: 0 13px;
+  background: transparent;
+  border-color: var(--rule-control);
+  color: var(--text-dim);
+  font-size: var(--t-2);
+  font-weight: 500;
+}
+
+/* The hover rule restates the resting border for a second reason: the bare
+   `button:hover` takes its border to the accent, which is the one thing a chip
+   must not do until it is set. */
+.chip:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--rule-control);
+  color: var(--text);
+}
+
+/* On. The wash is what carries it at a glance across a row of four; the border
+   and the ink are what carry it where the wash cannot be seen — it is 12% of an
+   ink laid over the page, and nothing may rest on it alone. */
+.chip.is-on:not(:disabled) {
+  background: var(--accent-wash);
+  border-color: var(--accent-mark);
+  color: var(--accent-ink);
+}
+
+/* A set chip answers the pointer on its edge alone: moving its ground would
+   cost the wash that says it is on, and moving its ink would cost the ratio the
+   wash was measured against. */
+.chip.is-on:hover:not(:disabled) {
+  border-color: var(--accent-strong);
+}
+
+/* The value the chip holds — its whole point, so it takes the strongest ink
+   and the weight the label does not. Inline-flex because the sort chip sets a
+   caret beside its word, and a block glyph inside a bare `<b>` would drop to
+   its own line. */
+.chip b {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.chip.is-on b {
+  color: var(--accent-ink);
 }
 
 .icon {
@@ -178,8 +240,8 @@ input[type='checkbox'] {
   margin: 0;
   padding: 0;
   background: var(--ground);
-  border: 1px solid var(--rule-strong);
-  border-radius: var(--r);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-chip);
   cursor: pointer;
   transition:
     background 0.12s var(--ease),
@@ -187,13 +249,13 @@ input[type='checkbox'] {
 }
 
 input[type='checkbox']:hover:not(:disabled) {
-  border-color: var(--violet);
+  border-color: var(--accent-ink);
 }
 
 input[type='checkbox']:checked,
 input[type='checkbox']:indeterminate {
-  background: var(--violet-wash);
-  border-color: var(--violet);
+  background: var(--accent-wash);
+  border-color: var(--accent-ink);
 }
 
 input[type='checkbox']:checked::after {
@@ -203,7 +265,7 @@ input[type='checkbox']:checked::after {
   top: 1px;
   width: 4px;
   height: 8px;
-  border: solid var(--violet-strong);
+  border: solid var(--accent-strong);
   border-width: 0 1.6px 1.6px 0;
   transform: rotate(43deg);
 }
@@ -213,7 +275,7 @@ input[type='checkbox']:indeterminate::after {
   position: absolute;
   inset: 6px 3px auto;
   height: 0;
-  border-top: 1.6px solid var(--violet-strong);
+  border-top: 1.6px solid var(--accent-strong);
 }
 
 input[type='checkbox']:disabled {
@@ -230,6 +292,11 @@ input[type='checkbox']:disabled {
 .sort-key {
   display: flex;
   align-items: center;
+  /* The bare button centres its content, which is right for a button and wrong
+     for a column head: stretched across a track, the label left its own values
+     and floated to the middle of the column. Invisible while the columns were
+     narrow, plain the moment the title took half the width. */
+  justify-content: flex-start;
   gap: 5px;
   width: 100%;
   padding: 0;
@@ -253,5 +320,5 @@ input[type='checkbox']:disabled {
 .sort-key-arrow {
   display: inline-flex;
   width: 9px;
-  color: var(--violet);
+  color: var(--accent-ink);
 }

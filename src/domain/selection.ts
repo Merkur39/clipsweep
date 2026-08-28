@@ -6,11 +6,11 @@ export type SelectionState = 'all' | 'none' | 'some'
 
 /**
  * Selections are stored rather than exclusions: nothing is checked by default,
- * so a clip that appears — a raised threshold, a fresh sweep — comes in
+ * so a clip that appears — a raised threshold, a fresh search — comes in
  * unchecked, and no export ever carries a clip the user never pointed at.
  */
 export function selectedClips<T extends Identified>(
-  clips: T[],
+  clips: readonly T[],
   selected: ReadonlySet<string>,
 ): T[] {
   return selected.size === 0 ? [] : clips.filter((clip) => selected.has(clip.id))
@@ -28,7 +28,7 @@ export function selectionState(
 ): SelectionState {
   if (clips.length === 0) return 'none'
 
-  const kept = selectedClips([...clips], selected).length
+  const kept = selectedClips(clips, selected).length
   if (kept === clips.length) return 'all'
   return kept === 0 ? 'none' : 'some'
 }

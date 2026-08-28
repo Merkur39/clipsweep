@@ -1,5 +1,23 @@
 import '@testing-library/jest-dom/vitest'
 
+import { cleanup } from '@testing-library/react'
+import { afterEach } from 'vitest'
+
+/**
+ * Unmounting between tests, once for the whole suite.
+ *
+ * Testing Library only auto-cleans when the runner's globals are on, and they
+ * are not here — every test imports what it uses. Left to each file, the line
+ * is a convention, and a file that forgets it leaks its DOM into the next test
+ * of the same file, where a `getByRole` then finds two of everything.
+ *
+ * `sequence.hooks` is `stack`, so this runs **after** a file's own `afterEach`:
+ * a file that unmounts alongside something else — restoring a stubbed global,
+ * putting real timers back — has to keep its own call, and does. Cleaning up
+ * twice costs nothing.
+ */
+afterEach(cleanup)
+
 /**
  * jsdom does not implement ResizeObserver, which the virtualized table uses to
  * measure its viewport. An inert observer is enough: the component's default
@@ -39,6 +57,18 @@ if (typeof HTMLDialogElement !== 'undefined' && !HTMLDialogElement.prototype.sho
  */
 if (typeof Element !== 'undefined' && !Element.prototype.scrollTo) {
   Element.prototype.scrollTo = () => {}
+}
+
+/**
+ * `window.scrollTo` is the other half of the same hole, and it is worse: jsdom
+ * *defines* it and answers every call with a "Not implemented" error on its
+ * virtual console. Both readouts scroll the page — one to keep the reader's
+ * place across a change of density, the other to bring an order back to its
+ * beginning — so the noise would be on every run. Replaced outright rather than
+ * guarded on absence: what is there does not work.
+ */
+if (typeof window !== 'undefined') {
+  window.scrollTo = () => {}
 }
 
 /**
@@ -93,4 +123,24 @@ for (const name of ['localStorage', 'sessionStorage'] as const) {
       value: memoryStorage(),
     })
   }
+}
+
+/**
+ * jsdom parses media queries but never evaluates them: `matchMedia` is simply
+ * absent. The stub answers "does not match" for everything, which is the wide
+ * world — the one every test that does not say otherwise is written against. A
+ * test after the narrow layout overrides it, and the hook it feeds is covered on
+ * its own.
+ */
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia
 }

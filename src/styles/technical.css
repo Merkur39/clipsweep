@@ -1,0 +1,109 @@
+/* TechnicalDetails.tsx — the drawer under the toolbar. The timeline itself
+   lives in `chart.css`.
+
+   One card, and the banner is inside it rather than being it: folded, the card
+   is the banner; opened, the same card grows a body under a rule. A separate
+   panel appearing below a separate button would be two objects for one drawer,
+   and the eye would have to work out that they belong together. */
+
+.technical {
+  margin: 0 0 var(--s-5);
+  border: 1px solid var(--rule-control);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+/* The full width, not the width of its words: the banner is a band the page
+   reads across, and its summary files at the far end where a readout goes. */
+.technical > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* 44 px, and it is a figure the design argues for rather than a rounding: the
+     band is on screen at all times, and it earns that height by saying
+     something even folded. */
+  height: 44px;
+  padding: 0 var(--s-4);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+  list-style: none;
+  transition:
+    color 0.12s var(--ease),
+    background 0.12s var(--ease);
+}
+
+.technical > summary::-webkit-details-marker {
+  display: none;
+}
+
+.technical > summary:hover {
+  color: var(--text);
+  background: var(--surface-hover);
+}
+
+.technical > summary .icon {
+  color: var(--text-faint);
+  transform: rotate(90deg);
+  transition: transform 0.16s var(--ease);
+}
+
+.technical[open] > summary .icon {
+  transform: rotate(180deg);
+}
+
+/* Only once open: a rule under the banner announces a body, and a folded
+   drawer has none to announce. */
+.technical[open] > summary {
+  border-bottom: 1px solid var(--rule);
+}
+
+.technical > summary .summary-aside {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.technical-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+}
+
+/* ---- journal ----
+   No frame of its own: it is already inside one. What sets it apart from the
+   timeline above is the rule it hangs from and the monospace it is set in. */
+
+.log {
+  height: 180px;
+  overflow-y: auto;
+  border-top: 1px solid var(--rule);
+  padding-top: var(--s-3);
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--text-dim);
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule-strong) transparent;
+}
+
+.log p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.log .good {
+  color: var(--accent-strong);
+}
+
+.log .warn {
+  color: var(--warn-ink);
+}
+
+.log .err {
+  color: var(--danger-ink);
+}

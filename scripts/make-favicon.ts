@@ -23,29 +23,45 @@ import { writeFileSync } from 'node:fs'
 import { deflateSync } from 'node:zlib'
 
 /** One rectangle of the mark, in the frame of the `viewBox`. */
-type Rect = readonly [fill: string, x: number, y: number, width: number, height: number]
+type Rect = readonly [
+  fill: string,
+  alpha: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+]
 
 /**
  * The rectangles of `Mark`, in the **light variant** of `base.css`.
  *
- * A PNG does not follow the tab's theme: a side has to be taken. The beige of
- * the first bar stays readable on a dark tab, whereas the `#39415c` of the dark
- * variant would disappear on a light tab — the choice is therefore not
- * symmetric.
+ * A PNG does not follow the tab's theme: a side has to be taken. The darker
+ * mint holds against a dark tab, where the `#47d7b8` of the dark variant would
+ * all but vanish against a light one — the choice is not symmetric.
+ *
+ * The tail is one short bar and not the four dashes the interface draws: at the
+ * size of a tab the gaps between those dashes fall under half a pixel, and four
+ * of them read as a smear. Same divergence as `favicon.svg`, same reason.
  */
 const RECTS: readonly Rect[] = [
-  ['#b6ada0', 1, 2.4, 14, 2.2],
-  ['#b6ada0', 1, 6.9, 6.4, 2.2],
-  ['#8f6ae8', 8.6, 6.9, 6.4, 2.2],
-  ['#8f6ae8', 1, 11.4, 2.8, 2.2],
-  ['#6b3fd4', 5, 11.4, 2.4, 2.2],
-  ['#6b3fd4', 8.6, 11.4, 2.4, 2.2],
-  ['#cf2b2b', 12.2, 11.4, 2.8, 2.2],
+  ['#00957d', 1, 2.5, 3.4, 23, 2.9],
+  ['#00957d', 0.72, 2.5, 9.2, 17, 2.9],
+  ['#00957d', 0.46, 2.5, 15, 10.5, 2.9],
+  ['#65686f', 1, 2.5, 20.5, 5, 2.9],
 ]
 
-/** The `rx` of the rects, and the side of the `viewBox`: both come from `Mark`. */
-const RADIUS = 0.6
-const VIEW = 16
+/** The `rx` of the rects, and the `viewBox` they live in: both come from `Mark`. */
+const RADIUS = 1.45
+const VIEW_WIDTH = 28
+const VIEW_HEIGHT = 24
+/**
+ * The square the PNG has to be, in the units of the `viewBox`. A mark that is
+ * not square is letterboxed by an SVG renderer, and the raster has to letterbox
+ * it the same way or the two icons would not be the same drawing.
+ */
+const VIEW = Math.max(VIEW_WIDTH, VIEW_HEIGHT)
+const INSET_X = (VIEW - VIEW_WIDTH) / 2
+const INSET_Y = (VIEW - VIEW_HEIGHT) / 2
 
 const rgb = (hex: string): [number, number, number] => [
   parseInt(hex.slice(1, 3), 16),
@@ -58,7 +74,7 @@ const rgb = (hex: string): [number, number, number] => [
  * back onto the inner rectangle (the one the roundings do not bite into), and
  * it is the distance to that point which decides.
  */
-function inside(px: number, py: number, [, x, y, width, height]: Rect): boolean {
+function inside(px: number, py: number, [, , x, y, width, height]: Rect): boolean {
   const cx = Math.min(Math.max(px, x + RADIUS), x + width - RADIUS)
   const cy = Math.min(Math.max(py, y + RADIUS), y + height - RADIUS)
   return (px - cx) ** 2 + (py - cy) ** 2 <= RADIUS * RADIUS
@@ -69,6 +85,10 @@ function inside(px: number, py: number, [, x, y, width, height]: Rect): boolean 
  * alpha, the average of the hits gives the colour. It is the poor man's
  * anti-aliasing, and it is enough — at 32px the edges are short and the flats
  * are clean.
+ *
+ * A rect's own alpha is weighed into the coverage rather than blended into its
+ * colour: the mark stands on nothing, so a bar drawn at 72% is 72% opaque, not
+ * a paler mint.
  */
 function render(size: number, samples = 8): Buffer {
   const pixels = Buffer.alloc(size * size * 4)
@@ -77,14 +97,15 @@ function render(size: number, samples = 8): Buffer {
   for (let row = 0; row < size; row++) {
     for (let col = 0; col < size; col++) {
       let hits = 0
+      let covered = 0
       let r = 0
       let g = 0
       let b = 0
 
       for (let sy = 0; sy < samples; sy++) {
         for (let sx = 0; sx < samples; sx++) {
-          const x = (col * VIEW) / size + (sx + 0.5) * step
-          const y = (row * VIEW) / size + (sy + 0.5) * step
+          const x = (col * VIEW) / size + (sx + 0.5) * step - INSET_X
+          const y = (row * VIEW) / size + (sy + 0.5) * step - INSET_Y
           const hit = RECTS.find((rect) => inside(x, y, rect))
           if (!hit) continue
 
@@ -92,6 +113,7 @@ function render(size: number, samples = 8): Buffer {
           r += hr
           g += hg
           b += hb
+          covered += hit[1]
           hits++
         }
       }
@@ -101,7 +123,7 @@ function render(size: number, samples = 8): Buffer {
       pixels[i] = Math.round(r / hits)
       pixels[i + 1] = Math.round(g / hits)
       pixels[i + 2] = Math.round(b / hits)
-      pixels[i + 3] = Math.round((hits / (samples * samples)) * 255)
+      pixels[i + 3] = Math.round((covered / (samples * samples)) * 255)
     }
   }
 

@@ -1,4 +1,4 @@
-export interface CachedChannel {
+interface CachedChannel {
   login: string
   /** `yyyy-mm-dd`. */
   createdAt: string
@@ -55,7 +55,7 @@ export function rememberChannel(
 const STORAGE_KEY = 'getclip.channels'
 
 /**
- * The cache travels with the sweep fields, so it lives in `sessionStorage` like
+ * The cache travels with the search fields, so it lives in `sessionStorage` like
  * they do. A creation date never goes stale, but keeping the list of visited
  * channels past the tab's closing would leave a trace of past searches well
  * beyond the session that made them.

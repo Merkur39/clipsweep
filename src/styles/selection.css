@@ -1,0 +1,232 @@
+/* SelectionBar.tsx — what can be done with what is picked. */
+
+/* It floats over the readout rather than closing the page under it: the ticks
+   are in the middle of a list that scrolls, and a control filed at the foot of
+   the page is a control the picking has just scrolled away from.
+
+   Aligned on the left gutter of the page rather than centred: the page starts
+   there, and a bar that floated over its middle would answer to the window
+   instead of to what it acts on. */
+
+.selection-bar {
+  position: fixed;
+  z-index: 5;
+  bottom: var(--s-5);
+  left: var(--gutter);
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+  /* Lifted further than a card: this one hangs over the readout, and the
+     shadow is what says it is not part of it. */
+  box-shadow: var(--shadow-float);
+}
+
+/* The count in the accent, as it is on the ticket: the same ink for the same
+   kind of answer. */
+.selection-count {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--accent-ink);
+}
+
+/* The page makes room for it rather than letting it sit on the last rows of
+   the readout and on the footer. Only while it is there — the room is not owed
+   to a bar that does not exist.
+
+   Named as well as spent: the bar is not the only thing that floats down here,
+   and whatever else does has to know how deep it goes. One figure answers
+   both, and the mobile override below moves it for both at once. */
+.page:has(.selection-bar) {
+  --dock: 96px;
+  padding-bottom: var(--dock);
+}
+
+/* ---- what was just handed over ----
+   The file has left, and past that there is no interface at all — only a row in
+   a folder. So what it is and what to do with it are said here, at the one
+   moment the question gets asked, rather than in a menu the primary button never
+   opens.
+
+   Over the bar and aligned on it, the way the menu goes: the bar sits at the
+   foot of the page and nothing below it is free. It is a panel, not a strip of
+   the bar — the bar is four controls on one line, and a paragraph inside it
+   would make every one of them taller for as long as the message stood. */
+
+.handed {
+  position: absolute;
+  z-index: 10;
+  bottom: calc(100% + var(--s-2));
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 46ch;
+  padding: var(--s-4) var(--s-6) var(--s-4) var(--s-4);
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-popover);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-faint);
+}
+
+.handed p {
+  margin: 0;
+}
+
+.handed-title {
+  font-size: var(--t-3);
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* The one line that has to be acted on, so the one that is not a footnote: full
+   ink, and the command set in the face a command is read in. Wrapped rather than
+   cut — a `chmod` line carrying the file's own name is long, and half of it is
+   worth nothing. */
+.handed-do {
+  color: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.handed-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-faint);
+}
+
+.handed-close:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: transparent;
+  color: var(--text);
+}
+
+/* ---- the menu ----
+   Everything the download button does not do: the other platform's script, and
+   the list without the videos. */
+
+.menu-root {
+  position: relative;
+}
+
+.menu-button .icon {
+  color: var(--text-faint);
+  transition: transform 0.16s var(--ease);
+}
+
+/* The chevron points the way the panel goes, and the panel goes up: the bar
+   sits at the foot of the page. Open, it turns back on itself. */
+.menu-button[aria-expanded='true'] .icon {
+  transform: rotate(180deg);
+}
+
+.menu {
+  position: absolute;
+  z-index: 10;
+  bottom: calc(100% + 5px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 260px;
+  padding: 5px;
+  background: var(--surface-raised);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-popover);
+}
+
+/* What an entry is for, above the entries it speaks about — the two lines the
+   two blocks at the foot of the page used to carry as ledes. */
+.menu-help {
+  margin: 0;
+  padding: 8px 9px 6px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-faint);
+}
+
+/* A row, not a button in a row: it fills the panel, and its own help sits under
+   its name rather than beside it. */
+.menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 7px 9px;
+  background: none;
+  border: none;
+  border-radius: var(--r-chip);
+  text-align: left;
+  font-weight: 600;
+}
+
+.menu-item:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: transparent;
+}
+
+.menu-item span {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-faint);
+}
+
+/* Under 760 the bar spans the gutters: three controls and a count do not fit on
+   a phone's width, and a bar that overflowed would put its last button off the
+   screen. */
+@media (max-width: 760px) {
+  .selection-bar {
+    left: var(--gutter);
+    right: var(--gutter);
+    bottom: var(--s-4);
+    flex-wrap: wrap;
+    gap: var(--s-2);
+  }
+
+  .selection-count {
+    width: 100%;
+    font-size: var(--t-3);
+  }
+
+  /* Smaller, so the three of them stand a chance of one row: a phone's row is
+     334px once the gutters are out, and the labels are what they are. */
+  .selection-bar button {
+    padding: 0 11px;
+    height: 34px;
+    font-size: 12px;
+  }
+
+  .menu {
+    right: auto;
+    left: 0;
+  }
+
+  /* The label goes, the cross stays: three labelled buttons want 375px of a
+     row that has 334. The accessible name is on the button itself, so nothing
+     is lost but the reading. */
+  .selection-clear span {
+    display: none;
+  }
+
+  /* The bar is two rows tall here, and the page owes it the room: the readout's
+     last tile and the footer both live under it otherwise. */
+  .page:has(.selection-bar) {
+    --dock: 120px;
+  }
+}

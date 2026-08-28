@@ -99,7 +99,7 @@ describe('channelCache', () => {
     expect(channelCache.read('testchannel')).toBeNull()
   })
 
-  // The cache travels with the sweep fields, which live for the tab's lifetime:
+  // The cache travels with the search fields, which live for the tab's lifetime:
   // leaving it in localStorage would leave the trace of visited channels there
   // long after the session that searched for them has ended.
   it('lives in sessionStorage, leaving nothing in localStorage', () => {

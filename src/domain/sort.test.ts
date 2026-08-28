@@ -40,6 +40,36 @@ describe('nextSort', () => {
 })
 
 describe('sortClips', () => {
+  // The one key the filters cannot stand in for: a run of clips can be narrowed
+  // to a game or a creator from the chips, but "everything under a minute" is
+  // asked for by ordering.
+  it('orders from shortest to longest', () => {
+    const clips = [
+      clip({ id: 'long', duration: 58.4 }),
+      clip({ id: 'short', duration: 12 }),
+      clip({ id: 'middling', duration: 30 }),
+    ]
+
+    expect(ids(sortClips(clips, { key: 'duration', direction: 'asc' }))).toEqual([
+      'short',
+      'middling',
+      'long',
+    ])
+    expect(ids(sortClips(clips, { key: 'duration', direction: 'desc' }))).toEqual([
+      'long',
+      'middling',
+      'short',
+    ])
+  })
+
+  // Helix serves the duration as a float, and the badge rounds it: two clips a
+  // tenth of a second apart read the same and must still order stably.
+  it('orders on the second the badge does not show', () => {
+    const clips = [clip({ id: 'b', duration: 59.6 }), clip({ id: 'a', duration: 59.2 })]
+
+    expect(ids(sortClips(clips, { key: 'duration', direction: 'asc' }))).toEqual(['a', 'b'])
+  })
+
   it('orders from least to most viewed by default', () => {
     const clips = [clip({ id: 'a', view_count: 9 }), clip({ id: 'b', view_count: 0 })]
 

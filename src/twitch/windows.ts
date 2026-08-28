@@ -10,13 +10,19 @@ export interface DateWindow {
   endedAt: string
 }
 
-/** Twitch rejects the fractional seconds produced by `toISOString()`. */
-export function toRfc3339(date: Date): string {
-  return date.toISOString().replace(/\.\d{3}Z$/, 'Z')
+/**
+ * The whole extent a search covers, in epoch milliseconds — what the windows
+ * above are cut out of. Not a `DateWindow`: nothing sends it to Twitch, it is
+ * read against the clock by whoever draws the run.
+ */
+export interface Span {
+  from: number
+  to: number
 }
 
-export function windowDurationMs(window: DateWindow): number {
-  return Date.parse(window.endedAt) - Date.parse(window.startedAt)
+/** Twitch rejects the fractional seconds produced by `toISOString()`. */
+function toRfc3339(date: Date): string {
+  return date.toISOString().replace(/\.\d{3}Z$/, 'Z')
 }
 
 /**

@@ -1,0 +1,212 @@
+/* Door.tsx — the wall, and the case for it. */
+
+/* Two columns: the argument, and a glimpse of what it is arguing for.
+
+   The one screen of the product that has a measure. Everywhere else the page
+   runs to the window because what fills it is a board of images, which takes
+   every pixel it is given; here it is a title, a paragraph and a button, and
+   thirty-eight-pixel type set across two and a half thousand pixels is not a
+   title, it is a banner. 1360 is what the plate draws at 1440 — the plate's own
+   proportions, held past the width it was drawn at. The nameplate and the
+   footer stay on the gutters, as they do on every other screen. */
+
+.door {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  align-items: center;
+  gap: var(--s-6) var(--s-7);
+  max-width: 1360px;
+  margin: 0 auto;
+  padding-top: var(--s-6);
+}
+
+/* 700px, the plate's own measure, inside a column that is wider than that: the
+   argument is prose and reads at a prose width, while the column keeps the
+   proportion it has against the glimpse beside it. */
+.door-pitch {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-5);
+  min-width: 0;
+  max-width: 700px;
+}
+
+/* The one screen of the product that is read rather than used, so the one
+   place a title takes the size of a title. */
+.door-title {
+  margin: 0;
+  font-size: var(--t-7);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+/* The half that says what nothing else does. Accent ink, not italics: the
+   emphasis is on the claim, and a slanted Manrope at 38px is a different
+   typeface.
+
+   On its own line, because it is its own claim: left to flow, it started
+   wherever the first sentence happened to end, and the accent then read as a
+   colour change mid-sentence rather than as a second thing being said. */
+.door-title em {
+  display: block;
+  font-style: normal;
+  color: var(--accent-ink);
+}
+
+.door-lede {
+  white-space: pre-line;
+  margin: 0;
+  max-width: 60ch;
+  font-size: var(--t-4);
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+/* A neutral rule, not an accent one: the system keeps `--accent-mark` for what
+   is active or picked. This block is an aside, not a state, and giving it the
+   accent would dilute the one signal that says "this is on". */
+.door-why {
+  white-space: pre-line;
+  margin: 0;
+  max-width: 68ch;
+  padding: 2px 0 2px var(--s-4);
+  border-left: 2px solid var(--rule-strong);
+  font-size: var(--t-3);
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.door-why b {
+  display: block;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* The button sizes on its label, like the one in the open ticket: stretched
+   across the column it would weigh more than the title it concludes. */
+.door-connect {
+  height: 54px;
+  padding: 0 28px;
+  font-size: var(--t-4);
+}
+
+.door-guarantees {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--t-2);
+  color: var(--text-faint);
+}
+
+.door-guarantees li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.door-guarantees li::before {
+  content: '';
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-mark);
+}
+
+/* ---- what waits behind ----
+   The readout's own tile, with four clips that do not exist — see `PEEK` in
+   Door.tsx. Nothing is searched before a connection, so an honest grid here
+   would be an empty one, and an empty grid illustrates nothing.
+
+   Faded out at the bottom rather than cropped: what is being shown is that the
+   grid goes on. */
+
+.door-peek {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.door-peek-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--s-4) var(--s-3);
+  opacity: 0.85;
+  mask-image: linear-gradient(180deg, #000 54%, transparent 97%);
+}
+
+/* In the readout the frame's height is set inline, from `gridMetrics`, and
+   `scripts/geometry/tile.test.ts` adds those figures up. Nothing here is
+   virtualised, so nothing here belongs to that contract: the ratio is stated
+   directly, and the two sizes below are the illustration's own — deliberately
+   not the ones the gate counts. */
+.door-peek .tile-frame {
+  aspect-ratio: 16 / 9;
+}
+
+/* Flush with the image, as in the readout: the tile has no frame to inset the
+   type from any more. */
+.door-peek .tile-title {
+  -webkit-line-clamp: 2;
+  margin: 8px 0 0;
+  font-size: var(--t-2);
+  line-height: 18px;
+}
+
+.door-peek .tile-meta {
+  margin: 4px 0 0;
+  font-size: var(--t-1);
+  line-height: 16px;
+}
+
+/* Four frames of nothing in particular, drawn rather than fetched: an image
+   file would be one more thing to ship, and a real thumbnail would be a real
+   clip.
+
+   Qualified by the parent, and it has to be: `.tile-frame` carries the sunken
+   flat an empty frame shows, at the same weight, from a sheet imported after
+   this one. A bare `.peek-1` lost to it and the four frames came out black. */
+.door-peek .peek-1 {
+  background: radial-gradient(120% 96% at 28% 16%, #e8bd72, #8a4a12 42%, #2a1305 78%, #150902);
+}
+
+.door-peek .peek-2 {
+  background: linear-gradient(158deg, #223050 0%, #6d5fa4 52%, #d9a7bd 100%);
+}
+
+.door-peek .peek-3 {
+  background: linear-gradient(200deg, #123a34 0%, #2f7e63 46%, #cbd88a 100%);
+}
+
+.door-peek .peek-4 {
+  background: radial-gradient(110% 88% at 72% 26%, #7ceaff, #1c5aa8 48%, #061a33 88%);
+}
+
+/* Under 1080 the glimpse is the first thing to go: it is an illustration, and
+   the argument is not. Under 760 the title comes down a step of the scale —
+   38px over a 390px screen breaks "Tous les clips" across two lines. */
+@media (max-width: 1080px) {
+  .door {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .door-peek {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .door-title {
+    font-size: var(--t-6);
+  }
+
+  .door-connect {
+    align-self: stretch;
+  }
+}

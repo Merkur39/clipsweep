@@ -50,7 +50,7 @@ describe('useRememberedChannel', () => {
     expect(result.current.remember).toBe(true)
   })
 
-  // A reload must find the target of the sweep in progress, not the one kept:
+  // A reload must find the target of the search in progress, not the one kept:
   // the tab has been typing over it since.
   it('lets the tab in progress outrank the name kept', () => {
     localStorage.setItem('getclip.remember', 'on')

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildDownloadScript, detectScriptFlavor } from './scripts'
+import { buildDownloadScript, detectScriptFlavor, scriptFileName } from './scripts'
 import { makeT } from '../i18n/translate'
 
 const t = makeT('fr')
@@ -120,7 +120,7 @@ describe('buildDownloadScript, disposable yt-dlp', () => {
     expect(sh()).not.toMatch(/rm\s+(?:-\S+\s+)*"?\.?\/?yt-dlp"?\s*$/m)
   })
 
-  // A half-written binary, or an interrupted sweep, must not leave behind the
+  // A half-written binary, or an interrupted search, must not leave behind the
   // stale file all of this is trying to avoid.
   it('cleans up when things go wrong too', () => {
     // .bat: a failed download erases its own trace before exiting.
@@ -240,5 +240,39 @@ describe('buildDownloadScript, .sh specifics', () => {
 
   it('uses LF line endings', () => {
     expect(sh()).not.toContain('\r')
+  })
+})
+
+/**
+ * The name is the last thing the tool controls: once the file is in the
+ * downloads folder there is no interface left, only a row in a list. A name that
+ * opens on the verb survives being truncated there, where `kaliyami_2026-08-28`
+ * said nothing about what the file was for.
+ */
+describe('scriptFileName', () => {
+  it('opens on what the file is for, and keeps the date at the end', () => {
+    expect(scriptFileName('bat', 'kaliyami', '2026-08-28', t)).toBe(
+      'telecharger-les-clips-kaliyami-2026-08-28.bat',
+    )
+  })
+
+  it('serves the language’s own verb', () => {
+    expect(scriptFileName('sh', 'kaliyami', '2026-08-28', makeT('en'))).toBe(
+      'download-the-clips-kaliyami-2026-08-28.sh',
+    )
+  })
+
+  /* A channel name reaches a file system here. Same doctrine as the URLs the
+     script carries: anything outside the allowlist is dropped, not escaped. */
+  it('keeps a channel name out of the path it lands in', () => {
+    expect(scriptFileName('sh', '../../etc/passwd', '2026-08-28', t)).toBe(
+      'telecharger-les-clips-______etc_passwd-2026-08-28.sh',
+    )
+  })
+
+  it('names the file for a search with no channel at all', () => {
+    expect(scriptFileName('bat', '', '2026-08-28', t)).toBe(
+      'telecharger-les-clips-clips-2026-08-28.bat',
+    )
   })
 })

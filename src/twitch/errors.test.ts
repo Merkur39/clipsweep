@@ -10,8 +10,8 @@ describe('describeError', () => {
   it('renders a known error in the language served', () => {
     const error = new TranslatableError('error.channelNotFound', { login: 'zerator' })
 
-    expect(describeError(error, t)).toBe('Chaîne « zerator » introuvable.')
-    expect(describeError(error, makeT('en'))).toBe('Channel “zerator” not found.')
+    expect(describeError(error, t)).toContain('Aucune chaîne ne s’appelle « zerator »')
+    expect(describeError(error, makeT('en'))).toContain('No channel is called “zerator”')
   })
 
   it('covers the token rejection, which is one of them', () => {

@@ -1,13 +1,11 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { render } from '../test-render'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
-import { DEFAULT_SORT, type ClipSort } from '../domain/sort'
+import type { TileView } from '../domain/view'
 import type { Clip } from '../twitch/types'
 import { ClipGrid } from './ClipGrid'
-
-afterEach(cleanup)
 
 const clip = (id: string, over: Partial<Clip> = {}): Clip =>
   ({
@@ -25,24 +23,40 @@ const clip = (id: string, over: Partial<Clip> = {}): Clip =>
     ...over,
   }) as Clip
 
-const setup = (
-  options: { clips?: Clip[]; selected?: ReadonlySet<string>; sort?: ClipSort } = {},
-) => {
+type Options = {
+  clips?: Clip[]
+  selected?: ReadonlySet<string>
+  view?: TileView
+}
+
+const setup = (options: Options = {}) => {
   const onToggle = vi.fn()
   const onPlay = vi.fn()
-  const onSortChange = vi.fn()
-  render(
+  const onHover = vi.fn()
+  const rendered = render(
     <ClipGrid
+      view={options.view ?? 'grid'}
       clips={options.clips ?? [clip('a'), clip('b')]}
       selected={options.selected ?? new Set()}
       onToggle={onToggle}
       onPlay={onPlay}
+      onHover={onHover}
       emptyMessage="rien"
-      sort={options.sort ?? DEFAULT_SORT}
-      onSortChange={onSortChange}
     />,
   )
-  return { onToggle, onPlay, onSortChange }
+  const at = (view: TileView) =>
+    rendered.rerender(
+      <ClipGrid
+        view={view}
+        clips={options.clips ?? [clip('a'), clip('b')]}
+        selected={options.selected ?? new Set()}
+        onToggle={onToggle}
+        onPlay={onPlay}
+        onHover={vi.fn()}
+        emptyMessage="rien"
+      />,
+    )
+  return { onToggle, onPlay, onHover, at }
 }
 
 const tile = (id: string) => screen.getByRole('button', { name: `Lire Titre ${id}` })
@@ -104,39 +118,14 @@ describe('ClipGrid, watching and choosing', () => {
     expect(onPlay).not.toHaveBeenCalled()
   })
 
+  /* The box and nothing else: the tile has no frame left to mark, so what says
+     a clip is kept is the one control that is drawn on every tile whether it is
+     kept or not. */
   it('marks the tiles that are kept', () => {
     setup({ selected: new Set(['a']) })
 
     expect(screen.getByRole('checkbox', { name: 'Titre a' })).toBeChecked()
     expect(screen.getByRole('checkbox', { name: 'Titre b' })).not.toBeChecked()
-    expect(document.querySelectorAll('.tile.is-picked')).toHaveLength(1)
-  })
-})
-
-describe('ClipGrid, ordering', () => {
-  it('offers the same four keys as the table', () => {
-    setup()
-
-    for (const name of ['Vues', 'Date', 'Titre', 'Créateur']) {
-      expect(screen.getByRole('button', { name })).toBeInTheDocument()
-    }
-  })
-
-  it('requests the order asked for', () => {
-    const { onSortChange } = setup()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Date' }))
-
-    expect(onSortChange).toHaveBeenCalledWith('date')
-  })
-
-  // No column to carry `aria-sort` here: the pressed state is what says which
-  // key is in force.
-  it('announces the key in force', () => {
-    setup({ sort: { key: 'views', direction: 'asc' } })
-
-    expect(screen.getByRole('button', { name: 'Vues' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.getByRole('button', { name: 'Date' })).toHaveAttribute('aria-pressed', 'false')
   })
 })
 
@@ -149,15 +138,126 @@ describe('ClipGrid, with nothing to show', () => {
         selected={new Set()}
         onToggle={vi.fn()}
         onPlay={vi.fn()}
+        onHover={vi.fn()}
         emptyMessage="Aucun clip sur cette période."
         emptyAction={{ label: 'Voir les 300', onClick }}
-        sort={DEFAULT_SORT}
-        onSortChange={vi.fn()}
+        view="grid"
       />,
     )
 
     expect(screen.getByText('Aucun clip sur cette période.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Voir les 300' }))
     expect(onClick).toHaveBeenCalled()
+  })
+})
+
+/**
+ * Two densities out of one component: the sheet draws the block under the
+ * thumbnail, this places the rows, and the two answer to `TILE_GEOMETRY`. That
+ * the figures agree is checked by `scripts/geometry/tile.test.ts`; what is
+ * checked here is that the density actually reaches the sheet and the layout.
+ */
+describe('ClipGrid, the two densities', () => {
+  const rows = () => document.querySelector('.grid-rows') as HTMLElement
+  const many = Array.from({ length: 60 }, (_, index) => clip(String(index).padStart(2, '0')))
+
+  /** What the page holds above the board — a ticket, a toolbar, a drawer. */
+  const HEADER = 200
+
+  /**
+   * The board scrolls with the page now, so a scroll is a rect and a
+   * `window.scrollY` that agree: the rows begin `HEADER` into the document, and
+   * the reader has run `within` pixels into them.
+   */
+  const scrollTo = (within: number) => {
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      top: -within,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: 900,
+      height: 0,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    } as DOMRect)
+    Object.defineProperty(window, 'scrollY', { value: HEADER + within, configurable: true })
+    fireEvent.scroll(window)
+  }
+
+  it('tells the sheet which density it is drawn at', () => {
+    setup({ view: 'large' })
+
+    expect(document.querySelector('.grid')).toHaveAttribute('data-density', 'large')
+  })
+
+  // Applied from the geometry rather than written in the sheet: the virtualiser
+  // multiplies these very gaps to place its rows, and a second copy of them is
+  // one more thing that can drift. Rows apart, then columns apart: a row of
+  // images needs more air under it than beside it.
+  it('lays the rows out at the columns and the gaps of its density', () => {
+    const { at } = setup({ clips: many, view: 'grid' })
+    // 900px of stage: three columns of 230, two of 400.
+    expect(rows().style.gridTemplateColumns).toBe('repeat(3, minmax(0, 1fr))')
+    expect(rows().style.gap).toBe('18px 14px')
+
+    at('large')
+
+    expect(rows().style.gridTemplateColumns).toBe('repeat(2, minmax(0, 1fr))')
+    expect(rows().style.gap).toBe('24px 20px')
+  })
+
+  /**
+   * The clips are in the same order at either density, only drawn at another
+   * size: the reader keeps their place. Rows of 227 against rows of 348 —
+   * leaving the offset alone would drop them from clip 12 to clip 4.
+   */
+  it('brings the row holding the clip at the top of the view to the top', () => {
+    const scroll = vi.spyOn(window, 'scrollTo')
+    const { at } = setup({ clips: many, view: 'grid' })
+    // Row 4 of 227px: three columns, hence clip 12 at the top edge.
+    scrollTo(4 * 227)
+
+    at('large')
+
+    // Two columns: the same clip 12 opens row 6, counted from where the board
+    // begins in the document.
+    expect(scroll).toHaveBeenCalledWith(0, HEADER + 6 * 348)
+  })
+
+  /* Nothing to bring back: the beginning of the board is on screen, and
+     scrolling to it would push the ticket off the top of the page. */
+  it('leaves a reader who can see the first row where they are', () => {
+    const scroll = vi.spyOn(window, 'scrollTo')
+    const { at } = setup({ clips: many, view: 'grid' })
+    scrollTo(0)
+
+    at('large')
+
+    expect(scroll).not.toHaveBeenCalled()
+  })
+})
+
+/**
+ * What the keyboard acts on: space plays the clip under the pointer, X picks it.
+ * The tile reports the pointer, and nothing else — the sheet already draws the
+ * hover, so the caller can keep this in a ref and spend no render on it.
+ */
+describe('ClipGrid, what the pointer is over', () => {
+  it('reports the tile entered', () => {
+    const { onHover } = setup()
+
+    fireEvent.mouseEnter(document.querySelectorAll('.tile')[0])
+
+    expect(onHover).toHaveBeenCalledWith('a')
+  })
+
+  // Leaving one tile for the next is an enter; only leaving the board clears it.
+  it('clears it on the way out of the board', () => {
+    const { onHover } = setup()
+
+    fireEvent.mouseLeave(document.querySelector('.tile')!.parentElement!.parentElement!)
+
+    expect(onHover).toHaveBeenCalledWith(null)
   })
 })

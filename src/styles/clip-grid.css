@@ -1,94 +1,43 @@
-/* ClipGrid.tsx — the second readout: the same clips, given their images.
+/* ClipGrid.tsx — the readout that gives the clips their images, in two
+   densities: images large enough to judge a clip by, or as many on screen as
+   will fit.
 
-   Careful: the geometry is settled in `ClipGrid.tsx`, which places the rows
+   No card around the board and no frame around a tile: the images are the
+   subject, and a rectangle drawn around a rectangle only competes with it. What
+   a tile is made of is a thumbnail and, under it, two lines that belong to it —
+   set apart by air rather than by a rule. The board flows in the page, and the
+   page is what scrolls.
+
+   Careful: the geometry is settled in `tileGeometry.ts`, which places the rows
    from it. The thumbnail's height comes from there, applied on `.tile-frame` —
    which is why no `aspect-ratio` is written here: two sources for one height
-   round differently, and half a pixel per row becomes a visible step.
+   round differently, and half a pixel per row becomes a visible step. The gaps
+   come from there too, applied inline on `.grid-rows`.
 
-   What this sheet still owns is the block underneath, and it must come to
-   exactly `META_HEIGHT` (60px): 1 (hairline) + 6 + 32 (two lines of title) + 15
-   (the readout) + 5 + 1. A rule changed here without being changed there puts
-   the placed rows beside the drawn ones. */
+   What this sheet still owns is the block under the thumbnail, and per density
+   it must come to exactly the `metaHeight` of that density — the air above the
+   title, the title, the air above the readout line, the readout line. That
+   addition is the one contract kept in two places, and
+   `scripts/geometry/tile.test.ts` reads these rules to check it. Every figure it
+   needs is written here in px on purpose: a token would have to be resolved, and
+   the gate has no browser to resolve it with. */
 
-.grid {
-  border: 1px solid var(--rule);
-  border-radius: 0 0 var(--r) var(--r);
-  overflow: hidden;
-  background: var(--surface);
-}
-
-/* The same silkscreen strip as the table's head, minus the columns: nothing
-   here is a column header, so the pressed key says what `aria-sort` says over
-   there. */
-.grid-head {
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  height: 34px;
-  padding: 0 var(--s-4);
-  background: var(--chassis);
-  border-bottom: 1px solid var(--rule-strong);
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-
-.grid-head .sort-key {
-  width: auto;
-}
-
-.grid-head .sort-key[aria-pressed='true'] {
-  color: var(--text);
-}
-
-.grid-body {
-  height: clamp(300px, 62vh, 860px);
-  padding: var(--s-3) var(--s-4);
-  overflow: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--rule-strong) transparent;
-}
-
+/* The columns and the gap are both applied inline, from `tileGeometry.ts`: the
+   virtualiser and the sheet have to agree to the pixel, and the surest way for
+   two figures to agree is for there to be one. */
 .grid-rows {
   position: absolute;
   left: 0;
   right: 0;
   display: grid;
-  gap: 12px;
 }
 
 /* ---- the tile ----
-   Its own frame, because a board of images needs a grid to hold it: the flat
-   carries the thumbnail, the hairline separates two neighbours whose images
-   would otherwise touch. */
+   Nothing of its own but the ground the box is placed against: the thumbnail
+   carries the frame, and the type under it sits on the page. */
 
 .tile {
   position: relative;
-  border: 1px solid var(--rule);
-  border-radius: var(--r);
-  background: var(--chassis);
-  overflow: hidden;
-}
-
-/* Kept: marked in the positive, never by dimming its neighbours. Nothing is
-   checked by default here, so extinguishing what is not kept would put the
-   whole board out at rest.
-
-   An outline, not an inset shadow: a shadow is painted under the element's
-   children, so the thumbnail covered the very edge meant to mark the tile — two
-   pixels around the block of type, one around the image, which read as a frame
-   the image was biting into. The outline paints above everything, follows the
-   radius, and costs no layout, which the virtualiser demands: a kept tile has
-   to measure exactly what an unkept one measures. */
-.tile.is-picked {
-  border-color: var(--violet);
-  outline: 1px solid var(--violet);
-}
-
-.tile.is-picked .tile-title {
-  color: var(--violet-strong);
 }
 
 /* The whole tile save the box: a button, hence every bare-button rule undone. */
@@ -110,10 +59,15 @@
   border-color: transparent;
 }
 
-/* Its height is set inline, from `gridMetrics`: 16:9 of the column granted. */
+/* The one thing on a tile that is drawn as an object: rounded, lifted off the
+   page by the card shadow, and clipping whatever image lands in it. Its height
+   is set inline, from `gridMetrics`: 16:9 of the column granted. */
 .tile-frame {
   position: relative;
   display: block;
+  overflow: hidden;
+  border-radius: var(--r-card);
+  box-shadow: var(--shadow-card);
   background: var(--surface-sunken);
 }
 
@@ -137,96 +91,158 @@
 /* On the image, so it holds its own ground whatever the image carries. */
 .tile-duration {
   position: absolute;
-  right: 5px;
-  bottom: 5px;
-  padding: 1px 5px;
-  border-radius: var(--r);
+  right: 8px;
+  bottom: 8px;
+  padding: 2px 6px;
+  border-radius: var(--r-chip);
   background: rgb(0 0 0 / 72%);
   color: #fff;
-  font-family: var(--mono);
   font-size: 11px;
-  font-variant-numeric: tabular-nums;
+  font-weight: 600;
   line-height: 15px;
 }
 
-/* The two lines are reserved whether the title fills them or not: a tile one
-   line shorter than its neighbour would break the row the virtualiser places. */
+/* The lines are reserved whether the title fills them or not: a tile one line
+   shorter than its neighbour would break the row the virtualiser places. How
+   many of them, and how tall, is what parts the two densities — see below. */
 .tile-title {
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
   overflow: hidden;
-  height: 32px;
-  margin: 6px 8px 0;
-  font-size: 12.5px;
-  line-height: 16px;
   color: var(--text);
 }
 
 .tile-open:hover .tile-title {
-  color: var(--violet-strong);
+  color: var(--accent-strong);
 }
 
 .tile-meta {
   display: block;
-  height: 15px;
-  margin: 0 8px 5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-family: var(--mono);
-  font-size: 11px;
-  line-height: 15px;
   color: var(--text-faint);
+}
+
+/* ---- the two densities ----
+   Every figure below is added up by `scripts/geometry/tile.test.ts` against the
+   `metaHeight` its density declares. Changing one of them without changing that
+   number puts the placed rows beside the drawn ones — and nothing on screen
+   says so until the readout is scrolled.
+
+   Large: 76 = 10 (under the thumbnail) + 44 (two lines of 22) + 4 + 18.
+   The title is set at the tile size of the scale, and its second line is what
+   the density is for — a clip's title is the only thing on a tile that says
+   what it is. */
+
+.grid[data-density='large'] .tile-title {
+  -webkit-line-clamp: 2;
+  height: 44px;
+  margin: 10px 0 0;
+  font-size: var(--t-4);
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.grid[data-density='large'] .tile-meta {
+  height: 18px;
+  margin: 4px 0 0;
+  font-size: var(--t-2);
+  line-height: 18px;
+}
+
+/* Tight: 45 = 8 + 18 (one line) + 4 + 15.
+   One line, and the title ellipsises: at five columns a second line would cost
+   a fifth of the rows on screen, which is the whole of what this density buys.
+   Whoever needs the full title has the tooltip, the large tiles and the table. */
+
+.grid[data-density='grid'] .tile-title {
+  -webkit-line-clamp: 1;
+  height: 18px;
+  margin: 8px 0 0;
+  font-size: var(--t-2);
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.grid[data-density='grid'] .tile-meta {
+  height: 15px;
+  margin: 4px 0 0;
+  font-size: var(--t-1);
+  line-height: 15px;
+}
+
+/* The thumbnail is a card at the large density and a stamp at the tight one:
+   the card radius on a 240px image reads as a rounded button rather than a
+   frame. */
+.grid[data-density='grid'] .tile-frame {
+  border-radius: var(--r);
 }
 
 .tile-views {
   color: var(--text-dim);
+  font-weight: 600;
 }
 
-/* Zero views: the case the sweep exists to unearth. */
+/* Zero views: the case the search exists to unearth. */
 .tile-views.zero {
-  color: var(--amber);
+  color: var(--warn-ink);
 }
 
 /* ---- the box ----
    Always drawn, never revealed on hover: there is no hover on a touch screen,
    and a board whose only control appears under the cursor has no control at
-   all. It sits on its own chip so it holds against any thumbnail. */
+   all. It sits at the foot of the image, opposite the length, and it is the one
+   thing that says a tile is kept — the tile itself has no frame left to mark.
+
+   Placed by the thumbnail's own height, applied inline from the very figure the
+   virtualiser used, then lifted by its whole height so its inset padding lands
+   on the bottom edge of the image. No second source for where the image ends. */
 
 .tile-pick {
   position: absolute;
-  top: 0;
   left: 0;
   display: flex;
-  padding: 6px;
+  padding: 8px;
+  margin: 0;
+  transform: translateY(-100%);
 }
 
+/* The shared box takes the ground of a panel and the border of a control,
+   which counts on a surface being there. Over a thumbnail there is none: the
+   opaque flat read as a hole punched in the image, and `--rule-control` — a
+   figure measured against the interface's own surfaces — said nothing against
+   a photograph. So the box darkens what it sits on instead of covering it, and
+   draws its own edge in white, with a soft black ring to hold it off a pale
+   image. */
 .tile-pick input {
+  width: 20px;
+  height: 20px;
   margin: 0;
-  box-shadow: 0 0 0 3px rgb(0 0 0 / 45%);
+  border-radius: 6px;
+  border: 1.5px solid rgb(255 255 255 / 72%);
+  background: rgb(0 0 0 / 42%);
+  box-shadow: 0 0 0 3px rgb(0 0 0 / 30%);
+}
+
+.tile-pick input:hover:not(:disabled):not(:checked) {
+  border-color: #fff;
+  background: rgb(0 0 0 / 55%);
 }
 
 /* Checked, the shared box fills with a wash — which counts on something opaque
    behind it. Over a thumbnail there is nothing: the image showed through, and
    the tick, drawn a shade away from that wash, all but vanished. Here the box
-   is a full violet flat and the tick takes the ink meant for that flat. */
+   is a full accent flat and the tick takes the ink meant for that flat. */
 .tile-pick input:checked {
-  background: var(--violet);
-  border-color: var(--violet);
+  background: var(--accent-ink);
+  border-color: var(--accent-ink);
 }
 
 .tile-pick input:checked::after {
-  border-color: var(--on-violet);
-}
-
-@media (max-width: 700px) {
-  .grid-body {
-    padding: var(--s-2);
-  }
-
-  .grid-head {
-    gap: var(--s-3);
-    padding: 0 var(--s-3);
-  }
+  left: 6px;
+  top: 3px;
+  width: 5px;
+  height: 10px;
+  border-color: var(--on-accent);
 }

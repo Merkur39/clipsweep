@@ -1,11 +1,25 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="theme-color" content="#f3f1ed" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#090b12" media="(prefers-color-scheme: dark)" />
+    <meta
+      name="description"
+      content="Find all clips from a Twitch channel, without limits — including those the official site no longer shows. A channel, a period, the complete list."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="ClipSweep" />
+    <meta
+      property="og:description"
+      content="Find all clips from a Twitch channel, without limits — including those the official site no longer shows. A channel, a period, the complete list."
+    />
+    <!-- No `og:url` and no `og:image`, and both for the same reason: they take
+         an absolute URL, and this build pins no origin — `base: './'` exists so
+         the same files serve from a domain root, a sub-path or a self-host. A
+         card pointing at one deployment would be wrong for every other. -->
+    <meta name="theme-color" content="#f4f6f8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f1115" media="(prefers-color-scheme: dark)" />
     <!-- The masthead mark. PNG first, SVG second: at equal support the last
          declaration wins, so browsers that read SVG prefer it — crisp at every
          density, and it follows the tab's theme. Safari ignores the SVG type and
