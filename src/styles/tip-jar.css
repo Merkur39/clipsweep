@@ -1,0 +1,93 @@
+/* TipJar.tsx — the tip jar, and the corner it has to share. */
+
+/* Ko-fi draws its widget bottom-LEFT, sized to a frame rather than to the
+   button inside it, and eight digits up the z stack — in a sheet it loads from
+   its own CDN, therefore after this one. Everything below is scoped under the
+   host for that reason: at equal weight the sheet read last wins, so the
+   override has to weigh more than one class. */
+
+/* The other half of the page's answer, and it is not decoration: the button
+   lives inside a frame, where none of these tokens reach. `tipJarFrame.ts`
+   reads these six declarations back off this element and writes them into the
+   frame. The pairing of property to role is arbitrary and shared with that
+   file; what matters is that both sides read them in the same order.
+     color → the label · background → the flat · border-top → the edge
+     border-left → the flat under the pointer · border-bottom → its edge
+     outline → the focus ring, which the frame owes the keyboard
+
+   On the probe itself and never on its parent: five of the seven do not
+   inherit, and read off a child they come back as an empty flat and borders in
+   `currentColor`. Nothing here is painted — the element is `display: none`,
+   which does not stop a colour from being computed. */
+.tip-jar-skin {
+  display: none;
+  color: var(--text);
+  background-color: var(--surface-raised);
+  border-top-color: var(--rule-control);
+  border-left-color: var(--surface-hover);
+  border-bottom-color: var(--accent-ink);
+  outline-color: var(--accent-strong);
+  font-family: var(--sans);
+}
+
+/* Side by side with the way back up, on the same line and at the same height:
+   the two are one row of the same corner, and the tip jar stands further in
+   because the page's own control comes first. */
+.tip-jar .floatingchat-container-wrap,
+.tip-jar .floatingchat-container-wrap-mobi {
+  right: calc(var(--gutter) + 44px + var(--s-3));
+  bottom: var(--tip-bottom);
+  left: auto;
+  /* Wide enough for the longest of the two labels; the frame's sheet stretches
+     the button to fill it, so what is declared here IS the button. A width
+     read off the button instead would have to be measured after the CDN's
+     sheet and the font had both landed, and again at every change of
+     language. */
+  width: 152px;
+  max-width: none;
+  height: var(--tip-height);
+  /* The lift the corner's other control has, drawn from outside the frame
+     because a shadow drawn inside is a shadow clipped by it. `drop-shadow`
+     follows the pill's own outline, where `box-shadow` would draw the frame's
+     rectangle. */
+  filter: drop-shadow(0 10px 16px var(--shadow-panel));
+}
+
+/* The frame is 195px wide by their sheet and pinned to the left of the wrap.
+   Both have to give way, or the button lands 15px past the gutter. */
+.tip-jar .floatingchat-container,
+.tip-jar .floatingchat-container-mobi {
+  right: 0;
+  left: auto;
+  width: 100%;
+  height: 100%;
+}
+
+/* What the button opens, brought back to the same corner and set just clear of
+   it. Its width stays Ko-fi's — they set it inline and insist. */
+.tip-jar .floating-chat-kofi-popup-iframe,
+.tip-jar .floating-chat-kofi-popup-iframe-mobi {
+  right: var(--gutter);
+  bottom: calc(var(--tip-bottom) + var(--tip-height) + var(--s-2));
+  left: auto;
+}
+
+/* The two figures the corner stands on, declared on the page rather than on the
+   host: `--dock` is set by the selection bar on `.page` and read from here, and
+   a custom property only ever travels downwards. Everything above reads them. */
+.page:has(.tip-jar:not([hidden])) {
+  --tip-bottom: var(--s-5);
+  --tip-height: 44px;
+}
+
+/* Under 760 the bar spans the gutters and the corner moves above it, both
+   controls together. */
+@media (max-width: 760px) {
+  .page:has(.tip-jar:not([hidden])) {
+    --tip-bottom: var(--s-4);
+  }
+
+  .page:has(.tip-jar:not([hidden])):has(.selection-bar) {
+    --tip-bottom: var(--dock);
+  }
+}

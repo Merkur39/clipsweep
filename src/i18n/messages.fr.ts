@@ -361,6 +361,14 @@ export const fr = {
    */
   'toTop.label': 'Remonter en haut',
 
+  // ── Tip jar ──────────────────────────────────────────────────────────────
+  /**
+   * Ce que le lecteur ferait, pas ce que l'outil demande : « Faire un don »
+   * nomme une transaction, or le bouton n'en ouvre pas une — il ouvre une page.
+   * Et le tutoiement du reste de l'interface tient ici aussi.
+   */
+  'tipJar.label': 'Me soutenir',
+
   // ── Search log ───────────────────────────────────────────────────────────
   'log.stopRequested': 'Arrêt demandé.',
   'log.channel': 'Chaîne : {name} (id {id}), créée le {date}.',

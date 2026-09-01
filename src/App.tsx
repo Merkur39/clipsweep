@@ -16,6 +16,7 @@ import { Mark } from './components/Icon'
 import { LocaleToggle } from './components/LocaleToggle'
 import { SearchRun } from './components/SearchRun'
 import { TicketSummary } from './components/TicketSummary'
+import { TipJar } from './components/TipJar'
 import { TechnicalDetails } from './components/TechnicalDetails'
 import { gameLabeller } from './components/selectionLabel'
 import { ThemeToggle } from './components/ThemeToggle'
@@ -786,6 +787,11 @@ export default function App({ authError }: { authError: string | null }) {
           and until now the only way back to the ticket was to undo the scroll
           that got you away from it. */}
       <BackToTop />
+
+      {/* The same corner, one control further in. It is not there for whoever
+          is still at the door: a page whose one job is to be let in has no
+          business also asking for money. */}
+      <TipJar shown={!showDoor} theme={theme} />
 
       {/* Over the readout rather than under it: what can be done with what is
           picked belongs beside the ticks, not at the foot of a page the picking
