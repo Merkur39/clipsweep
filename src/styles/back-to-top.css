@@ -34,20 +34,6 @@
   }
 }
 
-/* The room the page owes it, as it owes the bar its own: 24 of offset, 44 of
-   button, 16 of air. Without it the button sits on the last lines of the
-   footer once the page is scrolled to its end. */
-.page:has(.to-top) {
-  padding-bottom: 84px;
-}
-
-/* Both floaters at once, on a width where they stand side by side: the bar is
-   the deeper of the two and its reserve covers them both. Restated here
-   because the two rules weigh the same and this sheet is read second. */
-.page:has(.to-top):has(.selection-bar) {
-  padding-bottom: var(--dock);
-}
-
 /* Under 760 the bar spans the gutters and there is no corner left to stand in:
    the button goes above it, on the far side of the room the page already
    reserves for it — and the page then owes that room twice over. */
@@ -58,13 +44,5 @@
 
   .page:has(.selection-bar) .to-top {
     bottom: var(--dock);
-  }
-
-  .page:has(.to-top) {
-    padding-bottom: 76px;
-  }
-
-  .page:has(.to-top):has(.selection-bar) {
-    padding-bottom: calc(var(--dock) + 60px);
   }
 }
