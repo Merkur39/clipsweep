@@ -225,6 +225,9 @@ export const en: Catalogue = {
   // ── Back to top ──────────────────────────────────────────────────────────
   'toTop.label': 'Back to top',
 
+  // ── Tip jar ──────────────────────────────────────────────────────────────
+  'tipJar.label': 'Support me',
+
   // ── Search log ───────────────────────────────────────────────────────────
   'log.stopRequested': 'Stop requested.',
   'log.channel': 'Channel: {name} (id {id}), created on {date}.',
