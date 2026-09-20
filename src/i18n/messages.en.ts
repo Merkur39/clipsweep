@@ -236,6 +236,14 @@ export const en: Catalogue = {
     one: '{n} slice to explore, narrowed only if it saturates.',
     other: '{n} slices to explore, narrowed only if they saturate.',
   },
+  'log.sliceRescued': {
+    one: '{indent}{from} → {to} read again in smaller pages: {n} clip recovered',
+    other: '{indent}{from} → {to} read again in smaller pages: {n} clips recovered',
+  },
+  'log.sliceGap': {
+    one: '{indent}{from} → {to}: {n} clip Twitch counted and did not hand over',
+    other: '{indent}{from} → {to}: {n} clips Twitch counted and did not hand over',
+  },
   'log.sliceSplit': '{indent}{from} → {to} saturated ({n}), split in two',
   'log.sliceLost':
     '{indent}{from} → {to}: {n} clips — still saturated at the floor, clips are missing',

@@ -182,6 +182,16 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
               to: { day: report.window.endedAt },
               n: report.clipCount,
             }
+            // Said before the slice's own line, because it is what makes that
+            // line's count true: the tally that follows is the one the second,
+            // smaller read came back with.
+            if (report.recovered) {
+              log('log.sliceRescued', { ...window, n: report.recovered }, 'good')
+            }
+            if (report.unreachable > 0) {
+              log('log.sliceGap', { ...window, n: report.unreachable }, 'warn')
+            }
+
             if (report.split) {
               log('log.sliceSplit', window, 'warn')
             } else if (report.saturated) {

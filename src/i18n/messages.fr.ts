@@ -378,6 +378,14 @@ export const fr = {
     one: '{n} tranche à explorer, resserrée seulement si elle sature.',
     other: '{n} tranches à explorer, resserrées seulement si elles saturent.',
   },
+  'log.sliceRescued': {
+    one: '{indent}{from} → {to} relue par petites pages : {n} clip récupéré',
+    other: '{indent}{from} → {to} relue par petites pages : {n} clips récupérés',
+  },
+  'log.sliceGap': {
+    one: '{indent}{from} → {to} : {n} clip que Twitch a compté sans le rendre',
+    other: '{indent}{from} → {to} : {n} clips que Twitch a comptés sans les rendre',
+  },
   'log.sliceSplit': '{indent}{from} → {to} saturée ({n}), recoupée en deux',
   'log.sliceLost':
     '{indent}{from} → {to} : {n} clips — encore saturée au plancher, des clips manquent',

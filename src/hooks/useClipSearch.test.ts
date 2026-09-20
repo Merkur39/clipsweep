@@ -120,6 +120,34 @@ describe('useClipSearch', () => {
    * to freeze at the moment each line was written, which left French lines
    * standing under an English interface for the rest of the session.
    */
+  /**
+   * The buy-back has to be said, because it is the only place the sweep admits
+   * that Helix withheld anything: the slice's own line reports a count, and a
+   * count that went up because the window was read twice looks exactly like one
+   * that never needed it.
+   */
+  it('says what re-reading a slice brought back, and what it still could not', async () => {
+    channelFound()
+    gameNames(new Map())
+    const cursorAt = (offset: number) =>
+      btoa(JSON.stringify({ b: null, a: { Cursor: btoa(String(offset)) } }))
+    fetchPage.mockImplementation(async (_w: unknown, cursor: string | undefined, first: number) =>
+      cursor
+        ? { clips: [] }
+        : first === 100
+          ? { clips: [clip('a')], cursor: cursorAt(4) }
+          : { clips: [clip('a'), clip('b')], cursor: cursorAt(4) },
+    )
+
+    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    await act(async () => result.current.start(request))
+    await waitFor(() => expect(result.current.running).toBe(false))
+
+    const log = result.current.logEntries.map((entry) => entry.say(t)).join(' ')
+    expect(log).toContain('1 clip récupéré')
+    expect(log).toContain('2 clips que Twitch a comptés sans les rendre')
+  })
+
   it('reads in the language it is read in, not the one it ran in', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [] })
