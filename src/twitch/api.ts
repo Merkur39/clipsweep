@@ -4,7 +4,6 @@ import { TranslatableError } from './errors'
 import type { Clip, Game, TwitchUser } from './types'
 
 const HELIX = 'https://api.twitch.tv/helix'
-const PAGE_SIZE = 100
 /** Helix allows 800 points/min; one request costs one point. */
 const THROTTLE_MS = 60
 const MAX_ATTEMPTS = 6
@@ -138,11 +137,16 @@ export class TwitchApi {
     return { names, incomplete }
   }
 
+  /**
+   * The page size is the caller's, not ours: it is the one knob that decides
+   * how much Helix withholds — see `DEFAULT_RESCUE_PAGE_SIZE` — so it belongs
+   * with the code that reads the gap and buys it back.
+   */
   clipPageFetcher(broadcasterId: string): ClipPageFetcher {
-    return async (window, cursor) => {
+    return async (window, cursor, first) => {
       const params: Record<string, string> = {
         broadcaster_id: broadcasterId,
-        first: String(PAGE_SIZE),
+        first: String(first),
         started_at: window.startedAt,
         ended_at: window.endedAt,
       }

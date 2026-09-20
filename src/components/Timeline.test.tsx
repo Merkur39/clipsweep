@@ -12,6 +12,7 @@ const report = (over: Partial<WindowReport> & { clipCount: number }): WindowRepo
   saturated: false,
   split: false,
   unreachable: 0,
+  recovered: null,
   ...over,
 })
 

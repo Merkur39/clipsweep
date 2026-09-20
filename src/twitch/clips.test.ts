@@ -113,7 +113,7 @@ describe('collectClips', () => {
 
     expect(clips.map((c) => c.id)).toEqual(['a', 'b', 'c'])
     expect(requests).toBe(2)
-    expect(fetchPage).toHaveBeenLastCalledWith(twoDays, 'p2')
+    expect(fetchPage).toHaveBeenLastCalledWith(twoDays, 'p2', 100)
   })
 
   it('deduplicates clips returned by overlapping windows', async () => {
@@ -378,9 +378,13 @@ describe('collectClips', () => {
     ]
     const fetchPage = vi.fn(async () => pages.shift()!)
 
+    // The ledger is what is under test, so the buy-back is held off by asking
+    // for a rescue no smaller than the first pass — what it does with the
+    // number is three tests below.
     const { reports, unreachable } = await collectClips({
       windows: [firstHalf],
       fetchPage,
+      rescuePageSize: 100,
     })
 
     expect(reports[0].unreachable).toBe(2)
@@ -397,6 +401,7 @@ describe('collectClips', () => {
     const { reports, unreachable } = await collectClips({
       windows: [firstHalf],
       fetchPage,
+      rescuePageSize: 100,
     })
 
     expect(reports[0].unreachable).toBe(0)
@@ -416,6 +421,98 @@ describe('collectClips', () => {
 
     expect(clips).toHaveLength(2)
     expect(reports[0].unreachable).toBe(0)
+  })
+
+  /**
+   * The buy-back. A window whose cursor admits a gap is read again at a smaller
+   * page size, because that is where the gap comes from: measured on
+   * 2026-09-20, `vinc33x` at `first=100` withheld 4 clips over three pages and
+   * the same window at `first=20` served every page full — 261 clips, the
+   * site's own count, deficit nought.
+   *
+   * Only a window walked to the end earns it. One about to be halved would pay
+   * for a span its two halves are about to walk again.
+   */
+  it('reads a window again, smaller, when the cursor admits a gap', async () => {
+    const asked: number[] = []
+    const fetchPage = vi.fn(async (_w: DateWindow, cursor: string | undefined, first: number) => {
+      asked.push(first)
+      if (first === 100) {
+        return cursor
+          ? { clips: [clip('c')] }
+          : { clips: [clip('a'), clip('b')], cursor: cursorAt(3) }
+      }
+      return cursor
+        ? { clips: [clip('c')] }
+        : { clips: [clip('a'), clip('b'), clip('x')], cursor: cursorAt(3) }
+    })
+
+    const { clips, reports, unreachable } = await collectClips({
+      windows: [firstHalf],
+      fetchPage,
+      rescuePageSize: 20,
+    })
+
+    expect(asked).toEqual([100, 100, 20, 20])
+    expect(clips.map((c) => c.id).sort()).toEqual(['a', 'b', 'c', 'x'])
+    expect(reports[0].recovered).toBe(1)
+    expect(reports[0].unreachable).toBe(0)
+    expect(unreachable).toBe(0)
+  })
+
+  it('leaves a window alone when every page served what it claimed', async () => {
+    const asked: number[] = []
+    const fetchPage = vi.fn(async (_w: DateWindow, cursor: string | undefined, first: number) => {
+      asked.push(first)
+      return cursor ? { clips: [clip('b')] } : { clips: [clip('a')], cursor: cursorAt(1) }
+    })
+
+    const { reports } = await collectClips({ windows: [firstHalf], fetchPage })
+
+    expect(asked).toEqual([100, 100])
+    expect(reports[0].recovered).toBeNull()
+  })
+
+  it('leaves a saturated window to its halves rather than buying it back', async () => {
+    const asked: number[] = []
+    const fetchPage = vi.fn(async (window: DateWindow, _c: string | undefined, first: number) => {
+      asked.push(first)
+      return key(window) === key(twoDays)
+        ? { clips: [clip('a'), clip('b')], cursor: cursorAt(9) }
+        : { clips: [clip('a')] }
+    })
+
+    const { reports } = await collectClips({
+      windows: [twoDays],
+      fetchPage,
+      pageCap: 2,
+      minWindowMs: TWO_DAYS_MS / 2,
+      rescuePageSize: 20,
+    })
+
+    expect(asked.every((first) => first === 100)).toBe(true)
+    expect(reports[0]).toMatchObject({ saturated: true, split: true, recovered: null })
+  })
+
+  // The gap can survive the buy-back, and then it is the honest residual that
+  // must be reported — not the one the first, coarser walk saw.
+  it('reports what the smaller read still could not reach', async () => {
+    const fetchPage = vi.fn(async (_w: DateWindow, cursor: string | undefined, first: number) => {
+      if (cursor) return { clips: [clip('c')] }
+      return first === 100
+        ? { clips: [clip('a')], cursor: cursorAt(4) }
+        : { clips: [clip('a'), clip('x')], cursor: cursorAt(4) }
+    })
+
+    const { reports, unreachable } = await collectClips({
+      windows: [firstHalf],
+      fetchPage,
+      rescuePageSize: 20,
+    })
+
+    expect(reports[0].recovered).toBe(1)
+    expect(reports[0].unreachable).toBe(2)
+    expect(unreachable).toBe(2)
   })
 
   it('stops early when the signal is aborted', async () => {
