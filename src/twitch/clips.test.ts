@@ -36,6 +36,10 @@ const years = (n: number, from = 2018): DateWindow[] =>
     endedAt: `${from + i + 1}-01-01T00:00:00Z`,
   }))
 
+/** A cursor as Helix shapes it: two base64 layers around a count of items. */
+const cursorAt = (offset: number) =>
+  btoa(JSON.stringify({ b: null, a: { Cursor: btoa(String(offset)) } }))
+
 /** The share of the period a report puts behind the search. */
 const share = (p: Progress) => (p.periodMs === 0 ? 0 : p.coveredMs / p.periodMs)
 
@@ -353,6 +357,65 @@ describe('collectClips', () => {
     })
 
     expect(seen.at(-1)?.coveredMs).toBe(0)
+  })
+
+  /**
+   * The gap Helix owns up to without naming it. Measured on 2026-09-20: a page
+   * asked at 100 came back with 98 clips and a cursor reading 100, then 98 more
+   * and a cursor reading 200. The four it kept are unreachable — the next
+   * request starts past them — and the sweep that read 257 clips was exactly
+   * four short of the site's own index.
+   *
+   * Read at each cursor and kept at its highest, never subtracted at the end: a
+   * last page carries no cursor, so the final offset lags the clips in hand and
+   * the difference would read as nought.
+   */
+  it('counts the clips a page claims to have served and did not', async () => {
+    const pages: ClipPage[] = [
+      { clips: [clip('a'), clip('b')], cursor: cursorAt(3) },
+      { clips: [clip('c'), clip('d')], cursor: cursorAt(6) },
+      { clips: [clip('e')] },
+    ]
+    const fetchPage = vi.fn(async () => pages.shift()!)
+
+    const { reports, unreachable } = await collectClips({
+      windows: [firstHalf],
+      fetchPage,
+    })
+
+    expect(reports[0].unreachable).toBe(2)
+    expect(unreachable).toBe(2)
+  })
+
+  it('counts nothing unreachable when every page serves what it claims', async () => {
+    const pages: ClipPage[] = [
+      { clips: [clip('a'), clip('b')], cursor: cursorAt(2) },
+      { clips: [clip('c')] },
+    ]
+    const fetchPage = vi.fn(async () => pages.shift()!)
+
+    const { reports, unreachable } = await collectClips({
+      windows: [firstHalf],
+      fetchPage,
+    })
+
+    expect(reports[0].unreachable).toBe(0)
+    expect(unreachable).toBe(0)
+  })
+
+  // The ledger is a reading of Helix, not a dependency on it: a cursor it no
+  // longer shapes the same way must cost the count and never the sweep.
+  it('counts nothing unreachable from a cursor it cannot read', async () => {
+    const pages: ClipPage[] = [
+      { clips: [clip('a')], cursor: 'opaque-to-us' },
+      { clips: [clip('b')] },
+    ]
+    const fetchPage = vi.fn(async () => pages.shift()!)
+
+    const { clips, reports } = await collectClips({ windows: [firstHalf], fetchPage })
+
+    expect(clips).toHaveLength(2)
+    expect(reports[0].unreachable).toBe(0)
   })
 
   it('stops early when the signal is aborted', async () => {

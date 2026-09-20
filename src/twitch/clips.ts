@@ -1,3 +1,4 @@
+import { claimedOffset } from './cursor'
 import type { Clip, ClipPage, Progress } from './types'
 import { bisect, type DateWindow } from './windows'
 
@@ -20,6 +21,19 @@ export interface WindowReport {
   saturated: boolean
   /** Saturated *and* small enough to be halved, so the gap gets covered. */
   split: boolean
+  /**
+   * Clips Helix counted as served and did not hand over — see [claimedOffset].
+   *
+   * Read at each cursor and kept at its highest, rather than subtracted once at
+   * the end: the last page of a window carries no cursor, so the final offset
+   * lags the clips in hand and the difference would read as nought. Measured on
+   * 2026-09-20, `vinc33x` at `first=100`: 2 after the first page, 4 after the
+   * second, and the sweep ended exactly four short of the site's own index.
+   *
+   * It is a floor, not a total: a window whose every page served what it
+   * claimed can still be missing clips the service never counted at all.
+   */
+  unreachable: number
 }
 
 export interface CollectResult {
@@ -27,6 +41,15 @@ export interface CollectResult {
   reports: WindowReport[]
   /** Saturated windows that could not be split: their surplus clips are lost. */
   incomplete: WindowReport[]
+  /**
+   * Clips the service counted as served and withheld, summed over the windows
+   * that were walked to the end.
+   *
+   * Split windows are left out on purpose, like `coveredMs` leaves them out:
+   * their halves walk the very span they walked, and would count the same gap
+   * twice.
+   */
+  unreachable: number
   requests: number
 }
 
@@ -100,6 +123,7 @@ export async function collectClips({
     let cursor: string | undefined
     let collected = 0
     let saturated = false
+    let unreachable = 0
 
     for (;;) {
       const page = await fetchPage(window, cursor)
@@ -107,6 +131,11 @@ export async function collectClips({
       for (const clip of page.clips) byId.set(clip.id, clip)
       collected += page.clips.length
       cursor = page.cursor
+      // What the next request will skip over. Helix serves fewer clips than the
+      // offset it hands back, says nothing about it, and starts the next page
+      // past them all the same.
+      const claimed = claimedOffset(cursor)
+      if (claimed !== null) unreachable = Math.max(unreachable, claimed - collected)
       // The count is the figure the run block is built around, and a window is
       // far too coarse to move it: it would sit at zero for a whole year of
       // clips, which reads as a search that found nothing rather than one that
@@ -144,6 +173,7 @@ export async function collectClips({
       clipCount: collected,
       saturated,
       split: halves !== null,
+      unreachable,
     }
     reports.push(report)
     onWindow?.(report)
@@ -183,6 +213,9 @@ export async function collectClips({
     clips: [...byId.values()],
     reports,
     incomplete: reports.filter((report) => report.saturated && !report.split),
+    unreachable: reports
+      .filter((report) => !report.split)
+      .reduce((total, report) => total + report.unreachable, 0),
     requests,
   }
 }
