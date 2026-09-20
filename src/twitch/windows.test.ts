@@ -1,38 +1,40 @@
 import { describe, expect, it } from 'vitest'
 
-import { bisect, splitByYear } from './windows'
+import { bisect, seedWindows } from './windows'
 
 const iso = (s: string) => new Date(s)
 
-describe('splitByYear', () => {
-  // Search seeding: year boundaries remove the top levels of the bisection tree,
-  // the most expensive ones, without asking anyone for anything.
-  it('cuts on calendar-year boundaries', () => {
-    const windows = splitByYear(iso('2019-06-15T00:00:00Z'), iso('2021-03-10T00:00:00Z'))
-
-    expect(windows).toEqual([
-      { startedAt: '2019-06-15T00:00:00Z', endedAt: '2020-01-01T00:00:00Z' },
-      { startedAt: '2020-01-01T00:00:00Z', endedAt: '2021-01-01T00:00:00Z' },
-      { startedAt: '2021-01-01T00:00:00Z', endedAt: '2021-03-10T00:00:00Z' },
+describe('seedWindows', () => {
+  // Measured on 2026-09-20: a narrower date range makes Helix under-deliver. On
+  // `kaliyami`, 2025 as one window returned 253 clips where the same span cut
+  // into quarters or months returned 249 — the very same 249, four short, and
+  // never a clip the wide window had missed. So the seed is as wide as the
+  // period, and only saturation buys a cut.
+  it('seeds one window spanning the whole period', () => {
+    expect(seedWindows(iso('2019-06-15T00:00:00Z'), iso('2021-03-10T00:00:00Z'))).toEqual([
+      { startedAt: '2019-06-15T00:00:00Z', endedAt: '2021-03-10T00:00:00Z' },
     ])
   })
 
-  it('returns a single window for a range fitting inside one year', () => {
-    expect(splitByYear(iso('2019-06-15T00:00:00Z'), iso('2019-08-01T00:00:00Z'))).toEqual([
-      { startedAt: '2019-06-15T00:00:00Z', endedAt: '2019-08-01T00:00:00Z' },
-    ])
+  it('crosses calendar years without cutting on them', () => {
+    const windows = seedWindows(iso('2019-06-15T00:00:00Z'), iso('2026-01-01T00:00:00Z'))
+
+    expect(windows).toHaveLength(1)
+    expect(windows[0]).toEqual({
+      startedAt: '2019-06-15T00:00:00Z',
+      endedAt: '2026-01-01T00:00:00Z',
+    })
   })
 
-  it('adds no empty window when the end lands exactly on a 1 January', () => {
-    const windows = splitByYear(iso('2019-06-15T00:00:00Z'), iso('2021-01-01T00:00:00Z'))
-
-    expect(windows).toHaveLength(2)
-    expect(windows[1].endedAt).toBe('2021-01-01T00:00:00Z')
+  it('drops the milliseconds Twitch rejects', () => {
+    expect(seedWindows(iso('2019-06-15T00:00:00.250Z'), iso('2021-03-10T12:30:45.999Z'))).toEqual([
+      { startedAt: '2019-06-15T00:00:00Z', endedAt: '2021-03-10T12:30:45Z' },
+    ])
   })
 
   it('returns nothing for an empty or inverted range', () => {
-    expect(splitByYear(iso('2020-01-01T00:00:00Z'), iso('2020-01-01T00:00:00Z'))).toEqual([])
-    expect(splitByYear(iso('2021-01-01T00:00:00Z'), iso('2020-01-01T00:00:00Z'))).toEqual([])
+    expect(seedWindows(iso('2020-01-01T00:00:00Z'), iso('2020-01-01T00:00:00Z'))).toEqual([])
+    expect(seedWindows(iso('2021-01-01T00:00:00Z'), iso('2020-01-01T00:00:00Z'))).toEqual([])
   })
 })
 

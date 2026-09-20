@@ -9,7 +9,7 @@ import type { Session } from '../twitch/auth'
 import { describeError } from '../twitch/errors'
 import { collectClips, type WindowReport } from '../twitch/clips'
 import type { Clip, Progress } from '../twitch/types'
-import { splitByYear, type Span } from '../twitch/windows'
+import { seedWindows, type Span } from '../twitch/windows'
 
 const LOG_LIMIT = 500
 
@@ -141,8 +141,10 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
           log('log.beforeCreation', { date: { day: since } }, 'warn')
         }
 
-        // Yearly seeding; the bisection tightens where clips are dense.
-        const windows = splitByYear(from, to)
+        // One window over the whole period; the bisection tightens only what
+        // saturates. A narrower range makes Helix return less, so a cut it was
+        // not forced into costs clips — see `seedWindows`.
+        const windows = seedWindows(from, to)
         log('log.slices', { n: windows.length })
 
         const result = await collectClips({

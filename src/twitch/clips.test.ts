@@ -29,7 +29,7 @@ const secondHalf: DateWindow = {
 const oneHour: DateWindow = { startedAt: '2024-01-01T00:00:00Z', endedAt: '2024-01-01T01:00:00Z' }
 const TWO_DAYS_MS = 2 * 24 * 3_600_000
 
-/** What `splitByYear` seeds a long search with: one window per calendar year. */
+/** Two windows, as a caller passing its own tiling would hand them over. */
 const years = (n: number, from = 2018): DateWindow[] =>
   Array.from({ length: n }, (_, i) => ({
     startedAt: `${from + i}-01-01T00:00:00Z`,

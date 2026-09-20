@@ -131,8 +131,8 @@ describe('useClipSearch', () => {
     await waitFor(() => expect(result.current.running).toBe(false))
     const read = (locale: 'fr' | 'en') =>
       result.current.logEntries.map((entry) => entry.say(makeT(locale))).join(' ')
-    expect(read('fr')).toContain('tranche annuelle')
-    expect(read('en')).toContain('yearly slice')
+    expect(read('fr')).toContain('tranche à explorer')
+    expect(read('en')).toContain('slice to explore')
   })
 
   /**

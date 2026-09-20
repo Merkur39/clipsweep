@@ -233,8 +233,8 @@ export const en: Catalogue = {
   'log.channel': 'Channel: {name} (id {id}), created on {date}.',
   'log.beforeCreation': 'The channel predates {date}: older clips are out of scope.',
   'log.slices': {
-    one: '{n} yearly slice to explore, narrowed if needed.',
-    other: '{n} yearly slices to explore, narrowed if needed.',
+    one: '{n} slice to explore, narrowed only if it saturates.',
+    other: '{n} slices to explore, narrowed only if they saturate.',
   },
   'log.sliceSplit': '{indent}{from} → {to} saturated ({n}), split in two',
   'log.sliceLost':
