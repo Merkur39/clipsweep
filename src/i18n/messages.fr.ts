@@ -375,8 +375,8 @@ export const fr = {
   'log.beforeCreation':
     'La chaîne est antérieure au {date} : les clips plus anciens sont hors périmètre.',
   'log.slices': {
-    one: '{n} tranche annuelle à explorer, resserrée si besoin.',
-    other: '{n} tranches annuelles à explorer, resserrées si besoin.',
+    one: '{n} tranche à explorer, resserrée seulement si elle sature.',
+    other: '{n} tranches à explorer, resserrées seulement si elles saturent.',
   },
   'log.sliceSplit': '{indent}{from} → {to} saturée ({n}), recoupée en deux',
   'log.sliceLost':

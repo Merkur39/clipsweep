@@ -14,9 +14,15 @@ Lists **every** clip on a Twitch channel — including the ones the site no long
 point: clips with 3 or 6 views sit behind it, unreachable by scrolling. The API has exactly the same
 limit — calling it naively changes nothing.
 
-The way around it: cut the period into `started_at` / `ended_at` windows fine enough that each request
-stays under the ceiling. Any window that saturates anyway (≥ 950 results with a cursor left) is **split
-in two and replayed**, depth first, down to a 6-hour floor. Clips are deduplicated by `id`.
+The way around it: `started_at` / `ended_at` windows. The sweep starts with **one window over the whole
+period** and splits in two, depth first, only what saturates (≥ 950 results with a cursor left), down to
+a 6-hour floor. Clips are deduplicated by `id`.
+
+Only what saturates, and that is the whole point: a narrower range does not merely cost less, it
+**returns less**. Measured on 2026-09-20 over `kaliyami` in 2025 — one window, 3 requests, 253 clips;
+the same span in quarters, 249; in months, the very same 249. A finer cut never returned a clip the
+wide window had missed. The four it lost sat at 1, 2, 5 and 9 views, nowhere near a boundary. That is
+[twitchdev/issues#48](https://github.com/twitchdev/issues/issues/48), open since 2020.
 
 A window still saturated at the floor means clips remain out of reach: it is counted in `incomplete`,
 drawn in red on the timeline, and called out by an alert. **The tool never claims completeness it has not
@@ -234,13 +240,15 @@ English interface, which no HTML attribute fixes.
 ## Tuning
 
 A sweep asks only for the channel and the date range. The window size is no longer a setting:
-`splitByYear` seeds one window per calendar year, and bisection tightens where clips are dense.
+`seedWindows` hands over the whole period as a single window, and bisection tightens only what
+saturates.
 
-That choice has a measurable cost. A saturated window spends ten requests before being split, and they
-are wasted — the halves refetch the same clips. Starting from a single window over the whole range
-would pay that toll at every internal node of the tree, roughly **three times** the requests of a
-well-sized seeding. Year boundaries remove the top levels, the expensive ones, without asking the user
-anything or probing a density the API cannot report.
+That choice has a price, and it is paid in requests. A saturated window spends ten of them before it
+can be split, and the halves refetch what it just read; seeding from a single window pays that toll at
+every internal node of the tree. Seeding on calendar years, as this project did until 2026-09-20,
+removed those top levels — and lost clips for it, on every channel whose whole history fits under the
+ceiling and never needed a cut at all. The toll is not wasted either: a saturated parent hands back the
+most complete view of the top of its own span, and every clip of it is kept.
 
 The period opens on **the past month** rather than the channel's entire history: an immediate click on
 "Start" should stay cheap instead of committing seven yearly windows before the period has been chosen.
