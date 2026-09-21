@@ -78,7 +78,25 @@ export function SearchRun({
    * moves no ground instead of negative ground, and the sum closes on the whole
    * period at the last slice.
    */
-  const share = periodMs > 0 ? coveredMs / periodMs : 0
+  const wholeShare = periodMs > 0 ? coveredMs / periodMs : 0
+
+  /**
+   * The second pass, which is where the wait actually is.
+   *
+   * It costs nine requests out of ten and brings back next to nothing — 0 clips
+   * of 261 on `vinc33x`, 1 of 91 on `noxya__`, measured on 2026-09-21. The
+   * reader has their table by then, so the block stops being the subject of the
+   * screen and becomes a line at the foot of it.
+   *
+   * And it is the one stretch that can be drawn as a fraction: `coveredMs` only
+   * moves when a window closes, so over the single window a sweep now seeds it
+   * says nought from the first request to the last. The pass, itself, knows
+   * what it costs.
+   */
+  const verifying = running && progress?.pass === 'narrow'
+  const passShare =
+    verifying && progress.passTotal ? Math.min(1, progress.passDone / progress.passTotal) : null
+  const share = passShare ?? wholeShare
 
   // Nothing has come back that would make a fraction — the channel is still
   // being resolved, the first slice is still being walked, or that slice turned
@@ -94,21 +112,40 @@ export function SearchRun({
   const seeking = share === 0
 
   return (
-    <div className="run-slot" data-open={running ? '' : undefined} inert={!running}>
+    <div
+      className="run-slot"
+      data-open={running ? '' : undefined}
+      data-compact={verifying ? '' : undefined}
+      inert={!running}
+    >
       <section className="run">
-        <div className="run-head">
-          <p className="run-figure">
-            <span className="run-count">{formatCount(clipsFound, locale)}</span>
-            <span className="run-unit">{t('run.found', { n: clipsFound })}</span>
-          </p>
+        {/* Verifying, the head is one line and the figure is not in it: the
+          ticket three centimetres above carries the same count in the same
+          words, and two readouts of one number is one too many. What is left to
+          say is what is being done, so that is all it says.
 
-          {/* The pause displaces what the search was doing rather than sitting
-            beside it: the counters have stopped moving, and a line still
-            reciting them is the very thing that reads as a hang. */}
-          {pausedFor === null ? (
-            <p className="run-say">{t('run.say')}</p>
+          The pause outranks it, here as above: it displaces what the search was
+          doing rather than sitting beside it, the counters having stopped
+          moving, and a line still reciting them is the very thing that reads as
+          a hang. */}
+        <div className="run-head">
+          {verifying ? (
+            <p className={pausedFor === null ? 'run-say' : 'run-say is-paused'}>
+              {pausedFor === null ? t('run.verifying') : t('run.paused', { n: pausedFor })}
+            </p>
           ) : (
-            <p className="run-say is-paused">{t('run.paused', { n: pausedFor })}</p>
+            <>
+              <p className="run-figure">
+                <span className="run-count">{formatCount(clipsFound, locale)}</span>
+                <span className="run-unit">{t('run.found', { n: clipsFound })}</span>
+              </p>
+
+              {pausedFor === null ? (
+                <p className="run-say">{t('run.say')}</p>
+              ) : (
+                <p className="run-say is-paused">{t('run.paused', { n: pausedFor })}</p>
+              )}
+            </>
           )}
         </div>
 
@@ -135,9 +172,16 @@ export function SearchRun({
           <i style={{ inlineSize: `${share * 100}%` }} />
         </div>
 
-        <div className="run-foot">
-          <span>{foot}</span>
-        </div>
+        {/* The slice count and the estimate belong to the pass that walks the
+          period. The second one walks the same window over again, so "0 of 1"
+          and a time left computed on ground that cannot move are two readings
+          of nothing — the drawer below keeps both, where slices still mean
+          something. */}
+        {verifying ? null : (
+          <div className="run-foot">
+            <span>{foot}</span>
+          </div>
+        )}
       </section>
     </div>
   )

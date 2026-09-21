@@ -204,6 +204,9 @@ describe('collectClips', () => {
       periodMs: TWO_DAYS_MS,
       clipsFound: 0,
       requests: 0,
+      pass: 'wide',
+      passDone: 0,
+      passTotal: null,
     })
   })
 
@@ -258,6 +261,10 @@ describe('collectClips', () => {
       periodMs: TWO_DAYS_MS,
       clipsFound: 1,
       requests: 2,
+      pass: 'wide',
+      // One request into the second window's only pass.
+      passDone: 1,
+      passTotal: null,
     })
   })
 

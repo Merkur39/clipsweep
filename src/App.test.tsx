@@ -249,6 +249,9 @@ describe('App, while a search is running', () => {
     periodMs: 8,
     clipsFound,
     requests: 3,
+    pass: 'wide' as const,
+    passDone: 0,
+    passTotal: null,
   })
 
   const searchAndRun = (clipsFound: number) =>

@@ -20,7 +20,7 @@ describe('describeSearchResume', () => {
     expect(describeSearchResume({ progress: null, split: 0 }, t)).toBeNull()
   })
 
-  it('counts the slices, the ones it had to halve, and the requests', () => {
+  it('counts the slices and the ones it had to halve', () => {
     const text = describeSearchResume(
       {
         progress: {
@@ -30,6 +30,9 @@ describe('describeSearchResume', () => {
           periodMs: 96,
           clipsFound: 4812,
           requests: 1288,
+          pass: 'wide' as const,
+          passDone: 0,
+          passTotal: null,
         },
         split: 3,
       },
@@ -38,8 +41,13 @@ describe('describeSearchResume', () => {
 
     expect(text).toContain('96')
     expect(text).toContain('3')
-    // Grouped with the no-break space `formatCount` normalises to.
-    expect(text).toContain('1' + String.fromCharCode(0x00a0) + '288')
+    // The requests are not among them. A sweep now spends one request per two
+    // clips, so the figure runs into the hundreds and says nothing a reader can
+    // act on — the folded line is the whole of what the drawer is worth unopened,
+    // and it is worth more spent on the slices. The log still carries the count,
+    // for whoever opens it.
+    expect(text).not.toContain('1' + String.fromCharCode(0x00a0) + '288')
+    expect(text).not.toContain('requête')
   })
 
   // Nothing halved is the ordinary case: a segment that says "0" of something
@@ -54,6 +62,9 @@ describe('describeSearchResume', () => {
           periodMs: 12,
           clipsFound: 40,
           requests: 12,
+          pass: 'wide' as const,
+          passDone: 0,
+          passTotal: null,
         },
         split: 0,
       },
@@ -76,13 +87,16 @@ describe('describeSearchResume', () => {
           periodMs: 1,
           clipsFound: 0,
           requests: 1,
+          pass: 'wide' as const,
+          passDone: 0,
+          passTotal: null,
         },
         split: 1,
       },
       t,
     )
 
-    expect(text).toBe('1 tranche · 1 relancée en deux · 1 requête')
+    expect(text).toBe('1 tranche · 1 relancée en deux')
   })
 })
 

@@ -163,6 +163,9 @@ export async function collectClips({
   }))
   const byId = new Map<string, Clip>()
   const reports: WindowReport[] = []
+  let pass: 'wide' | 'narrow' = 'wide'
+  let passDone = 0
+  let passTotal: number | null = null
   let windowsDone = 0
   let windowsTotal = queue.length
   let requests = 0
@@ -190,13 +193,19 @@ export async function collectClips({
     periodMs,
     clipsFound: 0,
     requests: 0,
+    pass,
+    passDone,
+    passTotal,
   })
 
   /**
    * One pass over a window, at the page size it is asked for. Runs twice on a
    * window that admits a gap, which is why it is a function.
    */
-  const walk = async (window: DateWindow, first: number) => {
+  const walk = async (window: DateWindow, first: number, expected: number | null) => {
+    pass = expected === null ? 'wide' : 'narrow'
+    passDone = 0
+    passTotal = expected
     const ids = new Set<string>()
     let cursor: string | undefined
     let collected = 0
@@ -218,6 +227,7 @@ export async function collectClips({
         throw cause
       }
       requests += 1
+      passDone += 1
       for (const clip of page.clips) {
         byId.set(clip.id, clip)
         ids.add(clip.id)
@@ -250,6 +260,9 @@ export async function collectClips({
         periodMs,
         clipsFound: byId.size,
         requests,
+        pass,
+        passDone,
+        passTotal,
       })
 
       if (signal?.aborted || !cursor) break
@@ -270,7 +283,7 @@ export async function collectClips({
 
   while (queue.length > 0 && !signal?.aborted) {
     const { window, depth } = queue.shift()!
-    const wide = await walk(window, pageSize)
+    const wide = await walk(window, pageSize, null)
     let { saturated, unreachable } = wide
     let clipCount = wide.ids.size
     let duplicated = wide.collected - wide.ids.size
@@ -287,7 +300,9 @@ export async function collectClips({
     // A saturated window is the one exception: it is about to be halved, and
     // its two halves walk this very span again, each paying for its own share.
     if (!saturated && narrowPageSize < pageSize && !signal?.aborted) {
-      const narrow = await walk(window, narrowPageSize)
+      // One request per page of what the wide pass just counted: the bar can
+      // draw a fraction for the whole of the long pass.
+      const narrow = await walk(window, narrowPageSize, Math.ceil(wide.ids.size / narrowPageSize))
       recovered = [...narrow.ids].filter((id) => !wide.ids.has(id)).length
       clipCount = new Set([...wide.ids, ...narrow.ids]).size
       duplicated += narrow.collected - narrow.ids.size
@@ -342,6 +357,9 @@ export async function collectClips({
       periodMs,
       clipsFound: byId.size,
       requests,
+      pass,
+      passDone,
+      passTotal,
     })
   }
 

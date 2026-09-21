@@ -16,6 +16,9 @@ const setup = (props: Partial<SearchRunProps> = {}) =>
         periodMs: 96,
         clipsFound: 3218,
         requests: 640,
+        pass: 'wide' as const,
+        passDone: 0,
+        passTotal: null,
       }}
       pausedUntil={null}
       clipsFound={3218}
@@ -45,6 +48,71 @@ describe('SearchRun', () => {
 
     expect(slot).not.toHaveAttribute('data-open')
     expect(slot).toHaveAttribute('inert')
+  })
+
+  /**
+   * The second pass costs nine requests out of ten and brings back next to
+   * nothing — 0 clips of 261 on `vinc33x`, 1 of 91 on `noxya__`, measured on
+   * 2026-09-21. The table is there by then, so the block comes down to a line
+   * at the foot of the screen and lets it be read.
+   */
+  it('comes down to a line while the second pass verifies', () => {
+    const { container } = setup({
+      progress: {
+        windowsDone: 0,
+        windowsTotal: 1,
+        coveredMs: 0,
+        periodMs: 172_800_000,
+        clipsFound: 261,
+        requests: 57,
+        pass: 'narrow',
+        passDone: 43,
+        passTotal: 100,
+      },
+    })
+
+    expect(container.firstElementChild!).toHaveAttribute('data-compact')
+    expect(screen.getByText(/Vérification en cours/)).toBeInTheDocument()
+    // The figure goes with it: the ticket above carries the same count, in the
+    // same words, three centimetres higher. One readout of one number.
+    expect(container.querySelector('.run-count')).toBeNull()
+    expect(screen.queryByText(/261/)).toBeNull()
+    // The slice count and the estimate go back down to the drawer: over a
+    // single window they read "0 of 1" and divide by ground that cannot move.
+    expect(container.querySelector('.run-foot')).toBeNull()
+  })
+
+  /**
+   * And it is the one stretch that can be drawn as a fraction. `coveredMs` only
+   * moves when a window closes, so over the single window a sweep now seeds, the
+   * bar has nothing to say from the first request to the last — where the pass
+   * knows exactly what it costs.
+   */
+  it('draws the second pass as a fraction of itself', () => {
+    setup({
+      progress: {
+        windowsDone: 0,
+        windowsTotal: 1,
+        coveredMs: 0,
+        periodMs: 172_800_000,
+        clipsFound: 261,
+        requests: 57,
+        pass: 'narrow',
+        passDone: 43,
+        passTotal: 100,
+      },
+    })
+    const bar = screen.getByRole('progressbar')
+
+    expect(bar).not.toHaveAttribute('data-indeterminate')
+    expect(bar).toHaveAttribute('aria-valuenow', '43')
+  })
+
+  it('stays whole while the first pass walks', () => {
+    const { container } = setup()
+
+    expect(container.firstElementChild!).not.toHaveAttribute('data-compact')
+    expect(container.querySelector('.run-foot')).not.toBeNull()
   })
 
   it('opens the moment a search is running', () => {
@@ -102,6 +170,9 @@ describe('SearchRun', () => {
         periodMs: 1000,
         clipsFound: 12,
         requests: 30,
+        pass: 'wide' as const,
+        passDone: 0,
+        passTotal: null,
       },
     })
 
@@ -138,6 +209,9 @@ describe('SearchRun', () => {
         periodMs: 99,
         clipsFound: 0,
         requests: 3,
+        pass: 'wide' as const,
+        passDone: 0,
+        passTotal: null,
       },
       clipsFound: 0,
     })
@@ -163,6 +237,9 @@ describe('SearchRun', () => {
         periodMs: 99,
         clipsFound: 40,
         requests: 10,
+        pass: 'wide' as const,
+        passDone: 0,
+        passTotal: null,
       },
       clipsFound: 40,
     })

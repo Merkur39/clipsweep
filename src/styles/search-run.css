@@ -59,6 +59,26 @@
     padding-block 0.24s var(--ease);
 }
 
+/* The second pass. It costs nine requests out of ten and brings back next to
+   nothing, so the block stops holding the screen: the figure comes down to the
+   size of ordinary type, the bar to a rule, and what is left is a line saying
+   the table is being confirmed. The slot keeps its transition, so the fold from
+   one to the other is the same movement as the fold at the end. */
+.run-slot[data-compact] .run {
+  gap: var(--s-2);
+  padding-block: var(--s-1) var(--s-3);
+}
+
+/* The line is the subject now, not a caption to the right of a figure. */
+.run-slot[data-compact] .run-say {
+  max-width: none;
+  text-align: left;
+}
+
+.run-slot[data-compact] .run-bar {
+  height: 3px;
+}
+
 .run-head {
   display: flex;
   align-items: flex-end;
