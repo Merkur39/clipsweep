@@ -410,6 +410,10 @@ export const fr = {
     one: 'Trop de requêtes : pause de {n} seconde demandée par Twitch.',
     other: 'Trop de requêtes : pause de {n} secondes demandée par Twitch.',
   },
+  'log.retrying': {
+    one: 'Twitch n’a pas répondu : nouvelle tentative dans {n} seconde.',
+    other: 'Twitch n’a pas répondu : nouvelle tentative dans {n} secondes.',
+  },
   'log.summaryClips': { one: '{n} clip unique', other: '{n} clips uniques' },
   'log.summaryRequests': { one: '{n} requête', other: '{n} requêtes' },
   'log.interrupted': 'Recherche interrompue : le résultat est partiel.',

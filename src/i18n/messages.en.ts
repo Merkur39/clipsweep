@@ -253,6 +253,10 @@ export const en: Catalogue = {
     one: 'Too many requests: Twitch asked for a pause of {n} second.',
     other: 'Too many requests: Twitch asked for a pause of {n} seconds.',
   },
+  'log.retrying': {
+    one: 'Twitch did not answer: trying again in {n} second.',
+    other: 'Twitch did not answer: trying again in {n} seconds.',
+  },
   'log.summaryClips': { one: '{n} unique clip', other: '{n} unique clips' },
   'log.summaryRequests': { one: '{n} request', other: '{n} requests' },
   'log.interrupted': 'Search interrupted: the result is partial.',

@@ -172,3 +172,91 @@ describe('the pause Helix asks for', () => {
     expect(fetch).toHaveBeenCalledTimes(2)
   })
 })
+
+/**
+ * A stop has to reach the waits, and not only the requests. The client spends
+ * more of a sweep waiting than fetching — sixty milliseconds between every
+ * request, up to a minute on a 429, up to thirty-two seconds backing off a
+ * server error — and a wait that ignores the signal keeps a stopped search
+ * alive for as long as it lasts.
+ */
+describe('a stop reaching the waits', () => {
+  afterEach(() => vi.useRealTimers())
+
+  const throttled = () =>
+    ({
+      ok: false,
+      status: 429,
+      headers: new Headers({ 'ratelimit-reset': String(Math.floor(Date.now() / 1000) + 30) }),
+      json: () => Promise.resolve({}),
+    }) as unknown as Response
+
+  it('cuts a pause short rather than sitting it out', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(throttled()))
+    const controller = new AbortController()
+
+    const pending = new TwitchApi(session, controller.signal).fetchUser('kaliyami')
+    const settled = expect(pending).rejects.toMatchObject({ name: 'AbortError' })
+    await vi.advanceTimersByTimeAsync(10)
+    controller.abort()
+    await vi.advanceTimersByTimeAsync(10)
+    await settled
+
+    // The minute was never spent, and the request was never tried again.
+    expect(fetch).toHaveBeenCalledTimes(1)
+  })
+
+  /**
+   * The spacing between requests is the one wait a stop must NOT reject on.
+   * The page is already fetched, parsed and paid for by then; throwing there
+   * would drop up to twenty clips the sweep holds, for a point of quota already
+   * spent.
+   */
+  it('hands back the page it already holds when a stop lands on the spacing', async () => {
+    const controller = new AbortController()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        controller.abort()
+        return ok([{ id: '1', login: 'kaliyami', display_name: 'KaliYami' }])
+      }),
+    )
+
+    await expect(
+      new TwitchApi(session, controller.signal).fetchUser('kaliyami'),
+    ).resolves.toMatchObject({ login: 'kaliyami' })
+  })
+
+  /**
+   * And a server error says so. The 429 branch has always announced its wait;
+   * this one backed off in silence for up to thirty-two seconds — a bar that
+   * stops moving, no countdown, no line in the log. Which is the very picture
+   * of a hang the announcement exists to prevent.
+   */
+  it('announces the wait it takes after a server error', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 503,
+          json: () => Promise.resolve({}),
+        } as Response)
+        .mockResolvedValue(ok([{ id: '1', login: 'kaliyami', display_name: 'KaliYami' }])),
+    )
+    const announced: { until: number | null; reason?: string }[] = []
+
+    const pending = new TwitchApi(session, undefined, (until, reason) =>
+      announced.push({ until, reason }),
+    ).fetchUser('kaliyami')
+    await vi.advanceTimersByTimeAsync(5_000)
+    await pending
+
+    expect(announced).toHaveLength(2)
+    expect(announced[0].reason).toBe('server')
+    expect(announced[1].until).toBeNull()
+  })
+})

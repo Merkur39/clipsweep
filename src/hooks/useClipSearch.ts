@@ -159,10 +159,11 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
       try {
         // Said out loud as well as waited out: up to a minute of a search
         // standing still, in silence, reads as a search that has hung.
-        const api = new TwitchApi(session, controller.signal, (resumesAt) => {
+        const api = new TwitchApi(session, controller.signal, (resumesAt, reason) => {
           setPausedUntil(resumesAt)
           if (resumesAt !== null) {
-            log('log.paused', { n: Math.round((resumesAt - Date.now()) / 1000) }, 'warn')
+            const n = Math.round((resumesAt - Date.now()) / 1000)
+            log(reason === 'server' ? 'log.retrying' : 'log.paused', { n }, 'warn')
           }
         })
         const user = await api.fetchUser(channel)
