@@ -29,6 +29,7 @@ const setup = (props: Partial<SearchPanelProps> = {}) => {
       channelCreatedAt={null}
       channelStatus="found"
       running={false}
+      stopping={false}
       onRun={onRun}
       {...props}
     />,
@@ -187,6 +188,22 @@ const run = () => screen.getByRole('button', { name: 'Chercher les clips' })
  * Which means it never comes alive mid-word: it waits for the answer rather
  * than following the keystrokes.
  */
+describe('SearchPanel, the stop', () => {
+  /**
+   * The third state of one button. A stop is instant where the click was and
+   * slow everywhere else — the sweep has a last delivery, a log and a round of
+   * game names to get through — so the button says what it is doing and refuses
+   * a second press, rather than standing on "stop the search" while all that
+   * unwinds.
+   */
+  it('acknowledges a stop before the search has finished unwinding', () => {
+    setup({ running: true, stopping: true })
+    const button = screen.getByRole('button', { name: /Arrêt en cours/ })
+
+    expect(button).toBeDisabled()
+  })
+})
+
 describe('SearchPanel, what the button refuses', () => {
   it('opens only on a channel that is confirmed to exist', () => {
     setup({ channel: 'kaliyami', channelStatus: 'found' })

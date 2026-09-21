@@ -234,6 +234,7 @@ export default function App({ authError }: { authError: string | null }) {
     logEntries,
     gameNames,
     running,
+    stopping,
   } = search
 
   // A running search, or its results on screen, live in the application's memory
@@ -640,6 +641,7 @@ export default function App({ authError }: { authError: string | null }) {
               channelCreatedAt={channelCreatedAt}
               channelStatus={lookup.status}
               running={running}
+              stopping={stopping}
               onRun={run}
               onFold={foldTicket}
             />

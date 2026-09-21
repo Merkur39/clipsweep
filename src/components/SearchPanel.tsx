@@ -44,6 +44,8 @@ export interface SearchPanelProps {
   channelStatus: ChannelLookup['status']
 
   running: boolean
+  /** A stop was asked for and the sweep has not finished unwinding. */
+  stopping: boolean
   onRun: () => void
   /**
    * The way back to the folded ticket, or nothing at all.
@@ -88,6 +90,7 @@ export function SearchPanel({
   channelCreatedAt,
   channelStatus,
   running,
+  stopping,
   onRun,
   onFold,
 }: SearchPanelProps) {
@@ -251,9 +254,11 @@ export function SearchPanel({
           type="button"
           className={`ticket-run ${running ? '' : 'primary'}`}
           onClick={onRun}
-          disabled={refused}
+          /* A second press has nothing left to ask for, and the wait between
+             the click and the last frame is exactly when it would be pressed. */
+          disabled={refused || stopping}
         >
-          {running ? t('panel.stop') : t('panel.run')}
+          {stopping ? t('panel.stopping') : running ? t('panel.stop') : t('panel.run')}
         </button>
 
         {/* The footnotes of the query: what becomes of the name typed, and what

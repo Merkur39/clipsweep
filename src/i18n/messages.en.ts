@@ -55,6 +55,7 @@ export const en: Catalogue = {
   'panel.fold': 'Back to the results',
   'panel.run': 'Search for clips',
   'panel.stop': 'Stop the search',
+  'panel.stopping': 'Stopping…',
 
   // ── What to expect ───────────────────────────────────────────────────────
 

@@ -102,6 +102,7 @@ export const fr = {
   'panel.fold': 'Revenir aux résultats',
   'panel.run': 'Chercher les clips',
   'panel.stop': 'Arrêter la recherche',
+  'panel.stopping': 'Arrêt en cours…',
 
   // ── What to expect ───────────────────────────────────────────────────────
   /* Three answers to the three questions a first search asks, and they are

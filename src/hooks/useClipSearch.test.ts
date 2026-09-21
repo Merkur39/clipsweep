@@ -171,6 +171,46 @@ describe('useClipSearch', () => {
     expect(log).toContain('1 clip récupéré')
   })
 
+  /**
+   * A stop has to be acknowledged where the click was, and at once. Everything
+   * the sweep does on the way out — the last delivery, the log, the game names
+   * — runs before `running` can fall, and on a big channel the main thread has
+   * no frame to spare for any of it. The button then sits there saying "stop
+   * the search", which is the picture of an application that has hung.
+   */
+  it('says it is stopping the instant it is asked to', async () => {
+    channelFound()
+    gameNames(new Map())
+    let release = () => {}
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    fetchPage.mockImplementation(async () => {
+      await held
+      return { clips: [clip('a')] }
+    })
+
+    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    let search!: Promise<void>
+    await act(async () => {
+      search = result.current.start(request)
+    })
+
+    expect(result.current.stopping).toBe(false)
+    act(() => result.current.stop())
+    // Before anything has been awaited: the search is still running.
+    expect(result.current.stopping).toBe(true)
+    expect(result.current.running).toBe(true)
+
+    await act(async () => {
+      release()
+      await search
+    })
+
+    expect(result.current.stopping).toBe(false)
+    expect(result.current.running).toBe(false)
+  })
+
   it('reads in the language it is read in, not the one it ran in', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [] })
