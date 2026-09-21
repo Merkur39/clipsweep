@@ -109,11 +109,16 @@ describe('collectClips', () => {
     ]
     const fetchPage = vi.fn(async () => pages.shift()!)
 
-    const { clips, requests } = await collectClips({ windows: [twoDays], fetchPage })
+    const { clips, requests } = await collectClips({
+      windows: [twoDays],
+      fetchPage,
+      // One pass: this fixture describes exactly the requests it expects.
+      narrowPageSize: 20,
+    })
 
     expect(clips.map((c) => c.id)).toEqual(['a', 'b', 'c'])
     expect(requests).toBe(2)
-    expect(fetchPage).toHaveBeenLastCalledWith(twoDays, 'p2', 100)
+    expect(fetchPage).toHaveBeenLastCalledWith(twoDays, 'p2', 20)
   })
 
   it('deduplicates clips returned by overlapping windows', async () => {
@@ -135,6 +140,8 @@ describe('collectClips', () => {
       windows: [twoDays, oneHour],
       fetchPage,
       pageCap: 2,
+      // One pass: this fixture describes exactly the requests it expects.
+      narrowPageSize: 20,
     })
 
     expect(clips.map((c) => c.id).sort()).toEqual(['a', 'b', 'c'])
@@ -215,6 +222,8 @@ describe('collectClips', () => {
       windows: [twoDays],
       fetchPage: async () => pages.shift()!,
       onProgress,
+      // One pass: this fixture describes exactly the requests it expects.
+      narrowPageSize: 20,
     })
 
     const seen = onProgress.mock.calls.map(([p]) => p as Progress)
@@ -232,7 +241,13 @@ describe('collectClips', () => {
     const onProgress = vi.fn()
     const fetchPage = vi.fn(async () => ({ clips: [clip('a')] }))
 
-    await collectClips({ windows: [firstHalf, secondHalf], fetchPage, onProgress })
+    await collectClips({
+      windows: [firstHalf, secondHalf],
+      fetchPage,
+      onProgress,
+      // One pass: this fixture describes exactly the requests it expects.
+      narrowPageSize: 20,
+    })
 
     expect(onProgress).toHaveBeenLastCalledWith({
       windowsDone: 2,
@@ -384,7 +399,7 @@ describe('collectClips', () => {
     const { reports, unreachable } = await collectClips({
       windows: [firstHalf],
       fetchPage,
-      rescuePageSize: 100,
+      narrowPageSize: 100,
     })
 
     expect(reports[0].unreachable).toBe(2)
@@ -401,7 +416,7 @@ describe('collectClips', () => {
     const { reports, unreachable } = await collectClips({
       windows: [firstHalf],
       fetchPage,
-      rescuePageSize: 100,
+      narrowPageSize: 100,
     })
 
     expect(reports[0].unreachable).toBe(0)
@@ -417,63 +432,90 @@ describe('collectClips', () => {
     ]
     const fetchPage = vi.fn(async () => pages.shift()!)
 
-    const { clips, reports } = await collectClips({ windows: [firstHalf], fetchPage })
+    const { clips, reports } = await collectClips({
+      windows: [firstHalf],
+      fetchPage,
+      // One pass: this fixture describes exactly the requests it expects.
+      narrowPageSize: 20,
+    })
 
     expect(clips).toHaveLength(2)
     expect(reports[0].unreachable).toBe(0)
   })
 
   /**
-   * The buy-back. A window whose cursor admits a gap is read again at a smaller
-   * page size, because that is where the gap comes from: measured on
-   * 2026-09-20, `vinc33x` at `first=100` withheld 4 clips over three pages and
-   * the same window at `first=20` served every page full — 261 clips, the
-   * site's own count, deficit nought.
+   * Two passes over every window, at two page sizes far apart, unioned by id.
+   * Neither size is right on its own, and measurement is what settled it:
    *
-   * Only a window walked to the end earns it. One about to be halved would pay
-   * for a span its two halves are about to walk again.
+   *   · `vinc33x`, 261 clips — `first=100` returned 257 (pages of 98 for a
+   *     hundred asked), `first=20` returned all 261, `first=2` returned 253
+   *     out of 261 rows served, eight of them repeats.
+   *   · `noxya__`, 91 clips — `first=100` returned 88 in a single page with no
+   *     cursor at all, `first=2` returned all 91.
+   *
+   * A wide slice drops rows inside itself; a narrow one multiplies the page
+   * borders, and the ordering shifts between two requests, so clips are served
+   * twice and others never. The two failures answer to opposite knobs, so the
+   * sweep turns both.
    */
-  it('reads a window again, smaller, when the cursor admits a gap', async () => {
+  it('reads every window twice, at two page sizes, and unions what it finds', async () => {
     const asked: number[] = []
     const fetchPage = vi.fn(async (_w: DateWindow, cursor: string | undefined, first: number) => {
       asked.push(first)
-      if (first === 100) {
-        return cursor
-          ? { clips: [clip('c')] }
-          : { clips: [clip('a'), clip('b')], cursor: cursorAt(3) }
-      }
-      return cursor
-        ? { clips: [clip('c')] }
-        : { clips: [clip('a'), clip('b'), clip('x')], cursor: cursorAt(3) }
+      if (cursor) return { clips: [] }
+      return first === 20
+        ? { clips: [clip('wide'), clip('both')], cursor: undefined }
+        : { clips: [clip('narrow'), clip('both')], cursor: undefined }
     })
 
-    const { clips, reports, unreachable } = await collectClips({
-      windows: [firstHalf],
-      fetchPage,
-      rescuePageSize: 20,
-    })
+    const { clips, reports } = await collectClips({ windows: [firstHalf], fetchPage })
 
-    expect(asked).toEqual([100, 100, 20, 20])
-    expect(clips.map((c) => c.id).sort()).toEqual(['a', 'b', 'c', 'x'])
+    expect(asked).toEqual([20, 2])
+    expect(clips.map((c) => c.id).sort()).toEqual(['both', 'narrow', 'wide'])
     expect(reports[0].recovered).toBe(1)
-    expect(reports[0].unreachable).toBe(0)
-    expect(unreachable).toBe(0)
   })
 
-  it('leaves a window alone when every page served what it claimed', async () => {
+  /**
+   * And the second pass is owed nothing by the first. On `noxya__` the whole
+   * channel came back as one page of 88 with no cursor — so nothing claimed
+   * more, the ledger read nought, and three clips were missing all the same.
+   * A trigger blind to the one page every window ends on cannot gate the pass
+   * that repairs it.
+   */
+  it('reads a window again even when nothing admitted a gap', async () => {
     const asked: number[] = []
-    const fetchPage = vi.fn(async (_w: DateWindow, cursor: string | undefined, first: number) => {
+    const fetchPage = vi.fn(async (_w: DateWindow, _c: string | undefined, first: number) => {
       asked.push(first)
-      return cursor ? { clips: [clip('b')] } : { clips: [clip('a')], cursor: cursorAt(1) }
+      return first === 20 ? { clips: [clip('a')] } : { clips: [clip('a'), clip('b')] }
     })
 
-    const { reports } = await collectClips({ windows: [firstHalf], fetchPage })
+    const { clips, reports } = await collectClips({ windows: [firstHalf], fetchPage })
 
-    expect(asked).toEqual([100, 100])
-    expect(reports[0].recovered).toBeNull()
+    expect(asked).toEqual([20, 2])
+    expect(clips.map((c) => c.id).sort()).toEqual(['a', 'b'])
+    expect(reports[0].unreachable).toBe(0)
+    expect(reports[0].recovered).toBe(1)
   })
 
-  it('leaves a saturated window to its halves rather than buying it back', async () => {
+  /**
+   * A row served twice is a row served in place of another: the pass that
+   * repeated it skipped something. It proves that pass incomplete — never the
+   * sweep, since the other pass may well hold what it missed, which is the
+   * whole reason there are two.
+   */
+  it('counts the rows a pass served twice', async () => {
+    const fetchPage = vi.fn(async (_w: DateWindow, cursor: string | undefined, first: number) => {
+      if (first !== 2) return { clips: [clip('a')] }
+      return cursor ? { clips: [clip('a')] } : { clips: [clip('a')], cursor: cursorAt(1) }
+    })
+
+    const { clips, reports } = await collectClips({ windows: [firstHalf], fetchPage })
+
+    expect(clips.map((c) => c.id)).toEqual(['a'])
+    expect(reports[0].duplicated).toBe(1)
+  })
+
+  it('leaves a saturated window to its halves rather than reading it twice', async () => {
     const asked: number[] = []
     const fetchPage = vi.fn(async (window: DateWindow, _c: string | undefined, first: number) => {
       asked.push(first)
@@ -487,32 +529,90 @@ describe('collectClips', () => {
       fetchPage,
       pageCap: 2,
       minWindowMs: TWO_DAYS_MS / 2,
-      rescuePageSize: 20,
     })
 
-    expect(asked.every((first) => first === 100)).toBe(true)
     expect(reports[0]).toMatchObject({ saturated: true, split: true, recovered: null })
   })
 
-  // The gap can survive the buy-back, and then it is the honest residual that
-  // must be reported — not the one the first, coarser walk saw.
-  it('reports what the smaller read still could not reach', async () => {
+  // The gap can survive both passes, and then it is the second pass's residual
+  // that must be reported — not the one the wider, coarser pass happened to see.
+  it('reports what the second pass still could not reach', async () => {
     const fetchPage = vi.fn(async (_w: DateWindow, cursor: string | undefined, first: number) => {
       if (cursor) return { clips: [clip('c')] }
-      return first === 100
-        ? { clips: [clip('a')], cursor: cursorAt(4) }
+      return first === 20
+        ? { clips: [clip('a')], cursor: cursorAt(9) }
         : { clips: [clip('a'), clip('x')], cursor: cursorAt(4) }
     })
 
-    const { reports, unreachable } = await collectClips({
-      windows: [firstHalf],
-      fetchPage,
-      rescuePageSize: 20,
-    })
+    const { reports, unreachable } = await collectClips({ windows: [firstHalf], fetchPage })
 
     expect(reports[0].recovered).toBe(1)
     expect(reports[0].unreachable).toBe(2)
     expect(unreachable).toBe(2)
+  })
+
+  /**
+   * A slice that dropped everything it held. Measured on 2026-09-20 on
+   * `noxya__`: asked for five clips over one day, Helix served three and a
+   * cursor reading five; the next request came back empty although two clips
+   * of that day were still unserved. An empty page is the shape a fully
+   * dropped slice takes, not the shape the end of a list takes — the end comes
+   * with no cursor at all.
+   */
+  it('keeps walking when a slice comes back empty and the cursor lives on', async () => {
+    const pages: ClipPage[] = [
+      { clips: [clip('a')], cursor: cursorAt(2) },
+      { clips: [], cursor: cursorAt(4) },
+      { clips: [clip('b')] },
+    ]
+    const fetchPage = vi.fn(async () => pages.shift()!)
+
+    const { clips } = await collectClips({
+      windows: [firstHalf],
+      fetchPage,
+      // One pass: this fixture describes exactly the requests it expects.
+      narrowPageSize: 20,
+    })
+
+    expect(clips.map((c) => c.id)).toEqual(['a', 'b'])
+    expect(fetchPage).toHaveBeenCalledTimes(3)
+  })
+
+  // And a floor under it, so that a service handing back cursors for ever
+  // cannot hold a sweep open on nothing.
+  it('gives up on a window after a run of empty pages', async () => {
+    const fetchPage = vi.fn(async () => ({ clips: [], cursor: cursorAt(99) }))
+
+    const { clips } = await collectClips({
+      windows: [firstHalf],
+      fetchPage,
+      // One pass: this fixture describes exactly the requests it expects.
+      narrowPageSize: 20,
+    })
+
+    expect(clips).toEqual([])
+    expect(fetchPage).toHaveBeenCalledTimes(3)
+  })
+
+  /**
+   * The page size the sweep asks for by default, and the whole of what stands
+   * between it and the clips Helix drops. Measured the same day, same window of
+   * one day: 100, 20 and 5 all returned three clips; 2 returned five.
+   *
+   * Not 1, which is the fragile end rather than the safe one: a slice of one
+   * that drops its only row answers with an empty page, and an empty page is
+   * one round of tolerance spent rather than a clip recovered.
+   */
+  it('asks twenty first, then two', async () => {
+    const asked: number[] = []
+    const fetchPage = vi.fn(async (_w: DateWindow, _c: string | undefined, first: number) => {
+      asked.push(first)
+      return { clips: [clip('a')] }
+    })
+
+    await collectClips({ windows: [firstHalf], fetchPage })
+
+    expect(asked).toEqual([20, 2])
   })
 
   it('stops early when the signal is aborted', async () => {

@@ -8,19 +8,50 @@ import { bisect, type DateWindow } from './windows'
  * from one that got truncated.
  */
 export const DEFAULT_PAGE_CAP = 950
+/**
+ * How many empty pages in a row end a window.
+ *
+ * An empty page is not the end of a list — the end comes with no cursor at all.
+ * It is the shape a slice takes when it dropped every row it held, and walking
+ * past it is how the clips behind it are reached. The floor is there so that a
+ * service handing back cursors for ever cannot hold a sweep open on nothing.
+ */
+const EMPTY_PAGE_TOLERANCE = 3
 /** Below six hours, splitting costs more requests than the clips it recovers. */
 export const DEFAULT_MIN_WINDOW_MS = 6 * 3_600_000
-/** The ceiling Helix allows, and what a sweep asks for until a gap shows up. */
-export const DEFAULT_PAGE_SIZE = 100
 /**
- * What a window is read again at once its cursor admits a gap.
+ * How many clips a request asks for — the one knob that decides how many Helix
+ * drops on the floor.
  *
- * Measured on 2026-09-20, `vinc33x`: at `first=100` the three pages served 98,
- * 98 and 61 clips against cursors reading 100 and 200 — four withheld, 257 in
- * hand. The same window at `first=20` served all fourteen pages full: 261
- * clips, the site's own count, and a deficit of nought on every page.
+ * It advances its cursor by what you asked for, never by what it served, so
+ * every row a slice fails to produce is skipped for good. The wider the slice,
+ * the more it drops. Measured on 2026-09-20, `noxya__`, one window of one day
+ * holding five clips: `first` at 100, 20 and 5 each returned three; `first` at
+ * 2 returned all five. On `vinc33x`, `first=100` returned 257 of 261, in pages
+ * of 98 for a hundred asked.
+ *
+ * Not 1, which is the fragile end rather than the safe one: a slice of one that
+ * drops its only row answers with an empty page, and an empty page buys nothing
+ * — see the tolerance below.
+ *
+ * It costs a request per two clips. The quota is not what pays for it: Helix
+ * allows 800 points a minute per user and per client ID, and the 60 ms spacing
+ * holds a sweep near 330. Time is what pays.
  */
-export const DEFAULT_RESCUE_PAGE_SIZE = 20
+export const DEFAULT_PAGE_SIZE = 20
+/**
+ * What a window is read again at once its cursor admits a gap — and by default
+ * nothing, the buy-back firing only under a page size larger than this one.
+ *
+ * It was 20 against a first pass of 100, and it worked where it fired. What it
+ * cannot do is fire on the last page of a window, which carries no cursor and
+ * therefore claims nothing: on `noxya__` the whole channel fitted in one such
+ * page, two clips were dropped, and the ledger read nought. A trigger blind to
+ * the one page every window ends on cannot be the guarantee, so the guarantee
+ * moved into the page size itself and the buy-back stays for a caller that asks
+ * for wider pages.
+ */
+export const DEFAULT_NARROW_PAGE_SIZE = 2
 
 export type ClipPageFetcher = (
   window: DateWindow,
@@ -60,6 +91,17 @@ export interface WindowReport {
    * read twice simply never admitted to a gap.
    */
   recovered: number | null
+  /**
+   * Rows a pass served twice, summed over the passes that ran.
+   *
+   * A repeat is a row served in place of another: the pass that repeated it
+   * skipped something, one for one. Measured on 2026-09-20, `vinc33x` at
+   * `first=2`: 261 rows served, 253 distinct, eight repeats — and eight clips
+   * that pass never served. It proves THAT pass incomplete, never the sweep:
+   * the other pass may hold exactly what it missed, which is the whole reason
+   * there are two.
+   */
+  duplicated: number
 }
 
 export interface CollectResult {
@@ -86,8 +128,8 @@ export interface CollectClipsOptions {
   minWindowMs?: number
   /** What a window is asked for first. */
   pageSize?: number
-  /** What a window admitting a gap is read again at; no buy-back above it. */
-  rescuePageSize?: number
+  /** What the second pass asks for; no second pass unless it is the smaller. */
+  narrowPageSize?: number
   onProgress?: (progress: Progress) => void
   onWindow?: (report: WindowReport) => void
   /**
@@ -109,7 +151,7 @@ export async function collectClips({
   pageCap = DEFAULT_PAGE_CAP,
   minWindowMs = DEFAULT_MIN_WINDOW_MS,
   pageSize = DEFAULT_PAGE_SIZE,
-  rescuePageSize = DEFAULT_RESCUE_PAGE_SIZE,
+  narrowPageSize = DEFAULT_NARROW_PAGE_SIZE,
   onProgress,
   onWindow,
   onClips,
@@ -155,15 +197,20 @@ export async function collectClips({
    * window that admits a gap, which is why it is a function.
    */
   const walk = async (window: DateWindow, first: number) => {
+    const ids = new Set<string>()
     let cursor: string | undefined
     let collected = 0
     let saturated = false
     let unreachable = 0
+    let emptyRun = 0
 
     for (;;) {
       const page = await fetchPage(window, cursor, first)
       requests += 1
-      for (const clip of page.clips) byId.set(clip.id, clip)
+      for (const clip of page.clips) {
+        byId.set(clip.id, clip)
+        ids.add(clip.id)
+      }
       collected += page.clips.length
       cursor = page.cursor
       // What the next request will skip over. Helix serves fewer clips than the
@@ -188,39 +235,49 @@ export async function collectClips({
         requests,
       })
 
-      if (signal?.aborted || !cursor || page.clips.length === 0) break
+      if (signal?.aborted || !cursor) break
+      if (page.clips.length === 0) {
+        emptyRun += 1
+        if (emptyRun >= EMPTY_PAGE_TOLERANCE) break
+      } else {
+        emptyRun = 0
+      }
       if (collected >= pageCap) {
         saturated = true
         break
       }
     }
 
-    return { collected, saturated, unreachable }
+    return { ids, collected, saturated, unreachable }
   }
 
   while (queue.length > 0 && !signal?.aborted) {
     const { window, depth } = queue.shift()!
-    let { collected, saturated, unreachable } = await walk(window, pageSize)
+    const wide = await walk(window, pageSize)
+    let { saturated, unreachable } = wide
+    let clipCount = wide.ids.size
+    let duplicated = wide.collected - wide.ids.size
     let recovered: number | null = null
 
-    // The buy-back. A cursor claiming more than the page delivered names the
-    // clips the next request is about to skip, and smaller pages are where they
-    // come back — the whole window again, since the gap sits at page borders
-    // whose position is precisely what changes.
+    // The second pass, unconditional. The two page sizes fail in opposite ways
+    // — a wide slice drops rows inside itself, a narrow one multiplies the page
+    // borders where the ordering shifts — so neither is right on its own and
+    // nothing in the response says which one is failing here. The ledger cannot
+    // gate it either: a window ending on its only page carries no cursor, so it
+    // claims nothing and admits nothing, which is exactly the case that needs
+    // the second pass most.
     //
-    // Only a window walked to the end earns it. A saturated one is about to be
-    // halved, and its two halves will walk this very span again, each buying
-    // back its own share; paying here would pay twice for the same ground.
-    if (!saturated && unreachable > 0 && rescuePageSize < pageSize && !signal?.aborted) {
-      const before = byId.size
-      const again = await walk(window, rescuePageSize)
-      recovered = byId.size - before
-      // The second pass read the same window more completely, so it is the one
-      // that describes it — its rows, its saturation, and the gap IT still
-      // could not close.
-      collected = again.collected
-      saturated = again.saturated
-      unreachable = again.unreachable
+    // A saturated window is the one exception: it is about to be halved, and
+    // its two halves walk this very span again, each paying for its own share.
+    if (!saturated && narrowPageSize < pageSize && !signal?.aborted) {
+      const narrow = await walk(window, narrowPageSize)
+      recovered = [...narrow.ids].filter((id) => !wide.ids.has(id)).length
+      clipCount = new Set([...wide.ids, ...narrow.ids]).size
+      duplicated += narrow.collected - narrow.ids.size
+      saturated = saturated || narrow.saturated
+      // The narrow pass's own residual, not the wide one's: reporting the
+      // figure the second pass was run to correct would quote a stale gap.
+      unreachable = narrow.unreachable
     }
 
     const halves = saturated ? bisect(window, minWindowMs) : null
@@ -233,11 +290,12 @@ export async function collectClips({
     const report: WindowReport = {
       window,
       depth,
-      clipCount: collected,
+      clipCount,
       saturated,
       split: halves !== null,
       unreachable,
       recovered,
+      duplicated,
     }
     reports.push(report)
     onWindow?.(report)
