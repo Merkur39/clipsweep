@@ -174,30 +174,54 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
           },
           // The table fills in during the search instead of waiting for the end.
           onClips: setClips,
+          /**
+           * A window reports twice: once when the wide pass leaves it, and
+           * again when the narrow one has been over it — see `collectClips`.
+           * So it is replaced rather than appended, and each line is said at
+           * the emission that can say it truthfully.
+           */
           onWindow: (report) => {
-            setReports((previous) => [...previous, report])
+            setReports((previous) => {
+              const at = previous.findIndex(
+                (seen) =>
+                  seen.window.startedAt === report.window.startedAt &&
+                  seen.window.endedAt === report.window.endedAt,
+              )
+              if (at === -1) return [...previous, report]
+              const next = [...previous]
+              next[at] = report
+              return next
+            })
+
             const window = {
               indent: '  '.repeat(report.depth),
               from: { day: report.window.startedAt },
               to: { day: report.window.endedAt },
               n: report.clipCount,
             }
-            // Said before the slice's own line, because it is what makes that
-            // line's count true: the tally that follows is the one the second,
-            // smaller read came back with.
-            if (report.recovered) {
+            const verified = report.recovered !== null
+
+            if (!verified) {
+              if (report.split) {
+                log('log.sliceSplit', window, 'warn')
+              } else if (report.saturated) {
+                log('log.sliceLost', window, 'err')
+              } else if (report.clipCount) {
+                log('log.slice', window)
+              }
+            } else if (report.recovered) {
+              // Said after the slice's own line and not before: the count that
+              // line carried was the wide pass's, and this is what the narrow
+              // one added to it.
               log('log.sliceRescued', { ...window, n: report.recovered }, 'good')
             }
-            if (report.unreachable > 0) {
-              log('log.sliceGap', { ...window, n: report.unreachable }, 'warn')
-            }
 
-            if (report.split) {
-              log('log.sliceSplit', window, 'warn')
-            } else if (report.saturated) {
-              log('log.sliceLost', window, 'err')
-            } else if (report.clipCount) {
-              log('log.slice', window)
+            // The gap waits for the window's last word. A window the narrow
+            // pass is about to go over would otherwise quote a figure that pass
+            // exists to correct; a saturated one gets no second pass, so its
+            // first word is its last.
+            if (report.unreachable > 0 && (verified || report.saturated)) {
+              log('log.sliceGap', { ...window, n: report.unreachable }, 'warn')
             }
           },
         })

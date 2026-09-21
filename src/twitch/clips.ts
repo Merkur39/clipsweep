@@ -281,36 +281,17 @@ export async function collectClips({
     return { ids, collected, saturated, unreachable }
   }
 
+  /** What the wide pass leaves for the narrow one, once it has walked it all. */
+  const toVerify: { report: WindowReport; wideIds: Set<string> }[] = []
+
+  // ── First pass, wide, over every window ───────────────────────────────────
   while (queue.length > 0 && !signal?.aborted) {
     const { window, depth } = queue.shift()!
     const wide = await walk(window, pageSize, null)
-    let { saturated, unreachable } = wide
-    let clipCount = wide.ids.size
-    let duplicated = wide.collected - wide.ids.size
-    let recovered: number | null = null
-
-    // The second pass, unconditional. The two page sizes fail in opposite ways
-    // — a wide slice drops rows inside itself, a narrow one multiplies the page
-    // borders where the ordering shifts — so neither is right on its own and
-    // nothing in the response says which one is failing here. The ledger cannot
-    // gate it either: a window ending on its only page carries no cursor, so it
-    // claims nothing and admits nothing, which is exactly the case that needs
-    // the second pass most.
-    //
-    // A saturated window is the one exception: it is about to be halved, and
-    // its two halves walk this very span again, each paying for its own share.
-    if (!saturated && narrowPageSize < pageSize && !signal?.aborted) {
-      // One request per page of what the wide pass just counted: the bar can
-      // draw a fraction for the whole of the long pass.
-      const narrow = await walk(window, narrowPageSize, Math.ceil(wide.ids.size / narrowPageSize))
-      recovered = [...narrow.ids].filter((id) => !wide.ids.has(id)).length
-      clipCount = new Set([...wide.ids, ...narrow.ids]).size
-      duplicated += narrow.collected - narrow.ids.size
-      saturated = saturated || narrow.saturated
-      // The narrow pass's own residual, not the wide one's: reporting the
-      // figure the second pass was run to correct would quote a stale gap.
-      unreachable = narrow.unreachable
-    }
+    const { saturated, unreachable } = wide
+    const clipCount = wide.ids.size
+    const duplicated = wide.collected - wide.ids.size
+    const recovered: number | null = null
 
     const halves = saturated ? bisect(window, minWindowMs) : null
     if (halves) {
@@ -331,6 +312,11 @@ export async function collectClips({
     }
     reports.push(report)
     onWindow?.(report)
+    // A saturated window is not verified. One about to be halved would pay for
+    // a span its two halves walk again; one saturated at the floor has already
+    // lost clips to the cap, and the narrow pass counts rows against that same
+    // cap — it would spend ten times the requests to stop in the same place.
+    if (!report.saturated && narrowPageSize < pageSize) toVerify.push({ report, wideIds: wide.ids })
 
     // The ground the search has actually walked, and the whole reason the bar
     // can no longer slide backwards. Three cases, and the condition holds all
@@ -361,6 +347,41 @@ export async function collectClips({
       passDone,
       passTotal,
     })
+  }
+
+  // ── Second pass, narrow, once the table is as full as the wide pass can
+  // make it ──────────────────────────────────────────────────────────────────
+  //
+  // Deliberately after all of them, and not window by window. The two passes
+  // fail in opposite ways — a wide slice drops rows inside itself, a narrow one
+  // multiplies the page borders where the ordering shifts — so both have to
+  // run; but the narrow one costs nine requests out of ten and brings back
+  // almost nothing (0 clips of 261 on `vinc33x`, 1 of 91 on `noxya__`).
+  // Interleaved, it held back clips the wide pass already had, and made a sweep
+  // over a big channel alternate between searching and verifying for two hours.
+  for (const { report, wideIds } of toVerify) {
+    if (signal?.aborted) break
+
+    // One request per page of what the wide pass counted: the bar draws a
+    // fraction for the whole of the long stretch.
+    const narrow = await walk(
+      report.window,
+      narrowPageSize,
+      Math.ceil(wideIds.size / narrowPageSize),
+    )
+    report.recovered = [...narrow.ids].filter((id) => !wideIds.has(id)).length
+    report.clipCount = new Set([...wideIds, ...narrow.ids]).size
+    report.duplicated += narrow.collected - narrow.ids.size
+    // The narrow pass's own residual, not the wide one's: reporting the figure
+    // the second pass was run to correct would quote a stale gap.
+    report.unreachable = narrow.unreachable
+    // Saturating here is not halved. The window has already been credited and
+    // reported as walked, and its halves would have to be walked wide as well,
+    // which is a second sweep rather than a second pass. It is said instead:
+    // `incomplete` takes it, and the ticket says so.
+    report.saturated = report.saturated || narrow.saturated
+    onWindow?.(report)
+    onClips?.([...byId.values()])
   }
 
   return {

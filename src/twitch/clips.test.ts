@@ -485,6 +485,26 @@ describe('collectClips', () => {
   })
 
   /**
+   * Every window is walked wide before any is verified. A sweep over a big
+   * channel bisects into hundreds of windows, and interleaving the two passes
+   * made the run alternate between "searching" and "verifying" for two hours.
+   * Worse, it withheld clips the wide pass could have had straight away: the
+   * narrow one costs nine requests out of ten and brings back almost nothing,
+   * so every minute it spends is a minute the table is not filling.
+   */
+  it('walks every window wide before it verifies any of them', async () => {
+    const seen: string[] = []
+    const fetchPage = vi.fn(async (window: DateWindow, _c: string | undefined, first: number) => {
+      seen.push(`${key(window) === key(firstHalf) ? 'A' : 'B'}${first}`)
+      return { clips: [clip(key(window) === key(firstHalf) ? 'a' : 'b')] }
+    })
+
+    await collectClips({ windows: [firstHalf, secondHalf], fetchPage })
+
+    expect(seen).toEqual(['A20', 'B20', 'A2', 'B2'])
+  })
+
+  /**
    * And the second pass is owed nothing by the first. On `noxya__` the whole
    * channel came back as one page of 88 with no cursor — so nothing claimed
    * more, the ledger read nought, and three clips were missing all the same.
