@@ -69,6 +69,22 @@ export const DEFAULT_PAGE_SIZE = 20
  * for wider pages.
  */
 export const DEFAULT_NARROW_PAGE_SIZE = 2
+/**
+ * How many windows the narrow pass reads at once — see `narrowConcurrency`.
+ *
+ * The gate in `api.ts` is what actually bounds the rate; this only decides how
+ * much of it gets used. At 85 ms a slot no sweep passes 706 requests a minute
+ * however many workers ask, so the figure cannot run away — which is why it can
+ * be set by what the link gives rather than by what the quota tolerates.
+ *
+ * Four sits almost exactly on that ceiling at the latency measured on
+ * 2026-09-21: 357 ms a request, so four in flight ask for 11,2 a second against
+ * the 11,8 the gate hands out. Three left a quarter of the gate unused — the
+ * pool ran at 1,79 in flight on average, windows being uneven enough that a
+ * worker idles while another finishes a long one. Should Twitch ever answer
+ * quicker, the gate takes over and holds the rate where it is.
+ */
+export const DEFAULT_NARROW_CONCURRENCY = 4
 
 export type ClipPageFetcher = (
   window: DateWindow,
@@ -159,6 +175,23 @@ export interface CollectClipsOptions {
   pageSize?: number
   /** What the second pass asks for; no second pass unless it is the smaller. */
   narrowPageSize?: number
+  /**
+   * How many windows the second pass reads at the same time.
+   *
+   * Windows parallelise; the pages inside one do not. A walk advances by the
+   * cursor the last page carried, so a second request sent before that page
+   * lands would start from a stale offset and skip whatever lies between them —
+   * the one way this could cost a clip, and the reason the pool stops at the
+   * window. The first pass stays serial for its own reasons: its queue is fed
+   * by the bisection as it goes, it credits `coveredMs`, and the order it
+   * reports in is the axis the timeline is drawn on.
+   *
+   * Measured on 2026-09-21, `kaliyami`, 2 668 clips: one request in flight at
+   * any moment out of a quota allowing thirteen a second, 357 ms each, the link
+   * idle 15 % of the time — and the narrow pass holding twelve of the fourteen
+   * minutes the sweep took.
+   */
+  narrowConcurrency?: number
   onProgress?: (progress: Progress) => void
   onWindow?: (report: WindowReport) => void
   /**
@@ -181,6 +214,7 @@ export async function collectClips({
   minWindowMs = DEFAULT_MIN_WINDOW_MS,
   pageSize = DEFAULT_PAGE_SIZE,
   narrowPageSize = DEFAULT_NARROW_PAGE_SIZE,
+  narrowConcurrency = DEFAULT_NARROW_CONCURRENCY,
   onProgress,
   onWindow,
   onClips,
@@ -417,9 +451,14 @@ export async function collectClips({
     0,
   )
 
-  for (const { report, wideIds } of toVerify) {
-    if (signal?.aborted) break
+  let next = 0
+  // The first failure stops the others rather than leaving them to fetch on
+  // behind a search that has already given up. `Promise.all` would reject on it
+  // straight away and leave its siblings running detached, so the workers are
+  // told to stop and the error is raised once they all have.
+  let failure: unknown = null
 
+  const verify = async ({ report, wideIds }: (typeof toVerify)[number]) => {
     const narrow = await walk(report.window, narrowPageSize, 'pass')
     report.recovered = [...narrow.ids].filter((id) => !wideIds.has(id)).length
     report.clipCount = new Set([...wideIds, ...narrow.ids]).size
@@ -437,8 +476,33 @@ export async function collectClips({
     // Only when it brought something back. A pass that found nothing new would
     // otherwise cost a full rebuild of the table per window, at the very moment
     // the catalogue is at its largest, for no clip at all.
+    //
+    // Not routed through `deliver()`, which could not see this: a single clip
+    // rescued out of 2 662 leaves the catalogue far short of the two percent
+    // growth a delivery waits for, and the table would keep the rescue hidden
+    // until the search ended.
     if (report.recovered > 0) onClips?.([...byId.values()])
   }
+
+  await Promise.all(
+    // Never nought. `Array.from({ length: 0 })` is an empty array and not an
+    // error, so a caller passing 0 would skip the whole pass in silence and
+    // lose whatever it was going to rescue — the one failure this file exists
+    // to prevent, arriving through a knob meant to buy time.
+    Array.from({ length: Math.max(1, Math.min(narrowConcurrency, toVerify.length)) }, async () => {
+      while (!signal?.aborted && failure === null) {
+        const index = next
+        next += 1
+        if (index >= toVerify.length) break
+        try {
+          await verify(toVerify[index])
+        } catch (cause) {
+          failure = cause
+        }
+      }
+    }),
+  )
+  if (failure !== null) throw failure
 
   return {
     clips: [...byId.values()],
