@@ -147,6 +147,30 @@ describe('useClipSearch', () => {
     expect(log).toContain('3 clips que Twitch a comptés sans les rendre')
   })
 
+  /**
+   * A window reports twice — once leaving the wide pass, once verified — and
+   * the timeline draws one slice per report. Appending them would draw the same
+   * span twice, and say its line twice with it.
+   */
+  it('replaces a slice when it is verified rather than drawing it twice', async () => {
+    channelFound()
+    gameNames(new Map())
+    fetchPage.mockImplementation(async (_w: unknown, cursor: string | undefined, first: number) =>
+      cursor ? { clips: [] } : { clips: first === 20 ? [clip('a')] : [clip('a'), clip('b')] },
+    )
+
+    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    await act(async () => result.current.start(request))
+    await waitFor(() => expect(result.current.running).toBe(false))
+
+    expect(result.current.reports).toHaveLength(1)
+    expect(result.current.reports[0].recovered).toBe(1)
+    const log = result.current.logEntries.map((entry) => entry.say(t)).join(' | ')
+    // One line for the slice, one for what verifying it brought back.
+    expect(log.match(/01\/01\/2026 → 31\/01\/2026/g)).toHaveLength(2)
+    expect(log).toContain('1 clip récupéré')
+  })
+
   it('reads in the language it is read in, not the one it ran in', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [] })
