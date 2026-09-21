@@ -50,8 +50,10 @@ export const DEFAULT_MIN_WINDOW_MS = 6 * 3_600_000
  * — see the tolerance below.
  *
  * It costs a request per two clips. The quota is not what pays for it: Helix
- * allows 800 points a minute per user and per client ID, and the 60 ms spacing
- * holds a sweep near 330. Time is what pays.
+ * allows 800 points a minute per user and per client ID, and a sweep comes
+ * nowhere near it. Measured on 2026-09-21, `kaliyami` over 915 requests: 140 a
+ * minute, a fifth of the allowance, because a request takes 357 ms and only one
+ * was ever in flight. Time is what pays, and latency is what it pays to.
  */
 export const DEFAULT_PAGE_SIZE = 20
 /**
@@ -237,10 +239,16 @@ export async function collectClips({
    * One pass over a window, at the page size it is asked for. Runs twice on a
    * window that admits a gap, which is why it is a function.
    */
-  const walk = async (window: DateWindow, first: number, expected: number | null) => {
-    pass = expected === null ? 'wide' : 'narrow'
-    passDone = 0
-    passTotal = expected
+  const walk = async (window: DateWindow, first: number, scope: 'window' | 'pass') => {
+    // The wide pass counts per window because it cannot count otherwise: how
+    // many requests a window costs is exactly what walking it finds out. The
+    // narrow pass knows its whole bill before it starts, so it is counted once
+    // for the pass.
+    if (scope === 'window') {
+      pass = 'wide'
+      passDone = 0
+      passTotal = null
+    }
     const ids = new Set<string>()
     let cursor: string | undefined
     let collected = 0
@@ -322,7 +330,7 @@ export async function collectClips({
   // ── First pass, wide, over every window ───────────────────────────────────
   while (queue.length > 0 && !signal?.aborted) {
     const { window, depth } = queue.shift()!
-    const wide = await walk(window, pageSize, null)
+    const wide = await walk(window, pageSize, 'window')
     const { saturated, unreachable } = wide
     const clipCount = wide.ids.size
     const duplicated = wide.collected - wide.ids.size
@@ -396,16 +404,23 @@ export async function collectClips({
   // almost nothing (0 clips of 261 on `vinc33x`, 1 of 91 on `noxya__`).
   // Interleaved, it held back clips the wide pass already had, and made a sweep
   // over a big channel alternate between searching and verifying for two hours.
+  pass = 'narrow'
+  passDone = 0
+  // One request per page of what the wide pass counted, summed over every
+  // window owed a second look: the bar draws one fraction for the whole of the
+  // long stretch instead of running to full and dropping back once per window.
+  // The floor is not a rounding detail — a window the wide pass found empty
+  // budgets nought pages and still costs the one request that finds that out,
+  // so without it the numerator would overtake its denominator.
+  passTotal = toVerify.reduce(
+    (total, { wideIds }) => total + Math.max(1, Math.ceil(wideIds.size / narrowPageSize)),
+    0,
+  )
+
   for (const { report, wideIds } of toVerify) {
     if (signal?.aborted) break
 
-    // One request per page of what the wide pass counted: the bar draws a
-    // fraction for the whole of the long stretch.
-    const narrow = await walk(
-      report.window,
-      narrowPageSize,
-      Math.ceil(wideIds.size / narrowPageSize),
-    )
+    const narrow = await walk(report.window, narrowPageSize, 'pass')
     report.recovered = [...narrow.ids].filter((id) => !wideIds.has(id)).length
     report.clipCount = new Set([...wideIds, ...narrow.ids]).size
     report.duplicated += narrow.collected - narrow.ids.size

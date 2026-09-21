@@ -781,3 +781,51 @@ describe('collectClips', () => {
     expect(fetchPage).toHaveBeenCalledTimes(1)
   })
 })
+
+/**
+ * The pass is the unit, not the window inside it.
+ *
+ * `passDone` was reset on entering every walk, and `SearchRun` draws the bar off
+ * `passDone / passTotal` for the whole of the narrow pass — so with more than
+ * one window to verify, which is the ordinary case, the bar ran to full and
+ * dropped back to nothing once per window, over the long stretch where it is
+ * the only measure that moves at all.
+ */
+describe('collectClips, counting a pass', () => {
+  const years3 = years(3)
+
+  it('counts the whole narrow pass, not each window of it', async () => {
+    const seen: Progress[] = []
+
+    await collectClips({
+      windows: years3,
+      fetchPage: async (window) => ({
+        clips: [clip(window.startedAt.slice(0, 4))],
+        cursor: undefined,
+      }),
+      onProgress: (progress) => seen.push({ ...progress }),
+    })
+
+    const narrow = seen.filter((progress) => progress.pass === 'narrow')
+    // One window holds one clip, and the narrow pass reads two at a time: one
+    // request each, three windows, three requests for the pass.
+    expect(narrow.at(-1)?.passTotal).toBe(3)
+    expect(narrow.map((progress) => progress.passDone)).toEqual([1, 2, 3])
+  })
+
+  // A window the wide pass found empty budgets no page at all, and still costs
+  // the request that finds that out.
+  it('budgets a request for a window that holds nothing', async () => {
+    const seen: Progress[] = []
+
+    await collectClips({
+      windows: years(2),
+      fetchPage: async () => ({ clips: [], cursor: undefined }),
+      onProgress: (progress) => seen.push({ ...progress }),
+    })
+
+    const narrow = seen.filter((progress) => progress.pass === 'narrow')
+    expect(narrow.at(-1)?.passTotal).toBe(2)
+    expect(narrow.at(-1)?.passDone).toBeLessThanOrEqual(narrow.at(-1)!.passTotal!)
+  })
+})
