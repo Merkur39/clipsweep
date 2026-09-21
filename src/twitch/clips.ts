@@ -205,7 +205,18 @@ export async function collectClips({
     let emptyRun = 0
 
     for (;;) {
-      const page = await fetchPage(window, cursor, first)
+      let page: ClipPage
+      try {
+        page = await fetchPage(window, cursor, first)
+      } catch (cause) {
+        // A stop landing on a request in flight is the common case, and the
+        // real `fetch` rejects rather than resolving. Letting that out would
+        // throw away every clip the sweep is holding — which, over a single
+        // window, is the whole result. The loop below sees the aborted signal
+        // and unwinds on its own.
+        if ((cause as Error).name === 'AbortError') break
+        throw cause
+      }
       requests += 1
       for (const clip of page.clips) {
         byId.set(clip.id, clip)
@@ -226,6 +237,12 @@ export async function collectClips({
       // Only the counters, though — the clips themselves still come out one
       // window at a time, below, so the table is not re-rendered per request
       // for a handful of extra rows.
+      // Per page, and not per window as it was while a window was a calendar
+      // year and a sweep held a dozen of them. A sweep now seeds ONE window
+      // over the whole period and walks it in a hundred and more requests: per
+      // window means an empty table for the length of the search, and nothing
+      // at all to show for a stop.
+      onClips?.([...byId.values()])
       onProgress?.({
         windowsDone,
         windowsTotal,
@@ -318,9 +335,6 @@ export async function collectClips({
     if (!report.split && !signal?.aborted) coveredMs += spanOf(window)
 
     windowsDone += 1
-    // One period, one delivery: per-page would be finer grained, but would make
-    // the table render on every request for a handful of extra rows.
-    onClips?.([...byId.values()])
     onProgress?.({
       windowsDone,
       windowsTotal,
