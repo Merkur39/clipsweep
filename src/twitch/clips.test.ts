@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { collectClips } from './clips'
+import { collectClips, type ClipPageFetcher } from './clips'
 import type { Clip, ClipPage, Progress } from './types'
 import type { DateWindow } from './windows'
 
@@ -827,5 +827,127 @@ describe('collectClips, counting a pass', () => {
     const narrow = seen.filter((progress) => progress.pass === 'narrow')
     expect(narrow.at(-1)?.passTotal).toBe(2)
     expect(narrow.at(-1)?.passDone).toBeLessThanOrEqual(narrow.at(-1)!.passTotal!)
+  })
+})
+
+/**
+ * The narrow pass walks windows that no longer talk to each other: `toVerify`
+ * is complete before the first of them is read, each carries its own report and
+ * its own set of wide ids, and none of them touches `coveredMs`, the queue or
+ * the window counters. It is also where the time goes — measured on 2026-09-21,
+ * `kaliyami`: 14 min 53 s in all, of which the wide pass took two.
+ */
+describe('collectClips, verifying several windows at once', () => {
+  /**
+   * Counts requests open at the same moment, per window and overall.
+   *
+   * Every other fixture in this file is an `async` that returns on the spot, so
+   * a request is never in flight when the next is asked for: a pool that
+   * quietly serialised would pass all of them. Only a fetcher that stays open
+   * across a turn tells the two apart.
+   */
+  const counting = (page: (window: DateWindow, cursor?: string) => ClipPage) => {
+    let open = 0
+    let peak = 0
+    const perWindow = new Map<string, number>()
+    const peakPerWindow = new Map<string, number>()
+
+    const fetchPage: ClipPageFetcher = async (window, cursor) => {
+      const w = key(window)
+      open += 1
+      perWindow.set(w, (perWindow.get(w) ?? 0) + 1)
+      peak = Math.max(peak, open)
+      peakPerWindow.set(w, Math.max(peakPerWindow.get(w) ?? 0, perWindow.get(w)!))
+      await new Promise((resolve) => setTimeout(resolve, 0))
+      open -= 1
+      perWindow.set(w, perWindow.get(w)! - 1)
+      return page(window, cursor)
+    }
+
+    return {
+      fetchPage,
+      get peak() {
+        return peak
+      },
+      get peakOnOneWindow() {
+        return Math.max(...peakPerWindow.values())
+      },
+    }
+  }
+
+  /** One clip per window, named after it, so the windows cannot be confused. */
+  const oneEach = (window: DateWindow) => ({
+    clips: [clip(window.startedAt.slice(0, 4))],
+    cursor: undefined,
+  })
+
+  it('opens a request on each of several windows at once', async () => {
+    const probe = counting(oneEach)
+
+    await collectClips({
+      windows: years(3),
+      fetchPage: probe.fetchPage,
+      narrowConcurrency: 3,
+    })
+
+    expect(probe.peak).toBe(3)
+  })
+
+  /**
+   * The one invariant whose breach costs clips, and the reason the pool stops
+   * at the window: a walk advances by the cursor the last page carried, so a
+   * second request sent before that page lands would start from a stale offset
+   * and skip whatever lies between them, for good.
+   */
+  it('never opens two requests on the same window at once', async () => {
+    const probe = counting((window, cursor) => ({
+      clips: [clip(`${window.startedAt.slice(0, 4)}-${cursor ?? 'first'}`)],
+      cursor: cursor ? undefined : cursorAt(20),
+    }))
+
+    await collectClips({
+      windows: years(3),
+      fetchPage: probe.fetchPage,
+      narrowConcurrency: 3,
+    })
+
+    expect(probe.peakOnOneWindow).toBe(1)
+  })
+
+  // The rule the whole project is built on: time is never bought with clips.
+  it('finds the same clips whatever the concurrency', async () => {
+    const pages = (window: DateWindow, cursor: string | undefined) => ({
+      clips: [clip(`${window.startedAt.slice(0, 4)}-${cursor ?? 'first'}`)],
+      cursor: cursor ? undefined : cursorAt(20),
+    })
+    const run = (narrowConcurrency: number) =>
+      collectClips({
+        windows: years(4),
+        fetchPage: async (window, cursor) => pages(window, cursor),
+        narrowConcurrency,
+      })
+
+    const [serial, pooled] = await Promise.all([run(1), run(3)])
+
+    const ids = (result: Awaited<ReturnType<typeof run>>) => result.clips.map((c) => c.id).sort()
+    expect(ids(pooled)).toEqual(ids(serial))
+    expect(pooled.requests).toBe(serial.requests)
+  })
+
+  // A knob meant to buy time must not be able to cost a clip, not even when it
+  // is handed a value that makes no sense.
+  it('still verifies every window when asked for no concurrency at all', async () => {
+    const verified: string[] = []
+
+    await collectClips({
+      windows: years(3),
+      fetchPage: async (window) => oneEach(window),
+      narrowConcurrency: 0,
+      onWindow: (report) => {
+        if (!report.pending) verified.push(report.window.startedAt.slice(0, 4))
+      },
+    })
+
+    expect(verified).toEqual(['2018', '2019', '2020'])
   })
 })
