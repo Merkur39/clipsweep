@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { TwitchApi } from './api'
+import { resetSharedSpacing, THROTTLE_MS, TwitchApi } from './api'
 import type { Session } from './auth'
 
 const session: Session = { clientId: 'c', accessToken: 't', expiresInSeconds: 3600 }
@@ -20,7 +20,13 @@ const idsOf = (call: number) => {
   return url.searchParams.getAll('id')
 }
 
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+  vi.unstubAllGlobals()
+  // The gate is shared between clients on purpose, so it is shared between
+  // tests too: left alone, a slot one test reserved holds the next one back —
+  // and under fake timers, holds it back until a clock that no longer runs.
+  resetSharedSpacing()
+})
 
 describe('fetchGameNames', () => {
   it('asks for a hundred ids at a time, the ceiling the endpoint sets', async () => {
@@ -208,12 +214,17 @@ describe('a stop reaching the waits', () => {
   })
 
   /**
-   * The spacing between requests is the one wait a stop must NOT reject on.
-   * The page is already fetched, parsed and paid for by then; throwing there
-   * would drop up to twenty clips the sweep holds, for a point of quota already
-   * spent.
+   * A page already fetched, parsed and paid for is never thrown away by a stop
+   * that lands after it: dropping it would cost up to twenty clips the sweep
+   * holds, for a point of quota already spent.
+   *
+   * This used to be a property of the spacing, which sat after the response and
+   * had to resolve rather than reject on an abort. The spacing now runs ahead
+   * of the request, so nothing at all waits behind a page — the rule holds
+   * because there is no longer anywhere for it to break, which is worth a test
+   * saying so rather than a mode in `sleep` nobody reaches.
    */
-  it('hands back the page it already holds when a stop lands on the spacing', async () => {
+  it('hands back the page it already holds when a stop lands after it', async () => {
     const controller = new AbortController()
     vi.stubGlobal(
       'fetch',
@@ -258,5 +269,72 @@ describe('a stop reaching the waits', () => {
     expect(announced).toHaveLength(2)
     expect(announced[0].reason).toBe('server')
     expect(announced[1].until).toBeNull()
+  })
+})
+
+/**
+ * The spacing between requests, taken BEFORE the request rather than after the
+ * response, and shared by every client rather than kept per instance.
+ *
+ * Both halves of that were measured on 2026-09-21, `kaliyami`, 915 requests: a
+ * request takes 357 ms and the spacing added 64 ms on top of every one of them,
+ * for a cycle of 421 ms and a throughput of 2,36 req/s. Taken beforehand the
+ * spacing never binds at that latency — it only binds when requests start
+ * overlapping, which is exactly when a quota needs defending. And it has to be
+ * shared, because a per-instance gate bounds nothing: `useChannelLookup` builds
+ * a client of its own and fires it while the user types, sweep or no sweep.
+ */
+describe('the spacing between requests', () => {
+  afterEach(() => vi.useRealTimers())
+
+  const user = [{ id: '1', login: 'kaliyami', display_name: 'KaliYami' }]
+
+  // The wait used to sit after the response, so a search of one request paid a
+  // spacing that spaced it from nothing.
+  it('does not make a lone request pay the spacing', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok(user)))
+
+    const pending = new TwitchApi(session).fetchUser('kaliyami')
+    await vi.advanceTimersByTimeAsync(0)
+
+    await expect(pending).resolves.toMatchObject({ login: 'kaliyami' })
+  })
+
+  it('holds the next request back, across clients that share nothing else', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok(user)))
+
+    const first = new TwitchApi(session).fetchUser('kaliyami')
+    const second = new TwitchApi(session).fetchUser('kaliyami')
+    await vi.advanceTimersByTimeAsync(0)
+    expect(fetch).toHaveBeenCalledTimes(1)
+
+    await vi.advanceTimersByTimeAsync(THROTTLE_MS)
+    expect(fetch).toHaveBeenCalledTimes(2)
+    await Promise.all([first, second])
+  })
+
+  /**
+   * A stop landing on this wait holds nothing — the request has not gone out —
+   * so it travels out as the abort it is, and no point of quota is spent. That
+   * is the opposite of the wait it replaces, which sat on a page already paid
+   * for and had to resolve rather than reject.
+   */
+  it('lets a stop out, and never makes the request', async () => {
+    vi.useFakeTimers()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok(user)))
+    const controller = new AbortController()
+
+    const first = new TwitchApi(session).fetchUser('kaliyami')
+    await vi.advanceTimersByTimeAsync(0)
+    const second = new TwitchApi(session, controller.signal).fetchUser('kaliyami')
+    const settled = expect(second).rejects.toMatchObject({ name: 'AbortError' })
+    controller.abort()
+    await vi.advanceTimersByTimeAsync(THROTTLE_MS)
+
+    await settled
+    expect(fetch).toHaveBeenCalledTimes(1)
+    await first
   })
 })
