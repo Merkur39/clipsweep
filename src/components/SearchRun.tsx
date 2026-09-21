@@ -94,6 +94,21 @@ export function SearchRun({
    * what it costs.
    */
   const verifying = running && progress?.pass === 'narrow'
+  /**
+   * A halved slice re-reading the top of the span its parent already covered.
+   *
+   * Helix paginates by view count and a cursor belongs to the query that made
+   * it, so a half starts again from the top and its first pages hand back what
+   * the parent already had. `clipsFound` is a set's size, so it stands
+   * perfectly still — measured on 2026-09-21 over `kaliyami`, 48 % of the wide
+   * pass, in stretches of two to seven seconds.
+   *
+   * Two pages, not one: a page adding nothing is ordinary — a page of twenty
+   * against a catalogue of thousands often lands entirely inside what is held —
+   * and a line that appeared for every one of them would flicker rather than
+   * inform. A run of two means the overlap.
+   */
+  const rereading = running && !verifying && (progress?.stalePages ?? 0) >= 2
   const passShare =
     verifying && progress.passTotal ? Math.min(1, progress.passDone / progress.passTotal) : null
   const share = passShare ?? wholeShare
@@ -109,7 +124,10 @@ export function SearchRun({
   // Read off `share` and not off the slice count, so that it is the same
   // measure the fill uses: the hatch and the sheen then cannot both be on
   // screen, by arithmetic rather than by luck.
-  const seeking = share === 0
+  // Re-reading counts as seeking: the fill cannot move while the ground under
+  // it is ground already credited, and a bar frozen at a fraction says less
+  // than one that admits it cannot measure this stretch.
+  const seeking = share === 0 || rereading
 
   return (
     <div
@@ -137,7 +155,16 @@ export function SearchRun({
             <>
               <p className="run-figure">
                 <span className="run-count">{formatCount(clipsFound, locale)}</span>
-                <span className="run-unit">{t('run.found', { n: clipsFound })}</span>
+                {/* The reason rides on the unit rather than replacing the
+                  figure. The count is still true — that many clips have been
+                  found — and it is the still number that raises the question,
+                  so the answer belongs beside it. Replacing it would have taken
+                  it off screen and put it back some nine times a search, twice
+                  for under three seconds. */}
+                <span className="run-unit">
+                  {t('run.found', { n: clipsFound })}
+                  {rereading ? ` — ${t('run.rereading')}` : ''}
+                </span>
               </p>
 
               {pausedFor === null ? (

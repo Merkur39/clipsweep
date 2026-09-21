@@ -253,6 +253,7 @@ export async function collectClips({
   let pass: 'wide' | 'narrow' = 'wide'
   let passDone = 0
   let passTotal: number | null = null
+  let stalePages = 0
   let windowsDone = 0
   let windowsTotal = queue.length
   let requests = 0
@@ -283,6 +284,7 @@ export async function collectClips({
     pass,
     passDone,
     passTotal,
+    stalePages,
   })
 
   /**
@@ -299,6 +301,7 @@ export async function collectClips({
       passDone = 0
       passTotal = null
     }
+    if (scope === 'window') stalePages = 0
     const ids = new Set<string>()
     let cursor: string | undefined
     let collected = 0
@@ -335,10 +338,15 @@ export async function collectClips({
       }
       requests += 1
       passDone += 1
+      const held = byId.size
       for (const clip of page.clips) {
         byId.set(clip.id, clip)
         ids.add(clip.id)
       }
+      // Only the wide pass keeps this. The narrow one walks several windows at
+      // once, so a single counter would be four walks writing over each other,
+      // and it brings back almost nothing by design anyway.
+      if (scope === 'window') stalePages = byId.size > held ? 0 : stalePages + 1
       collected += page.clips.length
       cursor = page.cursor
       // What the next request will skip over. Helix serves fewer clips than the
@@ -370,6 +378,7 @@ export async function collectClips({
         pass,
         passDone,
         passTotal,
+        stalePages,
       })
 
       if (signal?.aborted || !cursor) break
@@ -456,6 +465,7 @@ export async function collectClips({
       pass,
       passDone,
       passTotal,
+      stalePages,
     })
   }
 
@@ -471,6 +481,7 @@ export async function collectClips({
   // over a big channel alternate between searching and verifying for two hours.
   pass = 'narrow'
   passDone = 0
+  stalePages = 0
   // One request per page of what the wide pass counted, summed over every
   // window owed a second look: the bar draws one fraction for the whole of the
   // long stretch instead of running to full and dropping back once per window.

@@ -129,6 +129,14 @@ export const fr = {
   /* Le temps que prend la seconde passe, dite pour ce qu'elle est : le tableau
      est déjà là, et ce qui tourne encore ne fait plus que le confirmer. */
   'run.verifying': 'Vérification en cours…',
+  /* Accroché à l'unité, sous le chiffre, parce que c'est le chiffre qui
+     interroge : pendant qu'une tranche recoupée relit le haut du span de son
+     parent, le compte ne bouge pas d'un clip et les requêtes continuent.
+     Trois choses se partagent alors le travail et aucune ne redit l'autre —
+     ceci dit POURQUOI le nombre est immobile, « Recherche en cours… » dit que
+     la recherche tourne, et la barre hachurée dit qu'elle est vivante.
+     Court, parce que le bloc met la figure et la ligne dos à dos. */
+  'run.rereading': 'Twitch repasse sur les mêmes',
   'run.slices': { one: '{n} tranche sur {total}', other: '{n} tranches sur {total}' },
   /* Announced as an estimate, because it is one: it is extrapolated from the
      slices already behind, and a channel does not answer at a constant rate. */
