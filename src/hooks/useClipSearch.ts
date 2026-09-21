@@ -240,7 +240,14 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
             const verified = report.recovered !== null
 
             if (!verified) {
-              if (report.split) {
+              // Before the count of what it did hold, and before saturation:
+              // a slice nothing could be fetched for holds no clips, so every
+              // line below it is guarded on a count and this one would be the
+              // only silence in the log — on the very slice with something to
+              // say.
+              if (report.failed) {
+                log('log.sliceFailed', window, 'err')
+              } else if (report.split) {
                 log('log.sliceSplit', window, 'warn')
               } else if (report.saturated) {
                 log('log.sliceLost', window, 'err')

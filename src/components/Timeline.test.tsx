@@ -15,6 +15,7 @@ const report = (over: Partial<WindowReport> & { clipCount: number }): WindowRepo
   recovered: null,
   duplicated: 0,
   pending: false,
+  failed: false,
   ...over,
 })
 

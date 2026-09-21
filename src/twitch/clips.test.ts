@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { collectClips, type ClipPageFetcher } from './clips'
 import type { Clip, ClipPage, Progress } from './types'
+import { TranslatableError } from './errors'
 import type { DateWindow } from './windows'
 
 const clip = (id: string, viewCount = 1, createdAt = '2024-01-01T00:00:00Z'): Clip => ({
@@ -756,12 +757,23 @@ describe('collectClips', () => {
     expect(reports).toHaveLength(1)
   })
 
-  it('lets an error that is not an abort travel out', async () => {
+  /**
+   * This used to assert the opposite — that anything but an abort travelled out
+   * — and travelling out ended the sweep on the first slice that failed, taking
+   * every slice after it and the caller's whole success path with it. What the
+   * error means has not changed; what it is allowed to cost has. The window
+   * says it failed and lands in `incomplete`; see the suite at the foot of this
+   * file, and the one error still let through.
+   */
+  it('does not let one slice failing end the search', async () => {
     const fetchPage = vi.fn(async () => {
       throw new Error('helix said no')
     })
 
-    await expect(collectClips({ windows: [firstHalf], fetchPage })).rejects.toThrow('helix said no')
+    const { reports, incomplete } = await collectClips({ windows: [firstHalf], fetchPage })
+
+    expect(reports[0].failed).toBe(true)
+    expect(incomplete).toHaveLength(1)
   })
 
   it('stops early when the signal is aborted', async () => {
@@ -949,5 +961,96 @@ describe('collectClips, verifying several windows at once', () => {
     })
 
     expect(verified).toEqual(['2018', '2019', '2020'])
+  })
+})
+
+/**
+ * A window whose requests fail is a window missing clips, not a search that
+ * never happened.
+ *
+ * Six attempts with exponential backoff already stand behind every one of
+ * these, so reaching here means a page is genuinely out of reach. Letting it
+ * travel out ended the whole sweep on it: the other windows were never walked,
+ * and `useClipSearch` skipped `setClips` with the summary, the verdict and the
+ * game names. The premise of the project says the opposite — the other windows
+ * are still there to be had.
+ */
+describe('collectClips, a window whose requests fail', () => {
+  const failing = (fails: (window: DateWindow) => boolean) => async (window: DateWindow) => {
+    if (fails(window))
+      throw new TranslatableError('error.attemptsExhausted', { n: 6, path: 'clips' })
+    return { clips: [clip(window.startedAt.slice(0, 4))], cursor: undefined }
+  }
+
+  it('walks the windows that come after it', async () => {
+    const result = await collectClips({
+      windows: years(3),
+      fetchPage: failing((window) => window.startedAt.startsWith('2019')),
+    })
+
+    expect(result.clips.map((c) => c.id).sort()).toEqual(['2018', '2020'])
+  })
+
+  it('reports it as incomplete rather than throwing', async () => {
+    const result = await collectClips({
+      windows: years(3),
+      fetchPage: failing((window) => window.startedAt.startsWith('2019')),
+    })
+
+    expect(result.incomplete.map((report) => report.window.startedAt.slice(0, 4))).toEqual(['2019'])
+    expect(result.reports.find((r) => r.window.startedAt.startsWith('2019'))?.failed).toBe(true)
+    expect(result.reports.find((r) => r.window.startedAt.startsWith('2018'))?.failed).toBe(false)
+  })
+
+  // A window that fails on its second page keeps the first. The failure costs
+  // what it could not fetch, never what it already had.
+  it('keeps the pages it got before the failure', async () => {
+    let calls = 0
+    const result = await collectClips({
+      windows: [twoDays],
+      narrowPageSize: 20,
+      fetchPage: async () => {
+        calls += 1
+        if (calls === 1) return { clips: [clip('a')], cursor: cursorAt(20) }
+        throw new TranslatableError('error.attemptsExhausted', { n: 6, path: 'clips' })
+      },
+    })
+
+    expect(result.clips.map((c) => c.id)).toEqual(['a'])
+    expect(result.reports[0].failed).toBe(true)
+  })
+
+  /**
+   * The one failure that must still end everything: the token is gone, so every
+   * window that follows would fail the same way, and the interface has an offer
+   * to make that a slice-by-slice report would bury.
+   */
+  it('lets a rejected token travel out', async () => {
+    const rejected = Object.assign(new Error('error.tokenRejected'), {
+      name: 'TokenRejectedError',
+    })
+
+    await expect(
+      collectClips({
+        windows: years(3),
+        fetchPage: async () => {
+          throw rejected
+        },
+      }),
+    ).rejects.toMatchObject({ name: 'TokenRejectedError' })
+  })
+
+  // The bar measures the period walked, not how exhaustively it was walked —
+  // the same rule a saturated window it could not halve already goes by.
+  it('credits the period of a window it could not read', async () => {
+    const seen: Progress[] = []
+
+    await collectClips({
+      windows: years(2),
+      fetchPage: failing((window) => window.startedAt.startsWith('2018')),
+      onProgress: (progress) => seen.push({ ...progress }),
+    })
+
+    expect(share(seen.at(-1)!)).toBe(1)
   })
 })

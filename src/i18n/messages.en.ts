@@ -248,6 +248,8 @@ export const en: Catalogue = {
   'log.sliceSplit': '{indent}{from} → {to} saturated ({n}), split in two',
   'log.sliceLost':
     '{indent}{from} → {to}: {n} clips — still saturated at the floor, clips are missing',
+  'log.sliceFailed':
+    '{indent}{from} → {to}: {n} clips — a request could not be made after six tries, the slice is incomplete',
   'log.slice': '{indent}{from} → {to}: {n} clips',
   'log.paused': {
     one: 'Too many requests: Twitch asked for a pause of {n} second.',

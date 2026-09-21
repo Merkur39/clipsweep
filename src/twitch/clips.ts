@@ -147,6 +147,22 @@ export interface WindowReport {
    * word.
    */
   pending: boolean
+  /**
+   * A request for this window could not be made, so some of it was never read.
+   *
+   * Six attempts with exponential backoff stand behind every one of these, so
+   * reaching it means a page is genuinely out of reach rather than slow. The
+   * error used to travel out and end the sweep on the spot: the windows after
+   * it were never walked at all, and the caller's `catch` ran instead of its
+   * success path, so the summary, the verdict and the game names were lost
+   * along with them. A channel is not unreadable because one of its slices is.
+   *
+   * Kept apart from `saturated`, which says the opposite thing — that the
+   * window was read right up to a cap it should have been split under. Both
+   * land in `incomplete`, because both mean clips are missing, and the reader
+   * is owed that either way.
+   */
+  failed: boolean
 }
 
 export interface CollectResult {
@@ -289,6 +305,7 @@ export async function collectClips({
     let saturated = false
     let unreachable = 0
     let emptyRun = 0
+    let failed = false
 
     for (;;) {
       let page: ClipPage
@@ -301,7 +318,20 @@ export async function collectClips({
         // window, is the whole result. The loop below sees the aborted signal
         // and unwinds on its own.
         if ((cause as Error).name === 'AbortError') break
-        throw cause
+        // The one failure that still ends everything. The token is gone, so
+        // every window after this would fail the same way, and the interface
+        // has an offer to make that a slice-by-slice report would bury.
+        //
+        // Matched on the name rather than on the class, as the abort above is:
+        // the client that raises it imports this module, so naming its type
+        // here would close the circle.
+        if ((cause as Error).name === 'TokenRejectedError') throw cause
+        // Anything else costs this window and no more. Swallowing a programming
+        // mistake along with a dead socket is the price, and it is the cheaper
+        // side of the trade: a sweep is minutes of network, the tests are where
+        // a bug of ours is caught, and the window says out loud that it failed.
+        failed = true
+        break
       }
       requests += 1
       passDone += 1
@@ -355,7 +385,7 @@ export async function collectClips({
       }
     }
 
-    return { ids, collected, saturated, unreachable }
+    return { ids, collected, saturated, unreachable, failed }
   }
 
   /** What the wide pass leaves for the narrow one, once it has walked it all. */
@@ -392,6 +422,7 @@ export async function collectClips({
       // that same cap — it would spend ten times the requests to stop in the
       // same place.
       pending: !saturated && narrowPageSize < pageSize,
+      failed: wide.failed,
     }
     reports.push(report)
     onWindow?.(report)
@@ -471,6 +502,10 @@ export async function collectClips({
     // which is a second sweep rather than a second pass. It is said instead:
     // `incomplete` takes it, and the ticket says so.
     report.saturated = report.saturated || narrow.saturated
+    // Never cleared by a second pass that went well: the wide pass is what
+    // read this window at the size that finds clips, and nothing says the page
+    // it never got held what the narrow one found.
+    report.failed = report.failed || narrow.failed
     report.pending = false
     onWindow?.(report)
     // Only when it brought something back. A pass that found nothing new would
@@ -507,7 +542,7 @@ export async function collectClips({
   return {
     clips: [...byId.values()],
     reports,
-    incomplete: reports.filter((report) => report.saturated && !report.split),
+    incomplete: reports.filter((report) => (report.saturated || report.failed) && !report.split),
     unreachable: reports
       .filter((report) => !report.split)
       .reduce((total, report) => total + report.unreachable, 0),

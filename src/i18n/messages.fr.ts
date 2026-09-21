@@ -402,6 +402,8 @@ export const fr = {
   'log.sliceSplit': '{indent}{from} → {to} saturée ({n}), recoupée en deux',
   'log.sliceLost':
     '{indent}{from} → {to} : {n} clips — encore saturée au plancher, des clips manquent',
+  'log.sliceFailed':
+    '{indent}{from} → {to} : {n} clips — requête impossible après six tentatives, la tranche est incomplète',
   'log.slice': '{indent}{from} → {to} : {n} clips',
   /* Two segments rather than one sentence, as the result counts already are:
      each number agrees with itself, which one message holding two counts
