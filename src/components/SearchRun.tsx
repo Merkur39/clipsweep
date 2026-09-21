@@ -107,8 +107,15 @@ export function SearchRun({
    * against a catalogue of thousands often lands entirely inside what is held —
    * and a line that appeared for every one of them would flicker rather than
    * inform. A run of two means the overlap.
+   *
+   * It yields to a pause, and that is not a detail of taste. Both say Twitch is
+   * holding things up, and they sit two lines apart in the same block — but
+   * only one of them names a delay Twitch is actually imposing, with a
+   * countdown and a promise to resume. A reader who has met the wording nine
+   * times without consequence has nothing left to recognise the real quota by,
+   * so the pass that waits on nothing gives the word back to the one that does.
    */
-  const rereading = running && !verifying && (progress?.stalePages ?? 0) >= 2
+  const rereading = running && !verifying && pausedFor === null && (progress?.stalePages ?? 0) >= 2
   const passShare =
     verifying && progress.passTotal ? Math.min(1, progress.passDone / progress.passTotal) : null
   const share = passShare ?? wholeShare
