@@ -117,6 +117,18 @@ export interface WindowReport {
    * there are two.
    */
   duplicated: number
+  /**
+   * A second pass is still owed to this window.
+   *
+   * A window reports twice — once leaving the wide pass, once verified — so a
+   * reader of the first report cannot tell what is settled from what is about
+   * to change. `recovered === null` does not answer it either: it reads the
+   * same whether the narrow pass has not run yet or will never run, and a sweep
+   * that leaves it disarmed makes the first report the last one. So the report
+   * says it outright, and whoever quotes the gap waits for the window's last
+   * word.
+   */
+  pending: boolean
 }
 
 export interface CollectResult {
@@ -332,14 +344,16 @@ export async function collectClips({
       unreachable,
       recovered,
       duplicated,
+      // A saturated window is not verified. One about to be halved would pay
+      // for a span its two halves walk again; one saturated at the floor has
+      // already lost clips to the cap, and the narrow pass counts rows against
+      // that same cap — it would spend ten times the requests to stop in the
+      // same place.
+      pending: !saturated && narrowPageSize < pageSize,
     }
     reports.push(report)
     onWindow?.(report)
-    // A saturated window is not verified. One about to be halved would pay for
-    // a span its two halves walk again; one saturated at the floor has already
-    // lost clips to the cap, and the narrow pass counts rows against that same
-    // cap — it would spend ten times the requests to stop in the same place.
-    if (!report.saturated && narrowPageSize < pageSize) toVerify.push({ report, wideIds: wide.ids })
+    if (report.pending) toVerify.push({ report, wideIds: wide.ids })
 
     // The ground the search has actually walked, and the whole reason the bar
     // can no longer slide backwards. Three cases, and the condition holds all
@@ -403,6 +417,7 @@ export async function collectClips({
     // which is a second sweep rather than a second pass. It is said instead:
     // `incomplete` takes it, and the ticket says so.
     report.saturated = report.saturated || narrow.saturated
+    report.pending = false
     onWindow?.(report)
     // Only when it brought something back. A pass that found nothing new would
     // otherwise cost a full rebuild of the table per window, at the very moment
