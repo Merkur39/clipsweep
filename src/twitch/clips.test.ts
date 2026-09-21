@@ -57,6 +57,8 @@ describe('collectClips, streaming as it goes', () => {
       windows: [firstHalf, secondHalf],
       fetchPage: async (window) => pages[key(window)],
       onClips,
+      // One pass: this fixture describes exactly the requests it expects.
+      narrowPageSize: 20,
     })
 
     expect(onClips.mock.calls.map(([clips]) => clips.map((c: Clip) => c.id))).toEqual([
@@ -613,6 +615,63 @@ describe('collectClips', () => {
     await collectClips({ windows: [firstHalf], fetchPage })
 
     expect(asked).toEqual([20, 2])
+  })
+
+  /**
+   * Delivery is per page, not per window. It was per window while a window was
+   * a calendar year and a sweep held a dozen of them; a sweep now seeds ONE
+   * window over the whole period, so per-window delivery means the table stays
+   * empty for the entire search and the reader watches a counter climb over
+   * nothing.
+   */
+  it('delivers the clips as each page lands', async () => {
+    const pages: ClipPage[] = [{ clips: [clip('a')], cursor: 'p2' }, { clips: [clip('b')] }]
+    const onClips = vi.fn()
+
+    await collectClips({
+      windows: [firstHalf],
+      fetchPage: async () => pages.shift() ?? { clips: [] },
+      onClips,
+      // One pass: this fixture describes exactly the requests it expects.
+      narrowPageSize: 20,
+    })
+
+    expect(onClips.mock.calls.map(([c]) => (c as Clip[]).map((x) => x.id))).toEqual([
+      ['a'],
+      ['a', 'b'],
+    ])
+  })
+
+  /**
+   * A stop keeps what the sweep already holds. The real `fetch` rejects with an
+   * `AbortError` when the stop lands on a request in flight — the common case —
+   * and that used to travel all the way out of `collectClips`, so the caller
+   * never saw the clips it had. One window makes that the whole result.
+   */
+  it('keeps the clips it already holds when a request is aborted', async () => {
+    const pages: ClipPage[] = [{ clips: [clip('a')], cursor: 'p2' }]
+    const fetchPage = vi.fn(async () => {
+      const next = pages.shift()
+      if (next) return next
+      throw new DOMException('Aborted', 'AbortError')
+    })
+
+    const { clips, reports } = await collectClips({
+      windows: [firstHalf],
+      fetchPage,
+      narrowPageSize: 20,
+    })
+
+    expect(clips.map((c) => c.id)).toEqual(['a'])
+    expect(reports).toHaveLength(1)
+  })
+
+  it('lets an error that is not an abort travel out', async () => {
+    const fetchPage = vi.fn(async () => {
+      throw new Error('helix said no')
+    })
+
+    await expect(collectClips({ windows: [firstHalf], fetchPage })).rejects.toThrow('helix said no')
   })
 
   it('stops early when the signal is aborted', async () => {
