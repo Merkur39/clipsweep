@@ -66,6 +66,7 @@ export const en: Catalogue = {
   'run.found': { one: 'clip found', other: 'clips found' },
   'run.say': 'Searching…',
   'run.verifying': 'Verification in progress…',
+  'run.rereading': 'Twitch is serving the same ones',
   'run.slices': { one: '{n} slice of {total}', other: '{n} slices of {total}' },
   'run.eta.minutes': { one: 'about {n} min left', other: 'about {n} min left' },
   'run.eta.soon': 'less than a minute left',

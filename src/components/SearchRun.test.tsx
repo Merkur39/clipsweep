@@ -5,6 +5,19 @@ import { describe, expect, it } from 'vitest'
 
 import { SearchRun, type SearchRunProps } from './SearchRun'
 
+const base = {
+  windowsDone: 47,
+  windowsTotal: 96,
+  coveredMs: 47,
+  periodMs: 96,
+  clipsFound: 3218,
+  requests: 640,
+  pass: 'wide' as const,
+  passDone: 0,
+  passTotal: null,
+  stalePages: 0,
+}
+
 const setup = (props: Partial<SearchRunProps> = {}) =>
   render(
     <SearchRun
@@ -19,6 +32,7 @@ const setup = (props: Partial<SearchRunProps> = {}) =>
         pass: 'wide' as const,
         passDone: 0,
         passTotal: null,
+        stalePages: 0,
       }}
       pausedUntil={null}
       clipsFound={3218}
@@ -68,6 +82,7 @@ describe('SearchRun', () => {
         pass: 'narrow',
         passDone: 43,
         passTotal: 100,
+        stalePages: 0,
       },
     })
 
@@ -100,6 +115,7 @@ describe('SearchRun', () => {
         pass: 'narrow',
         passDone: 43,
         passTotal: 100,
+        stalePages: 0,
       },
     })
     const bar = screen.getByRole('progressbar')
@@ -121,6 +137,48 @@ describe('SearchRun', () => {
 
     expect(slot).toHaveAttribute('data-open')
     expect(slot).not.toHaveAttribute('inert')
+  })
+
+  /**
+   * A halved slice re-reads the top of its parent's span, so the count stands
+   * perfectly still while the requests carry on — measured at 48 % of the wide
+   * pass, in nine stretches, two of them under three seconds.
+   *
+   * Said beside the count and not in place of it. The count is still true, and
+   * it is the still number that raises the question, so the answer belongs next
+   * to it; taking the figure off screen and putting it back nine times a search
+   * answers a stall with a flicker.
+   */
+  it('says why the count is standing still, beside the count', () => {
+    setup({ progress: { ...base, stalePages: 2 } })
+
+    expect(screen.getByText('3 218')).toBeInTheDocument()
+    expect(screen.getByText(/clips trouvés — Twitch repasse sur les mêmes/)).toBeInTheDocument()
+  })
+
+  // One page adding nothing is ordinary — a page of twenty against a catalogue
+  // of thousands often lands entirely inside what is held. A run of two is the
+  // overlap, and the line would otherwise blink on and off through the search.
+  it('says nothing when a single page merely added nothing', () => {
+    setup({ progress: { ...base, stalePages: 1 } })
+
+    expect(screen.getByText('clips trouvés')).toBeInTheDocument()
+    expect(screen.queryByText(/repasse sur les mêmes/)).not.toBeInTheDocument()
+  })
+
+  it('stops claiming a share it cannot move', () => {
+    const { container } = setup({ progress: { ...base, stalePages: 2 } })
+
+    expect(container.querySelector('.run-bar')).toHaveAttribute('data-indeterminate')
+  })
+
+  // Verifying already has its own line and shows no figure at all, and the
+  // narrow pass leaves the counter at nought: it must not speak over it.
+  it('says it is verifying rather than re-reading', () => {
+    setup({ progress: { ...base, pass: 'narrow', passTotal: 10, passDone: 3, stalePages: 2 } })
+
+    expect(screen.getByText('Vérification en cours…')).toBeInTheDocument()
+    expect(screen.queryByText(/repasse sur les mêmes/)).not.toBeInTheDocument()
   })
 
   it('leads with what has been found so far', () => {
@@ -173,6 +231,7 @@ describe('SearchRun', () => {
         pass: 'wide' as const,
         passDone: 0,
         passTotal: null,
+        stalePages: 0,
       },
     })
 
@@ -212,6 +271,7 @@ describe('SearchRun', () => {
         pass: 'wide' as const,
         passDone: 0,
         passTotal: null,
+        stalePages: 0,
       },
       clipsFound: 0,
     })
@@ -240,6 +300,7 @@ describe('SearchRun', () => {
         pass: 'wide' as const,
         passDone: 0,
         passTotal: null,
+        stalePages: 0,
       },
       clipsFound: 40,
     })

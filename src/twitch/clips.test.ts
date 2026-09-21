@@ -208,6 +208,7 @@ describe('collectClips', () => {
       pass: 'wide',
       passDone: 0,
       passTotal: null,
+      stalePages: 0,
     })
   })
 
@@ -266,6 +267,9 @@ describe('collectClips', () => {
       // One request into the second window's only pass.
       passDone: 1,
       passTotal: null,
+      // Both windows serve the same clip, so the second window's only page
+      // brought nothing the sweep did not already hold.
+      stalePages: 1,
     })
   })
 
@@ -1052,5 +1056,63 @@ describe('collectClips, a window whose requests fail', () => {
     })
 
     expect(share(seen.at(-1)!)).toBe(1)
+  })
+})
+
+/**
+ * A window that saturates is halved, and each half starts again from the top of
+ * its own span — Helix paginates by view count, and a cursor belongs to the
+ * query that made it, so a half cannot resume where its parent stopped. Its
+ * first pages therefore hand back clips the parent already had.
+ *
+ * Measured on 2026-09-21, `kaliyami`: the seed window saturated at 957 and the
+ * count sat at 957 for 5,7 s and 17 requests while the first half re-read it.
+ * Over the wide pass, 134 of 281 requests landed without a new clip — 48 %. The
+ * ground is not walked twice by mistake, and it cannot be skipped; what it must
+ * not do is read as a search that has hung.
+ */
+describe('collectClips, re-reading ground already covered', () => {
+  const page = (ids: string[], cursor?: string) => ({ clips: ids.map((id) => clip(id)), cursor })
+
+  it('counts the run of pages that brought nothing new', async () => {
+    const seen: Progress[] = []
+    const pages = [
+      page(['a', 'b'], cursorAt(2)),
+      page(['a', 'b'], cursorAt(4)),
+      page(['a', 'b'], cursorAt(6)),
+      page(['c']),
+    ]
+    let call = 0
+
+    await collectClips({
+      windows: [twoDays],
+      narrowPageSize: 20,
+      fetchPage: async () => pages[call++],
+      onProgress: (progress) => seen.push({ ...progress }),
+    })
+
+    // The first is said before any request, the last once the window closes.
+    expect(seen.filter((p) => p.pass === 'wide').map((p) => p.stalePages)).toEqual([
+      0, 0, 1, 2, 0, 0,
+    ])
+  })
+
+  it('starts the count over on a window that brings something', async () => {
+    const seen: Progress[] = []
+    const pages: Record<string, ClipPage> = {
+      [key(firstHalf)]: page(['a']),
+      [key(secondHalf)]: page(['a']),
+    }
+
+    await collectClips({
+      windows: [firstHalf, secondHalf],
+      narrowPageSize: 20,
+      fetchPage: async (window) => pages[key(window)],
+      onProgress: (progress) => seen.push({ ...progress }),
+    })
+
+    // The second window hands back the clip the first already had, so its page
+    // is stale — but the count belongs to the window, not to the sweep.
+    expect(seen.at(-1)?.stalePages).toBe(1)
   })
 })

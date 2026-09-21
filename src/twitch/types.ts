@@ -72,4 +72,26 @@ export interface Progress {
    * goes without for the two seconds where it does not matter.
    */
   passTotal: number | null
+  /**
+   * How many pages in a row have brought back nothing the sweep did not hold.
+   *
+   * A window that saturates is halved, and each half starts again from the top
+   * of its own span: Helix paginates by view count, and a cursor belongs to the
+   * query that made it, so a half cannot resume where its parent stopped. Its
+   * first pages therefore hand back what the parent already had, and
+   * `clipsFound` — which is a set's size — stands perfectly still while the
+   * requests carry on.
+   *
+   * Measured on 2026-09-21, `kaliyami`: 134 of the wide pass's 281 requests
+   * landed without a single new clip, 48 %, in nine stretches of two to seven
+   * seconds. The ground is not covered twice by mistake and it cannot be
+   * skipped; what it must not do is read as a search that has hung, which a
+   * still figure over a still bar is the very picture of.
+   *
+   * Counted per window and reset with it, and left at nought by the narrow
+   * pass, whose windows are walked several at a time and which brings back
+   * almost nothing by design — there, the run block says it is verifying and
+   * shows no figure at all.
+   */
+  stalePages: number
 }
