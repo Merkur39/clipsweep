@@ -264,6 +264,33 @@ describe('useClipSearch', () => {
 
   // Game names only serve to label a filter: their failure must not make a
   // successful search look like a failed one.
+  /**
+   * A slice nobody could fetch used to end the whole search: the error left
+   * `collectClips`, the hook's `catch` ran instead of its success path, and
+   * everything after `setClips` — the summary, the verdict, the game names —
+   * was skipped along with the slices that had not been walked yet. The table
+   * kept whatever the streaming had already put there, under a line saying the
+   * search had failed and nothing saying what it had got.
+   */
+  it('finishes the search when a slice cannot be fetched at all', async () => {
+    channelFound()
+    gameNames(new Map([['1', 'Cult of the Lamb']]))
+    fetchPage.mockRejectedValue(new Error('helix said no'))
+
+    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    await act(async () => result.current.start(request))
+    await waitFor(() => expect(result.current.running).toBe(false))
+
+    const log = logText(result.current.logEntries)
+    expect(log).toContain('requête impossible après six tentatives')
+    // The success path ran: the verdict is there, and so are the names.
+    expect(result.current.incomplete).toHaveLength(1)
+    expect(result.current.gameNames.get('1')).toBe('Cult of the Lamb')
+    // The wording `log.failed` renders — which is what ran before, instead of
+    // everything asserted above it.
+    expect(log).not.toContain('Échec :')
+  })
+
   it('keeps the clips even when the game names fail', async () => {
     channelFound()
     fetchPage.mockResolvedValue({ clips: [clip('a')] })
