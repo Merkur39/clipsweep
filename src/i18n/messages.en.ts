@@ -170,7 +170,7 @@ export const en: Catalogue = {
   'progress.resume.slices': { one: '{n} slice', other: '{n} slices' },
   'progress.resume.split': { one: '{n} halved and run again', other: '{n} halved and run again' },
   'progress.resume.requests': { one: '{n} request', other: '{n} requests' },
-  'progress.legend.done': 'complete slice',
+  'progress.legend.done': 'no gap detected',
   'progress.legend.split': 'saturated, split',
   'progress.legend.lost': 'saturated at the floor — clips missing',
   'progress.logEmpty': 'Standing by.',
@@ -186,7 +186,7 @@ export const en: Catalogue = {
     one: '{n} slice · hover for detail · logarithmic height',
     other: '{n} slices · hover for detail · logarithmic height',
   },
-  'timeline.kind.done': 'complete',
+  'timeline.kind.done': 'no gap detected',
   'timeline.kind.split': 'saturated, split',
   'timeline.kind.lost': 'saturated at the floor — clips missing',
 

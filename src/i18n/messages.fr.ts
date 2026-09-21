@@ -283,7 +283,17 @@ export const fr = {
   'progress.resume.slices': { one: '{n} tranche', other: '{n} tranches' },
   'progress.resume.split': { one: '{n} relancée en deux', other: '{n} relancées en deux' },
   'progress.resume.requests': { one: '{n} requête', other: '{n} requêtes' },
-  'progress.legend.done': 'tranche complète',
+  /**
+   * What a slice walked to the end is entitled to say, and no more.
+   *
+   * It said "complete" until 2026-09-20, when measurement showed that false: on
+   * `noxya__`, Helix answered with 88 clips in a single page and no cursor —
+   * claiming nothing further — where the site's own index held 90. Both missing
+   * clips resolve perfectly by `id=`, and no page size and no window brings
+   * them back. Helix going quiet is not a proof of exhaustiveness, and a slice
+   * can only testify to what was looked for.
+   */
+  'progress.legend.done': 'aucun trou détecté',
   'progress.legend.split': 'saturée, recoupée',
   'progress.legend.lost': 'saturée au plancher — clips manquants',
   'progress.logEmpty': 'En attente.',
@@ -300,7 +310,7 @@ export const fr = {
     other: '{n} tranches · survole pour le détail · hauteur logarithmique',
   },
   // Terser than the legend: the readout line already names the period.
-  'timeline.kind.done': 'complète',
+  'timeline.kind.done': 'aucun trou détecté',
   'timeline.kind.split': 'saturée, recoupée',
   'timeline.kind.lost': 'saturée au plancher — clips manquants',
 
