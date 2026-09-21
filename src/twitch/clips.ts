@@ -17,6 +17,21 @@ export const DEFAULT_PAGE_CAP = 950
  * service handing back cursors for ever cannot hold a sweep open on nothing.
  */
 const EMPTY_PAGE_TOLERANCE = 3
+/**
+ * How much the catalogue must grow before it is handed over again.
+ *
+ * Every delivery costs the caller a full pass over everything it holds —
+ * measured at 6.6 ms for 20 000 clips and 16.7 ms for 50 000, filters, sort and
+ * facets together. Delivered per page, a sweep over a large channel spends some
+ * 32 000 of them: eight minutes of blocking work, and no frame survives it. The
+ * table stops painting, and the stop button with it.
+ *
+ * Two percent turns those thirty-two thousand into a few hundred, and costs a
+ * reader nothing: the count beside the bar is reported per page by
+ * `onProgress`, which is O(1). What grows coarser is only how often the table
+ * is rebuilt, and it grows coarser exactly as rebuilding it gets dearer.
+ */
+const DELIVERY_GROWTH = 1.02
 /** Below six hours, splitting costs more requests than the clips it recovers. */
 export const DEFAULT_MIN_WINDOW_MS = 6 * 3_600_000
 /**
@@ -162,6 +177,14 @@ export async function collectClips({
     depth: 0,
   }))
   const byId = new Map<string, Clip>()
+  let delivered = 0
+
+  /** Hands the catalogue over, if it has grown enough to be worth the pass. */
+  const deliver = () => {
+    if (byId.size < Math.max(delivered + 1, Math.ceil(delivered * DELIVERY_GROWTH))) return
+    delivered = byId.size
+    onClips?.([...byId.values()])
+  }
   const reports: WindowReport[] = []
   let pass: 'wide' | 'narrow' = 'wide'
   let passDone = 0
@@ -247,12 +270,12 @@ export async function collectClips({
       // Only the counters, though — the clips themselves still come out one
       // window at a time, below, so the table is not re-rendered per request
       // for a handful of extra rows.
-      // Per page, and not per window as it was while a window was a calendar
-      // year and a sweep held a dozen of them. A sweep now seeds ONE window
-      // over the whole period and walks it in a hundred and more requests: per
-      // window means an empty table for the length of the search, and nothing
-      // at all to show for a stop.
-      onClips?.([...byId.values()])
+      // Not per window, as it was while a window was a calendar year and a
+      // sweep held a dozen of them: a sweep now seeds ONE window over the whole
+      // period, so per window means an empty table for the length of the search
+      // and nothing at all to show for a stop. Not per page either — see
+      // `DELIVERY_GROWTH`.
+      deliver()
       onProgress?.({
         windowsDone,
         windowsTotal,
@@ -381,7 +404,10 @@ export async function collectClips({
     // `incomplete` takes it, and the ticket says so.
     report.saturated = report.saturated || narrow.saturated
     onWindow?.(report)
-    onClips?.([...byId.values()])
+    // Only when it brought something back. A pass that found nothing new would
+    // otherwise cost a full rebuild of the table per window, at the very moment
+    // the catalogue is at its largest, for no clip at all.
+    if (report.recovered > 0) onClips?.([...byId.values()])
   }
 
   return {
