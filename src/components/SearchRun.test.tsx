@@ -153,7 +153,7 @@ describe('SearchRun', () => {
     setup({ progress: { ...base, stalePages: 2 } })
 
     expect(screen.getByText('3 218')).toBeInTheDocument()
-    expect(screen.getByText(/clips trouvés — Twitch repasse sur les mêmes/)).toBeInTheDocument()
+    expect(screen.getByText(/clips trouvés — En attente de Twitch/)).toBeInTheDocument()
   })
 
   // One page adding nothing is ordinary — a page of twenty against a catalogue
@@ -163,7 +163,23 @@ describe('SearchRun', () => {
     setup({ progress: { ...base, stalePages: 1 } })
 
     expect(screen.getByText('clips trouvés')).toBeInTheDocument()
-    expect(screen.queryByText(/repasse sur les mêmes/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/En attente de Twitch/)).not.toBeInTheDocument()
+  })
+
+  /**
+   * A rate-limit pause can land inside one of these stretches — the two are
+   * independent — and both would then say Twitch is holding things up, two
+   * lines apart. Only one of them is a delay Twitch is imposing, with a
+   * countdown and a promise to resume; the other waits on nothing. So the
+   * suffix gives the word back, and the pause keeps the signal it was written
+   * for.
+   */
+  it('gives the word back to a pause that lands mid-stretch', () => {
+    setup({ progress: { ...base, stalePages: 2 }, pausedUntil: Date.now() + 12_000 })
+
+    expect(screen.getByText(/Twitch demande une pause/)).toBeInTheDocument()
+    expect(screen.queryByText(/clips trouvés — En attente de Twitch/)).not.toBeInTheDocument()
+    expect(screen.getByText('clips trouvés')).toBeInTheDocument()
   })
 
   it('stops claiming a share it cannot move', () => {
@@ -178,7 +194,7 @@ describe('SearchRun', () => {
     setup({ progress: { ...base, pass: 'narrow', passTotal: 10, passDone: 3, stalePages: 2 } })
 
     expect(screen.getByText('Vérification en cours…')).toBeInTheDocument()
-    expect(screen.queryByText(/repasse sur les mêmes/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/En attente de Twitch/)).not.toBeInTheDocument()
   })
 
   it('leads with what has been found so far', () => {

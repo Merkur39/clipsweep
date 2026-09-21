@@ -132,11 +132,18 @@ export const fr = {
   /* Accroché à l'unité, sous le chiffre, parce que c'est le chiffre qui
      interroge : pendant qu'une tranche recoupée relit le haut du span de son
      parent, le compte ne bouge pas d'un clip et les requêtes continuent.
-     Trois choses se partagent alors le travail et aucune ne redit l'autre —
-     ceci dit POURQUOI le nombre est immobile, « Recherche en cours… » dit que
-     la recherche tourne, et la barre hachurée dit qu'elle est vivante.
-     Court, parce que le bloc met la figure et la ligne dos à dos. */
-  'run.rereading': 'Twitch repasse sur les mêmes',
+
+     Ça ne dit pas la cause — les pages arrivent pleines de clips déjà comptés —
+     mais l'état, du point de vue de quelqu'un qui regarde un chiffre immobile :
+     la main est chez Twitch, il n'y a rien à faire et rien à réparer. Le détail
+     reste dans le journal, où « saturée, recoupée en deux » le dit en toutes
+     lettres à qui ouvre les détails techniques.
+
+     Le mot « attente » appartient d'abord à 'run.paused', qui est le seul état
+     du produit à imposer un vrai délai. Les deux ne peuvent plus paraître
+     ensemble : voir la garde dans SearchRun, où le suffixe cède la place dès
+     qu'une pause est annoncée. */
+  'run.rereading': 'En attente de Twitch',
   'run.slices': { one: '{n} tranche sur {total}', other: '{n} tranches sur {total}' },
   /* Announced as an estimate, because it is one: it is extrapolated from the
      slices already behind, and a channel does not answer at a constant rate. */
