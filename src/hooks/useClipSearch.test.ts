@@ -121,22 +121,21 @@ describe('useClipSearch', () => {
    * standing under an English interface for the rest of the session.
    */
   /**
-   * The buy-back has to be said, because it is the only place the sweep admits
-   * that Helix withheld anything: the slice's own line reports a count, and a
-   * count that went up because the window was read twice looks exactly like one
-   * that never needed it.
+   * The gap has to be said, because it is the only place the sweep admits that
+   * Helix withheld anything: a slice's own line reports a count, and a count
+   * short of what the service claimed to serve looks exactly like a full one.
+   *
+   * The buy-back's own line is not reachable from here, and that is by design:
+   * the hook takes the default page size, under which nothing smaller is worth
+   * a second read — see `DEFAULT_RESCUE_PAGE_SIZE`.
    */
-  it('says what re-reading a slice brought back, and what it still could not', async () => {
+  it('says how many clips Twitch counted and did not hand over', async () => {
     channelFound()
     gameNames(new Map())
     const cursorAt = (offset: number) =>
       btoa(JSON.stringify({ b: null, a: { Cursor: btoa(String(offset)) } }))
-    fetchPage.mockImplementation(async (_w: unknown, cursor: string | undefined, first: number) =>
-      cursor
-        ? { clips: [] }
-        : first === 100
-          ? { clips: [clip('a')], cursor: cursorAt(4) }
-          : { clips: [clip('a'), clip('b')], cursor: cursorAt(4) },
+    fetchPage.mockImplementation(async (_w: unknown, cursor: string | undefined) =>
+      cursor ? { clips: [clip('b')] } : { clips: [clip('a')], cursor: cursorAt(4) },
     )
 
     const { result } = renderHook(() => useClipSearch(session, vi.fn()))
@@ -144,8 +143,8 @@ describe('useClipSearch', () => {
     await waitFor(() => expect(result.current.running).toBe(false))
 
     const log = result.current.logEntries.map((entry) => entry.say(t)).join(' ')
-    expect(log).toContain('1 clip récupéré')
-    expect(log).toContain('2 clips que Twitch a comptés sans les rendre')
+    // One clip served against four claimed by the cursor: three skipped.
+    expect(log).toContain('3 clips que Twitch a comptés sans les rendre')
   })
 
   it('reads in the language it is read in, not the one it ran in', async () => {
@@ -296,16 +295,17 @@ describe('useClipSearch', () => {
     const held = new Promise<void>((resolve) => {
       release = resolve
     })
-    fetchPage
-      .mockImplementationOnce(async () => {
-        now += 1_000
-        return { clips: [clip('a')], cursor: 'p2' }
-      })
-      .mockImplementationOnce(async () => {
-        now += 1_000
-        await held
-        return { clips: [clip('b')] }
-      })
+    // The narrow second pass answers nothing and costs no time: what is under
+    // test is the clock of the pass that walks the window, not the repair.
+    let wide = 0
+    fetchPage.mockImplementation(async (_w: unknown, _c: unknown, first: number) => {
+      if (first !== 20) return { clips: [] }
+      wide += 1
+      now += 1_000
+      if (wide === 1) return { clips: [clip('a')], cursor: 'p2' }
+      await held
+      return { clips: [clip('b')] }
+    })
 
     const { result } = renderHook(() => useClipSearch(session, vi.fn()))
     let search!: Promise<void>
@@ -353,20 +353,18 @@ describe('useClipSearch', () => {
     const held = new Promise<void>((resolve) => {
       release = resolve
     })
-    fetchPage
-      .mockImplementationOnce(async () => {
-        now += 1_000
-        return { clips: saturating, cursor: 'more' }
-      })
-      .mockImplementationOnce(async () => {
-        now += 1_000
+    let wide = 0
+    fetchPage.mockImplementation(async (_w: unknown, _c: unknown, first: number) => {
+      if (first !== 20) return { clips: [] }
+      wide += 1
+      now += 1_000
+      if (wide === 1) return { clips: saturating, cursor: 'more' }
+      if (wide === 2) {
         await held
         return { clips: [clip('first-half')] }
-      })
-      .mockImplementation(async () => {
-        now += 1_000
-        return { clips: [clip('second-half')] }
-      })
+      }
+      return { clips: [clip('second-half')] }
+    })
 
     const { result } = renderHook(() => useClipSearch(session, vi.fn()))
     let search!: Promise<void>

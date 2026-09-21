@@ -13,6 +13,7 @@ const report = (over: Partial<WindowReport> & { clipCount: number }): WindowRepo
   split: false,
   unreachable: 0,
   recovered: null,
+  duplicated: 0,
   ...over,
 })
 
