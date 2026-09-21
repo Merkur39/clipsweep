@@ -670,6 +670,40 @@ describe('collectClips', () => {
   })
 
   /**
+   * Delivery climbs with the catalogue instead of following the pages.
+   *
+   * Every delivery costs the caller a full pass over everything it holds —
+   * measured at 6,6 ms for 20 000 clips and 16,7 ms for 50 000, filters, sort
+   * and facets together. Per page, a sweep over a large channel spends some
+   * 32 000 of them, eight minutes of blocking work that no frame survives: the
+   * table stops painting, and the stop button with it. Asking for two percent
+   * of growth turns those thirty-two thousand into a few hundred and costs
+   * nothing a reader can see — the count beside the bar comes from `onProgress`,
+   * which still reports every page.
+   */
+  it('delivers on growth rather than on every page', async () => {
+    let served = 0
+    const fetchPage = vi.fn(async () => {
+      served += 1
+      return served <= 300 ? { clips: [clip(`c${served}`)], cursor: `p${served}` } : { clips: [] }
+    })
+    const onClips = vi.fn()
+
+    const { clips } = await collectClips({
+      windows: [firstHalf],
+      fetchPage,
+      onClips,
+      // One pass: this fixture describes exactly the requests it expects.
+      narrowPageSize: 20,
+    })
+
+    expect(clips).toHaveLength(300)
+    expect(onClips.mock.calls.length).toBeLessThan(150)
+    // And it starts at once: an empty table is the thing this exists to avoid.
+    expect((onClips.mock.calls[0][0] as Clip[]).map((c) => c.id)).toEqual(['c1'])
+  })
+
+  /**
    * A stop keeps what the sweep already holds. The real `fetch` rejects with an
    * `AbortError` when the stop lands on a request in flight — the common case —
    * and that used to travel all the way out of `collectClips`, so the caller
