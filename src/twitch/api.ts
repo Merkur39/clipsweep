@@ -8,7 +8,36 @@ const HELIX = 'https://api.twitch.tv/helix'
 const THROTTLE_MS = 60
 const MAX_ATTEMPTS = 6
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+/**
+ * A wait a stop can cut short — and the two things it can do when it lands.
+ *
+ * `abandon` is for a wait holding nothing: a 429 or a server error has given us
+ * no page, so a stop during it should travel out as the abort it is. `keep` is
+ * for the spacing between requests, where the page is already fetched, parsed
+ * and paid for — rejecting there would drop up to twenty clips the sweep holds,
+ * for a point of quota already spent.
+ *
+ * Written on `setTimeout` and an `abort` listener rather than on
+ * `AbortSignal.any`: the signal is optional here, and `any` escapes the fake
+ * clocks the pause is tested with.
+ */
+function sleep(ms: number, signal: AbortSignal | undefined, onStop: 'abandon' | 'keep') {
+  return new Promise<void>((resolve, reject) => {
+    const stopped = () => reject(new DOMException('Aborted', 'AbortError'))
+    if (signal?.aborted) return onStop === 'keep' ? resolve() : stopped()
+
+    const cut = () => {
+      clearTimeout(timer)
+      if (onStop === 'keep') resolve()
+      else stopped()
+    }
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', cut)
+      resolve()
+    }, ms)
+    signal?.addEventListener('abort', cut, { once: true })
+  })
+}
 
 /** Raised on 401 so the UI can drop the session and offer to reconnect. */
 export class TokenRejectedError extends TranslatableError {
@@ -27,7 +56,14 @@ export class TokenRejectedError extends TranslatableError {
  * a search that has hung — and the reader's only move then is to give up on one
  * that was going to finish.
  */
-export type PauseListener = (resumesAt: number | null) => void
+export type PauseListener = (resumesAt: number | null, reason?: PauseReason) => void
+
+/**
+ * Why the client is standing still. Twitch asking for the points back is not
+ * the same news as Twitch not answering, and the log says neither if it is
+ * handed one word for both.
+ */
+export type PauseReason = 'rate-limit' | 'server'
 
 interface HelixResponse<T> {
   data: T[]
@@ -66,14 +102,20 @@ export class TwitchApi {
         // Capped whatever the header says: a reset an hour out is a header to
         // distrust, not an hour to sit through.
         const wait = Math.min(waitMs + 250, 60_000)
-        this.onPause?.(Date.now() + wait)
-        await sleep(wait)
+        this.onPause?.(Date.now() + wait, 'rate-limit')
+        await sleep(wait, this.signal, 'abandon')
         this.onPause?.(null)
         continue
       }
       if (response.status === 401) throw new TokenRejectedError()
       if (response.status >= 500) {
-        await sleep(1000 * 2 ** attempt)
+        // Announced like the 429 above, and for the same reason: the last of
+        // these backs off for thirty-two seconds, and a bar that stops moving
+        // for half a minute with nothing said is the very picture of a hang.
+        const backoff = 1000 * 2 ** attempt
+        this.onPause?.(Date.now() + backoff, 'server')
+        await sleep(backoff, this.signal, 'abandon')
+        this.onPause?.(null)
         continue
       }
 
@@ -86,7 +128,7 @@ export class TwitchApi {
           : new TranslatableError('error.helixStatus', { status: String(response.status) })
       }
 
-      await sleep(THROTTLE_MS)
+      await sleep(THROTTLE_MS, this.signal, 'keep')
       return payload
     }
 
