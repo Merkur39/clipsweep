@@ -28,6 +28,7 @@ vi.mock('./hooks/useClipSearch', () => ({
     logEntries: [],
     gameNames: new Map(),
     running: false,
+    stopping: false,
     start,
     stop: vi.fn(),
     ...searchState,

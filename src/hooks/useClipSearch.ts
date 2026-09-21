@@ -13,6 +13,28 @@ import { seedWindows, type Span } from '../twitch/windows'
 
 const LOG_LIMIT = 500
 
+/**
+ * Keeps the tab out of the browser's energy saver for the length of a sweep.
+ *
+ * Chrome freezes a hidden tab it judges CPU-intensive after five minutes —
+ * timers, promise resolvers and event handlers with it
+ * (https://developer.chrome.com/blog/freezing-on-energy-saver). A sweep over a
+ * large channel runs for tens of minutes and ticks every box by construction,
+ * and what it would lose is not speed but the rest of itself. A held web lock
+ * exempts the group.
+ *
+ * Best effort, and silent when it fails: the lock is a courtesy the platform
+ * may not offer, and a sweep that runs without it is the sweep we had.
+ */
+function holdTab(): () => void {
+  let release = () => {}
+  const held = new Promise<void>((resolve) => {
+    release = resolve
+  })
+  navigator.locks?.request('clipsweep.sweep', () => held).catch(() => {})
+  return release
+}
+
 export interface SearchRequest {
   channel: string
   /** `yyyy-mm-dd`, as the date inputs produce them. */
@@ -50,6 +72,17 @@ export interface ClipSearch {
   logEntries: LogEntry[]
   gameNames: ReadonlyMap<string, string>
   running: boolean
+  /**
+   * A stop has been asked for and the sweep has not finished unwinding.
+   *
+   * Set where the click is, synchronously, because that is the only thing a
+   * stop can promise to be quick about. What follows it — the last delivery,
+   * the log, a round of game names — runs before `running` can fall, and on a
+   * big channel the main thread has no frame to spare for any of it. A button
+   * still reading "stop the search" through all that is the picture of an
+   * application that has hung.
+   */
+  stopping: boolean
   start: (request: SearchRequest) => Promise<void>
   stop: () => void
 }
@@ -74,6 +107,7 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
   const [logEntries, setLogEntries] = useState<LogEntry[]>([])
   const [gameNames, setGameNames] = useState<ReadonlyMap<string, string>>(() => new Map())
   const [running, setRunning] = useState(false)
+  const [stopping, setStopping] = useState(false)
 
   const abortRef = useRef<AbortController | null>(null)
   const startedAtRef = useRef(0)
@@ -87,6 +121,7 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
   }, [])
 
   const stop = useCallback(() => {
+    setStopping(true)
     abortRef.current?.abort()
     log('log.stopRequested', undefined, 'warn')
   }, [log])
@@ -106,7 +141,9 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
 
       const controller = new AbortController()
       abortRef.current = controller
+      const releaseTab = holdTab()
       setRunning(true)
+      setStopping(false)
       setClips([])
       setReports([])
       setIncomplete([])
@@ -267,7 +304,9 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
         // A pause outlives nothing: whatever ends the search ends the wait.
         setPausedUntil(null)
         setRunning(false)
+        setStopping(false)
         abortRef.current = null
+        releaseTab()
       }
     },
     [session, log, onTokenRejected],
@@ -284,6 +323,7 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
     logEntries,
     gameNames,
     running,
+    stopping,
     start,
     stop,
   }
