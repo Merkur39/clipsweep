@@ -14,6 +14,7 @@ const report = (over: Partial<WindowReport> & { clipCount: number }): WindowRepo
   unreachable: 0,
   recovered: null,
   duplicated: 0,
+  pending: false,
   ...over,
 })
 

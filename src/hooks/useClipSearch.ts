@@ -254,11 +254,13 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
               log('log.sliceRescued', { ...window, n: report.recovered }, 'good')
             }
 
-            // The gap waits for the window's last word. A window the narrow
-            // pass is about to go over would otherwise quote a figure that pass
-            // exists to correct; a saturated one gets no second pass, so its
-            // first word is its last.
-            if (report.unreachable > 0 && (verified || report.saturated)) {
+            // The gap waits for the window's last word, which `pending` is
+            // what says: a window the narrow pass is about to go over would
+            // otherwise quote the very figure that pass exists to correct.
+            // Read off `recovered` instead, it would never be said at all on a
+            // sweep that leaves the second pass disarmed — which is exactly
+            // where the gap is largest.
+            if (report.unreachable > 0 && !report.pending) {
               log('log.sliceGap', { ...window, n: report.unreachable }, 'warn')
             }
           },

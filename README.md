@@ -282,7 +282,11 @@ collected ([`narrowedRange`](src/domain/filters.ts)) — a bound reaching past t
 and the empty-table message must name the threshold on views rather than claim a range that hides
 nothing.
 
-Cost: ~1 request per 100 clips, plus one per bisection. Helix quota: 800 points/min; the client honors
+Cost: **~1 request per 2 clips**, plus one per bisection. Every window is walked twice — once in
+pages of twenty, once in pages of two — because the two page sizes fail in opposite ways and neither
+is exhaustive alone, see [`clips.ts`](src/twitch/clips.ts). The second pass is what the promise at
+the top of this file costs: it brought back 1 clip of 91 on one channel and 0 of 261 on another, and
+the one clip is the point. Helix quota: 800 points/min; the client honors
 `Ratelimit-Reset` on 429 and spaces requests 60 ms apart.
 
 ## What the sweep bets on

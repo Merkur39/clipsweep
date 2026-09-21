@@ -527,6 +527,35 @@ describe('collectClips', () => {
   })
 
   /**
+   * Whether a window still owes a second pass, said in the report rather than
+   * inferred from it. A caller reading `recovered === null` cannot tell "not
+   * verified yet" from "never will be" — and the difference decides when it is
+   * allowed to quote the gap.
+   */
+  it('says whether a second pass is still owed', async () => {
+    const fetchPage = vi.fn(async () => ({ clips: [clip('a')] }))
+
+    const owed = await collectClips({ windows: [firstHalf], fetchPage })
+    const settled = await collectClips({ windows: [firstHalf], fetchPage, narrowPageSize: 20 })
+
+    expect(owed.reports[0].pending).toBe(false)
+    expect(settled.reports[0].pending).toBe(false)
+  })
+
+  it('leaves a window pending until the second pass has been over it', async () => {
+    const seen: boolean[] = []
+    const fetchPage = vi.fn(async () => ({ clips: [clip('a')] }))
+
+    await collectClips({
+      windows: [firstHalf],
+      fetchPage,
+      onWindow: (report) => seen.push(report.pending),
+    })
+
+    expect(seen).toEqual([true, false])
+  })
+
+  /**
    * A row served twice is a row served in place of another: the pass that
    * repeated it skipped something. It proves that pass incomplete — never the
    * sweep, since the other pass may well hold what it missed, which is the
