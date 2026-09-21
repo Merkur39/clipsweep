@@ -125,6 +125,9 @@ export const fr = {
    */
   'run.found': { one: 'clip trouvé', other: 'clips trouvés' },
   'run.say': 'Recherche en cours…',
+  /* Le temps que prend la seconde passe, dite pour ce qu'elle est : le tableau
+     est déjà là, et ce qui tourne encore ne fait plus que le confirmer. */
+  'run.verifying': 'Vérification en cours…',
   'run.slices': { one: '{n} tranche sur {total}', other: '{n} tranches sur {total}' },
   /* Announced as an estimate, because it is one: it is extrapolated from the
      slices already behind, and a channel does not answer at a constant rate. */
@@ -282,7 +285,6 @@ export const fr = {
   'progress.detailsAside': 'chronologie et journal',
   'progress.resume.slices': { one: '{n} tranche', other: '{n} tranches' },
   'progress.resume.split': { one: '{n} relancée en deux', other: '{n} relancées en deux' },
-  'progress.resume.requests': { one: '{n} requête', other: '{n} requêtes' },
   /**
    * What a slice walked to the end is entitled to say, and no more.
    *

@@ -64,6 +64,7 @@ export const en: Catalogue = {
   // ── Search status ────────────────────────────────────────────────────────
   'run.found': { one: 'clip found', other: 'clips found' },
   'run.say': 'Searching…',
+  'run.verifying': 'Verification in progress…',
   'run.slices': { one: '{n} slice of {total}', other: '{n} slices of {total}' },
   'run.eta.minutes': { one: 'about {n} min left', other: 'about {n} min left' },
   'run.eta.soon': 'less than a minute left',
@@ -169,7 +170,6 @@ export const en: Catalogue = {
   'progress.detailsAside': 'timeline and log',
   'progress.resume.slices': { one: '{n} slice', other: '{n} slices' },
   'progress.resume.split': { one: '{n} halved and run again', other: '{n} halved and run again' },
-  'progress.resume.requests': { one: '{n} request', other: '{n} requests' },
   'progress.legend.done': 'no gap detected',
   'progress.legend.split': 'saturated, split',
   'progress.legend.lost': 'saturated at the floor — clips missing',

@@ -109,9 +109,15 @@ export interface SearchResumeInput {
  * the drawer stays shut with nothing lost.
  *
  * Segments joined rather than one sentence, as the result counts already are:
- * three counts in one message could agree with none of them. The halving is left
- * out when there was none — a segment reading "0" of something that did not
- * happen is a segment spent on nothing.
+ * two counts in one message could agree with neither. The halving is left out
+ * when there was none — a segment reading "0" of something that did not happen
+ * is a segment spent on nothing.
+ *
+ * The requests used to close the line and no longer do. A sweep walks every
+ * window twice and spends a request per two clips, so the figure runs into the
+ * hundreds: it measures the API's shortcomings rather than the search, and
+ * there is nothing a reader can do with it. The log still carries it, at the
+ * end, for whoever opens the drawer.
  */
 export function describeSearchResume({ progress, split }: SearchResumeInput, t: T): string | null {
   if (!progress) return null
@@ -119,7 +125,6 @@ export function describeSearchResume({ progress, split }: SearchResumeInput, t: 
   return [
     t('progress.resume.slices', { n: progress.windowsTotal }),
     ...(split > 0 ? [t('progress.resume.split', { n: split })] : []),
-    t('progress.resume.requests', { n: progress.requests }),
   ].join(' · ')
 }
 
