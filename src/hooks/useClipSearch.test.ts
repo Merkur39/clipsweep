@@ -71,6 +71,16 @@ const logText = (entries: LogEntry[]) =>
 const gameNames = (names: Map<string, string>, incomplete = false) =>
   fetchGameNames.mockResolvedValue({ names, incomplete })
 
+/**
+ * A resolution that names exactly the ids it is asked about, for a test where
+ * which request carried which game is the point.
+ */
+const gameCatalogue = (catalogue: Record<string, string>) =>
+  fetchGameNames.mockImplementation(async (ids: string[]) => ({
+    names: new Map(ids.filter((id) => id in catalogue).map((id) => [id, catalogue[id]])),
+    incomplete: false,
+  }))
+
 describe('useClipSearch', () => {
   it('does not call the API without a session', async () => {
     const { result } = renderHook(() => useClipSearch(null, vi.fn()))
@@ -100,6 +110,102 @@ describe('useClipSearch', () => {
     await waitFor(() => expect(result.current.clips).toHaveLength(2))
     expect(result.current.gameNames.get('1')).toBe('Cult of the Lamb')
     expect(result.current.running).toBe(false)
+  })
+
+  /**
+   * The creator facet is legible from the first page, the name being on the
+   * clip itself. The game facet has only an id to go on, and it used to wait
+   * for the whole sweep — the verification included, which is most of it on a
+   * large channel — before asking what those ids were called. Every game read
+   * "Unnamed" until then, which is what a retired category looks like.
+   */
+  it('names the games while the sweep is still running', async () => {
+    channelFound()
+    gameNames(new Map([['1', 'Cult of the Lamb']]))
+    let release = () => {}
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    fetchPage.mockImplementation(async (_w: unknown, cursor: string | undefined) => {
+      if (!cursor) return { clips: [clip('a')], cursor: 'p2' }
+      await held
+      return { clips: [] }
+    })
+
+    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    let search!: Promise<void>
+    await act(async () => {
+      search = result.current.start(request)
+    })
+
+    await waitFor(() => expect(result.current.gameNames.get('1')).toBe('Cult of the Lamb'))
+    expect(result.current.running).toBe(true)
+
+    await act(async () => {
+      release()
+      await search
+    })
+  })
+
+  /**
+   * A stop used to leave the game facet with no names at all: the round that
+   * named them came after the sweep, and ran on a signal the stop had already
+   * aborted. The clips a stop keeps are the ones it has to show, so the names
+   * already in hand stay — and nothing further is asked for.
+   */
+  it('keeps the names it had when the search is stopped, and asks for no more', async () => {
+    channelFound()
+    gameCatalogue({ '1': 'Cult of the Lamb', '2': 'Hollow Knight' })
+    let release = () => {}
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    fetchPage.mockImplementation(async (_w: unknown, cursor: string | undefined) => {
+      if (!cursor) return { clips: [clip('a', '1')], cursor: 'p2' }
+      await held
+      return { clips: [clip('b', '2')] }
+    })
+
+    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    let search!: Promise<void>
+    await act(async () => {
+      search = result.current.start(request)
+    })
+    await waitFor(() => expect(result.current.gameNames.get('1')).toBe('Cult of the Lamb'))
+
+    act(() => result.current.stop())
+    await act(async () => {
+      release()
+      await search
+    })
+
+    expect(result.current.clips.map((c) => c.id)).toEqual(['a', 'b'])
+    expect(result.current.gameNames.get('1')).toBe('Cult of the Lamb')
+    expect(fetchGameNames).toHaveBeenCalledTimes(1)
+  })
+
+  /**
+   * A delivery waits for the catalogue to grow by two percent, so the last clips
+   * of a sweep may arrive with its result alone — and their games, which no
+   * delivery carried, have to be asked about there.
+   */
+  it('names the games of the last clips, which no delivery carried', async () => {
+    channelFound()
+    gameCatalogue({ '1': 'Cult of the Lamb', '2': 'Hollow Knight' })
+    const hundred = Array.from({ length: 100 }, (_, i) => clip('c' + i, '1'))
+    // A hundred delivered, then one more: 101 is short of the 102 a delivery
+    // waits for. The narrow pass finds nothing, so it delivers nothing either.
+    fetchPage.mockImplementation(async (_w: unknown, cursor: string | undefined, first: number) => {
+      if (first !== 20) return { clips: [] }
+      return cursor ? { clips: [clip('last', '2')] } : { clips: hundred, cursor: 'p2' }
+    })
+
+    const { result } = renderHook(() => useClipSearch(session, vi.fn()))
+    await act(async () => result.current.start(request))
+    await waitFor(() => expect(result.current.running).toBe(false))
+
+    expect(result.current.clips).toHaveLength(101)
+    expect(result.current.gameNames.get('2')).toBe('Hollow Knight')
   })
 
   it('warns when the channel predates the period asked for', async () => {
@@ -173,10 +279,10 @@ describe('useClipSearch', () => {
 
   /**
    * A stop has to be acknowledged where the click was, and at once. Everything
-   * the sweep does on the way out — the last delivery, the log, the game names
-   * — runs before `running` can fall, and on a big channel the main thread has
-   * no frame to spare for any of it. The button then sits there saying "stop
-   * the search", which is the picture of an application that has hung.
+   * the sweep does on the way out — the last delivery, the log — runs before
+   * `running` can fall, and on a big channel the main thread has no frame to
+   * spare for any of it. The button then sits there saying "stop the search",
+   * which is the picture of an application that has hung.
    */
   it('says it is stopping the instant it is asked to', async () => {
     channelFound()
@@ -274,7 +380,7 @@ describe('useClipSearch', () => {
    */
   it('finishes the search when a slice cannot be fetched at all', async () => {
     channelFound()
-    gameNames(new Map([['1', 'Cult of the Lamb']]))
+    gameNames(new Map())
     fetchPage.mockRejectedValue(new Error('helix said no'))
 
     const { result } = renderHook(() => useClipSearch(session, vi.fn()))
@@ -283,9 +389,9 @@ describe('useClipSearch', () => {
 
     const log = logText(result.current.logEntries)
     expect(log).toContain('requête impossible après six tentatives')
-    // The success path ran: the verdict is there, and so are the names.
+    // The success path ran: the verdict is there, and so is the summary.
     expect(result.current.incomplete).toHaveLength(1)
-    expect(result.current.gameNames.get('1')).toBe('Cult of the Lamb')
+    expect(log).toContain('0 clip unique')
     // The wording `log.failed` renders — which is what ran before, instead of
     // everything asserted above it.
     expect(log).not.toContain('Échec :')

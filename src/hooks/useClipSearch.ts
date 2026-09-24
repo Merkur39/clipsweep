@@ -8,6 +8,7 @@ import { TokenRejectedError, TwitchApi } from '../twitch/api'
 import type { Session } from '../twitch/auth'
 import { describeError } from '../twitch/errors'
 import { collectClips, type WindowReport } from '../twitch/clips'
+import { createGameNameResolver } from '../twitch/gameNames'
 import type { Clip, Progress } from '../twitch/types'
 import { seedWindows, type Span } from '../twitch/windows'
 
@@ -77,10 +78,10 @@ export interface ClipSearch {
    *
    * Set where the click is, synchronously, because that is the only thing a
    * stop can promise to be quick about. What follows it — the last delivery,
-   * the log, a round of game names — runs before `running` can fall, and on a
-   * big channel the main thread has no frame to spare for any of it. A button
-   * still reading "stop the search" through all that is the picture of an
-   * application that has hung.
+   * the log — runs before `running` can fall, and on a big channel the main
+   * thread has no frame to spare for any of it. A button still reading "stop
+   * the search" through all that is the picture of an application that has
+   * hung.
    */
   stopping: boolean
   start: (request: SearchRequest) => Promise<void>
@@ -185,6 +186,15 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
         const windows = seedWindows(from, to)
         log('log.slices', { n: windows.length })
 
+        // Helix only returns a game id. The names are asked for as the clips
+        // come in, so the game facet reads like the creator one from the first
+        // page on — see `createGameNameResolver`.
+        const games = createGameNameResolver(
+          (ids) => api.fetchGameNames(ids),
+          setGameNames,
+          controller.signal,
+        )
+
         const result = await collectClips({
           windows,
           fetchPage: api.clipPageFetcher(user.id),
@@ -211,7 +221,10 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
             }
           },
           // The table fills in during the search instead of waiting for the end.
-          onClips: setClips,
+          onClips: (found) => {
+            setClips(found)
+            games.add(found)
+          },
           /**
            * A window reports twice: once when the wide pass leaves it, and
            * again when the narrow one has been over it — see `collectClips`.
@@ -274,6 +287,10 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
         })
 
         setClips(result.clips)
+        // The tail no delivery carried: one waits for the catalogue to grow by
+        // two percent, so the last clips of a sweep reach the table only here,
+        // and their games with them.
+        games.add(result.clips)
         setIncomplete(result.incomplete)
         // Two counts, so two messages: one message holding both could agree
         // with neither, and wrote "1 requests" for every single-request search.
@@ -291,15 +308,11 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
           log('log.interrupted', undefined, 'warn')
         }
 
-        // Helix only returns a game id. Labelling a filter is worth one request,
-        // but failing at it must not invalidate a search that succeeded — which
-        // is why what comes back is kept whether it is whole or not, and only
-        // the shortfall is said out loud. An abort still goes up: the search was
-        // stopped, and there is nothing left to label.
-        const { names, incomplete: namesIncomplete } = await api.fetchGameNames(
-          result.clips.map((clip) => clip.game_id),
-        )
-        setGameNames(names)
+        // Failing to label a filter must not invalidate a search that succeeded,
+        // so the shortfall is said once, when the last answer is in, and never
+        // as a failure. A stop leaves nothing to wait for: it has cut the
+        // request in flight, and what it had already named stays named.
+        const { incomplete: namesIncomplete } = await games.settled()
         if (namesIncomplete) log('log.gameNames', undefined, 'warn')
       } catch (cause) {
         const error = cause as Error
@@ -313,6 +326,10 @@ export function useClipSearch(session: Session | null, onTokenRejected: () => vo
       } finally {
         // A pause outlives nothing: whatever ends the search ends the wait.
         setPausedUntil(null)
+        // Nor does a request. The names are asked for alongside the sweep, so an
+        // error that ends it can leave one in flight, which would go on asking —
+        // and answering — after `running` has fallen.
+        controller.abort()
         setRunning(false)
         setStopping(false)
         abortRef.current = null
